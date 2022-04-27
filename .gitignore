@@ -214,3 +214,6 @@ confix/lib/confix-ami_torun.jar
 
 # miscellaneous byproducts (made for our interest)
 misc/
+
+## SimFin( (will be replaced by other models, currently on .gitignore due to its size)
+#pool/simfin/
