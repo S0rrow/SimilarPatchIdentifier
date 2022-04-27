@@ -1,10 +1,13 @@
-# ConPatFix (to be modified) 2022
+# ConPatFix 2022 (to be modified) / Work In Progress
 Revision of ConFix with patch recommendation data instead of change pool
 
-Work in Progress
-
-Inspired by _**Automated Patch Generation with Context-based Change Application**_ <br>
+Inspired by _**Automated Patch Generation with Context-based Change Application**_ 
 - [Original Repository of ConFix](https://github.com/thwak/ConFix)
+
+
+## Other projects included:
+- [ConFix](https://github.com/thwak/confix)
+- [AllChangeCollector](https://github.com/JeongHyunHeo/AllcCangeCollector)
 
 
 ## FicCollect [bash script]

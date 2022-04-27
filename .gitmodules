@@ -1,0 +1,3 @@
+[submodule "AllChangeCollector"]
+	path = AllChangeCollector
+	url = https://github.com/JeongHyunHeo/AllChangeCollector
