@@ -1,3 +1,6 @@
 [submodule "AllChangeCollector"]
 	path = AllChangeCollector
 	url = https://github.com/JeongHyunHeo/AllChangeCollector
+[submodule "fv4202"]
+	path = fv4202
+	url = ./fv4202/
