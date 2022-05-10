@@ -3,4 +3,4 @@
 	url = https://github.com/JeongHyunHeo/AllChangeCollector
 [submodule "fv4202"]
 	path = fv4202
-	url = ./fv4202/
+	url = https://github.com/S0rrow/fv4202
