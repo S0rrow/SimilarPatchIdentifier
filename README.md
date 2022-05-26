@@ -8,7 +8,12 @@ Inspired by _**Automated Patch Generation with Context-based Change Application*
 ## Other projects included:
 - [ConFix](https://github.com/thwak/confix)
 - [AllChangeCollector](https://github.com/JeongHyunHeo/AllcCangeCollector)
+- [Longest Common sub-vector Extractor (LCE)](https://github.com/s0rrow/fv4202)
 
+## How to run
+1.
+
+## 
 
 ## FicCollect [bash script]
 

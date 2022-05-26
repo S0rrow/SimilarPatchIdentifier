@@ -1,2 +1,0 @@
-Project,Faulty file path,faulty line,buggy sha,url,dummy
-Math-75,src/com/google/javascript/jscomp/NodeUtil.java,12,f, https://github.com/google/closure-compiler.git,
