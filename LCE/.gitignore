@@ -1,0 +1,4 @@
+# pool repository for storing old / new java files to compare
+pool/
+LAS/
+venv/
