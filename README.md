@@ -1,5 +1,7 @@
-# ConPatFix 2022 (to be modified) / Work In Progress
+# SPI 2022
 Revision of ConFix with patch recommendation data instead of change pool
+
+ACC + LCE + ConFix
 
 Inspired by _**Automated Patch Generation with Context-based Change Application**_ 
 - [Original Repository of ConFix](https://github.com/thwak/ConFix)
