@@ -57,9 +57,9 @@ def main(argv):
 
 
     ## build confix and move it to the library
-    os.system("cd ./confix/ConFix-code ;"
+    os.system(f"cd {root}/core/confix/ConFix-code ;"
             + "mvn clean package ;"
-            + "cp target/confix-0.0.1-SNAPSHOT-jar-with-dependencies.jar /home/codemodel/hans/APR/confix/lib/confix-ami_torun.jar")
+            + f"cp target/confix-0.0.1-SNAPSHOT-jar-with-dependencies.jar {root}/core/confix/lib/confix-ami_torun.jar")
 
 
 
@@ -74,11 +74,11 @@ def main(argv):
         os.system("rm -rf "+target_dir+ " ;"
                     + "defects4j checkout -p "+target_project+" -v "+target_id+"b -w "+target_dir)
 
-        os.system("cp "+root+"/confix/coverages/"+target_project.lower()+"/"+target_project.lower()+target_id+"b/coverage-info.obj "
+        os.system("cp "+root+"/core/confix/coverages/"+target_project.lower()+"/"+target_project.lower()+target_id+"b/coverage-info.obj "
                     + target_dir)
 
         os.system("cd "+target_dir+" ; "
-                    + root+"/confix/scripts/config.sh "+target_project+" "+target_id + " " + perfect_faulty_class + " " + perfect_faulty_line)
+                    + root+"/core/confix/scripts/config.sh "+target_project+" "+target_id + " " + perfect_faulty_class + " " + perfect_faulty_line)
         
         os.system("cd "+target_dir+" ; "
                 + "echo \"pool.source=" +just_target+ "/outputs/prepare_pool_source\" >> confix.properties ; ")
@@ -96,12 +96,12 @@ def main(argv):
         buildTool = input_list[5]
 
         ### copy dummy coverage info file
-        os.system("cp "+root+"/confix/coverages/math/math1b/coverage-info.obj "
+        os.system("cp "+root+"/core/confix/coverages/math/math1b/coverage-info.obj "
                     + target_dir)
 
 
         os.system("cd "+target_dir+" ; "
-                + "cp "+root+"/confix/properties/confix.properties ./")
+                + "cp "+root+"/core/confix/properties/confix.properties ./")
         
         ### fill up the confix.property
         os.system("cd "+target_dir+" ; "
@@ -137,13 +137,13 @@ def main(argv):
     print("cd "+target_dir+" ; "
             + "/usr/lib/jvm/java-8-openjdk-amd64/bin/java "
             # + "java "
-            + "-Xmx4g -cp ../../../confix/lib/las.jar:../../../confix/lib/confix-ami_torun.jar "
+            + "-Xmx4g -cp ../../../core/confix/lib/las.jar:../../../core/confix/lib/confix-ami_torun.jar "
             + "-Duser.language=en -Duser.timezone=America/Los_Angeles com.github.thwak.confix.main.ConFix "
             + "> log.txt")
     os.system("cd "+target_dir+" ; "
             + "/usr/lib/jvm/java-8-openjdk-amd64/bin/java "
             # + "java "
-            + "-Xmx4g -cp ../../../confix/lib/las.jar:../../../confix/lib/confix-ami_torun.jar "
+            + "-Xmx4g -cp ../../../core/confix/lib/las.jar:../../../core/confix/lib/confix-ami_torun.jar "
             + "-Duser.language=en -Duser.timezone=America/Los_Angeles com.github.thwak.confix.main.ConFix "
             + "> log.txt")
     print("ConFix Execution Finished.")

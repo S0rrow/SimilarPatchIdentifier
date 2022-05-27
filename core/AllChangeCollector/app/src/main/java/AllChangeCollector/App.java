@@ -87,7 +87,8 @@ public class App {
             try {
                 extract_lec(filename_lec);
             } catch (Exception e) {
-                System.out.println("Error: extracting lcs git repository");
+                System.out.println("[debug.log] Error while extracting LCE "+e);
+                System.exit(1);
             }
         }
 
