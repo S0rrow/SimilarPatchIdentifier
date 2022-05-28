@@ -24,5 +24,5 @@ cd ..
 # remove remaining candidate source codes
 cd candidates
 rm -rf *.java
- cd ..
+cd ..
 python3 validator.py -f meta_resultPool.csv -d /home/codemodel/turbstructor/M48A2/core/LCE/pool -n 10 -r /home/codemodel/turbstructor/M48A2/target/$1/outputs/fv4202/ -c $6 >> /home/codemodel/turbstructor/M48A2/target/$1/outputs/fv4202/log.txt

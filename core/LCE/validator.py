@@ -4,6 +4,7 @@ import os
 import sys
 import numpy as np
 from subprocess import call
+from pydriller import Repository
 
 def csv_to_array(csv_file):
     f_csv_file = open(csv_file, 'r')
@@ -11,6 +12,21 @@ def csv_to_array(csv_file):
 
     result_array = np.asarray(list(result_array))
     return result_array
+
+def after_commit_id(commitID, gitDirectory, target=None):
+    pwd = os.getcwd()
+    # gitDirectory = pwd+"/"+gitDirectory
+    nextID = ''
+    breaker = 2
+    #commitList = list()
+    for commit in Repository(gitDirectory, from_commit=commitID, only_modifications_with_file_types=['.java']).traverse_commits():
+        if breaker==0 :
+            break
+        if breaker==1 :
+            nextID = commit.hash
+        breaker -= 1
+    #call(f"echo {nextID} > {target}/afterCID.txt", shell=True)
+    return nextID
 
 def seperate_commit_id_and_path(result_array):
     commit_id_before_list = list()
@@ -49,9 +65,10 @@ def top_n_to_diffs(commit_id_before_list, commit_id_after_list, file_path_before
         git_dir = pool_dir+"/"+project
         if file_path_before_list[i] == file_path_after_list[i]:
             try:
+                nextID = after_commit_id(commit_id_before_list[i], url_list[i])
                 print(f"[debug.log] Generating patch candidate #{i}")
                 print(f"[debug.log] Extracting git diff files ...")
-                call(f"cd {git_dir}\ngit diff --output={pwd}/result/diff_{lcs_count_list[i]}_{i+1}.txt --unified=0 {commit_id_before_list[i]} {commit_id_after_list[i]} -- {file_path_before_list[i]}",shell=True)
+                call(f"cd {git_dir}\ngit diff --output={pwd}/result/diff_{lcs_count_list[i]}_{i+1}.txt --unified=0 {commit_id_before_list[i]} {nextID} -- {file_path_before_list[i]}",shell=True)
 
                 print(f"[debug.log] > Project           : {project}")
                 print(f"[debug.log] > CommitID before   : {commit_id_before_list[i]}")
@@ -59,13 +76,12 @@ def top_n_to_diffs(commit_id_before_list, commit_id_after_list, file_path_before
                 print(f"cd {git_dir}\ngit checkout -f {commit_id_before_list[i]}; cp {git_dir}/{file_path_before_list[i]} {candidate_dir}/{project}_rank-{i}_old.java")
                 call(f"cd {git_dir}\ngit checkout -f {commit_id_before_list[i]}; cp {git_dir}/{file_path_before_list[i]} {candidate_dir}/{project}_rank-{i}_old.java", shell=True)
 
-                print(f"[debug.log] > CommitID after    : {commit_id_after_list[i]}")
+                print(f"[debug.log] > CommitID after    : {nextID}")
                 print(f"[debug.log] > Path              : {file_path_after_list[i]}")
-                print(f"cd {git_dir}\ngit checkout -f {commit_id_after_list[i]}; cp {git_dir}/{file_path_before_list[i]} {candidate_dir}/{project}_rank-{i}_new.java")
-                call(f"cd {git_dir}\ngit checkout -f {commit_id_after_list[i]}; cp {git_dir}/{file_path_before_list[i]} {candidate_dir}/{project}_rank-{i}_new.java", shell=True)
+                print(f"cd {git_dir}\ngit checkout -f {nextID}; cp {git_dir}/{file_path_before_list[i]} {candidate_dir}/{project}_rank-{i}_new.java")
+                call(f"cd {git_dir}\ngit checkout -f {nextID}; cp {git_dir}/{file_path_before_list[i]} {candidate_dir}/{project}_rank-{i}_new.java", shell=True)
                 print(f"[debug.log] resetting the git header to current HEAD ...")
-                call(f"cd {git_dir}\ngit reset --hard HEAD\n")
-
+                call(f"cd {git_dir}\ngit reset --hard HEAD\n", shell=True)
             except:
                 print(f"[debug.log] exception occured: {sys.exc_info()[0]}")
         else:
