@@ -13,18 +13,21 @@ def csv_to_array(csv_file):
     result_array = np.asarray(list(result_array))
     return result_array
 
-def after_commit_id(commitID, gitDirectory, target=None):
+def after_commit_id(commitID, gitDirectory, filePath, target=None):
     pwd = os.getcwd()
+    filePath = filePath.split('/')[-1]
     # gitDirectory = pwd+"/"+gitDirectory
     nextID = ''
-    breaker = 2
-    #commitList = list()
-    for commit in Repository(gitDirectory, from_commit=commitID, only_modifications_with_file_types=['.java']).traverse_commits():
-        if breaker==0 :
-            break
-        if breaker==1 :
+    breaker = False
+    #commitList = list()#, filepath=filePath
+    for commit in Repository(gitDirectory).traverse_commits():
+        #print(f"commit.hash = {commit.hash}")
+        for m in commit.modified_files:
+            if m.filename == filePath:
+                breaker = True
+        if breaker :
             nextID = commit.hash
-        breaker -= 1
+            break
     #call(f"echo {nextID} > {target}/afterCID.txt", shell=True)
     return nextID
 
@@ -65,7 +68,7 @@ def top_n_to_diffs(commit_id_before_list, commit_id_after_list, file_path_before
         git_dir = pool_dir+"/"+project
         if file_path_before_list[i] == file_path_after_list[i]:
             try:
-                nextID = after_commit_id(commit_id_before_list[i], url_list[i])
+                nextID = after_commit_id(commit_id_before_list[i], url_list[i], file_path_before_list[i])
                 print(f"[debug.log] Generating patch candidate #{i}")
                 print(f"[debug.log] Extracting git diff files ...")
                 call(f"cd {git_dir}\ngit diff --output={pwd}/result/diff_{lcs_count_list[i]}_{i+1}.txt --unified=0 {commit_id_before_list[i]} {nextID} -- {file_path_before_list[i]}",shell=True)

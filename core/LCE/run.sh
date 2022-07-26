@@ -4,7 +4,7 @@
 # $2 = project-id : hash-id and D4J project ID of execution
 # 2022052521224055_Closure-14
 
-echo "executing "$0" on batch_"$1"-"$2"..."
+echo "executing "$0" on "$1"..."
 cd /home/codemodel/turbstructor/M48A2/target/$1/outputs
 mkdir fv4202 # make result directory
 cd /home/codemodel/turbstructor/M48A2/core/LCE

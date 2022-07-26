@@ -10,15 +10,19 @@ from pydriller import Repository
 def after_commit_id(commitID, gitDirectory, filePath, target=None):
     pwd = os.getcwd()
     # gitDirectory = pwd+"/"+gitDirectory
+
+    filePath = filePath.split('/')[-1]
     nextID = ''
     breaker = False
     #commitList = list()#, filepath=filePath
-    for commit in Repository(gitDirectory, from_commit=commitID, only_modifications_with_file_types=['.java']).traverse_commits():
-        # print(f"commit.hash = {commit.hash}")
+    for commit in Repository(gitDirectory).traverse_commits():
+        print(f"commit.hash = {commit.hash}")
+        for m in commit.modified_files:
+            if m.filename == filePath:
+                breaker = True
         if breaker :
             nextID = commit.hash
             break
-        breaker = not breaker
     call(f"echo {nextID} > {target}/afterCID.txt", shell=True)
     #return nextID
 
@@ -46,7 +50,6 @@ def main(argv):
             filePath = a
         else:
             assert False, "unhandled option"
-    filePath = filePath.split('/')[-1]
     print(f"filePath = {filePath}")
     after_commit_id(commitID, gitDirectory, filePath,targetDirectory)
 # https://github.com/apache/ant-ivyde.git
