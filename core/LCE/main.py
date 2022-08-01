@@ -34,7 +34,7 @@ def try_integer(s):
     except ValueError:
         return s
 
-def backtrack(vector_pol, target_vector, lcs_map, y, x):
+def backtrack(vector_pool, target_vector, lcs_map, y, x):
     dropped_sequence_length_list = [0 for _ in range(lcs_map[y][x] + 1)]
     result_vector = [0 for _ in range(index+1)]
     result_vector[index] = 0
