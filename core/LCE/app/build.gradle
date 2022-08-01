@@ -27,6 +27,12 @@ dependencies {
     //implementation group: 'net.sf.opencsv', name: 'opencsv', version: '2.3'
 
     testImplementation 'junit:junit:4.12'
+
+    // https://mvnrepository.com/artifact/org.eclipse.jgit/org.eclipse.jgit
+    implementation group: 'org.eclipse.jgit', name: 'org.eclipse.jgit', version: '2.2.0.201212191850-r'
+
+    // https://mvnrepository.com/artifact/commons-io/commons-io
+    implementation group: 'commons-io', name: 'commons-io', version: '2.6'
 }
 
 application {

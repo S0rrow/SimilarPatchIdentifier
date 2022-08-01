@@ -6,8 +6,12 @@ package LCE;
 import java.util.ArrayList;
 import java.util.List;
 
-public class App {
+import org.eclipse.jgit.api.errors.GitAPIException;
+import org.eclipse.jgit.api.errors.InvalidRemoteException;
+import org.eclipse.jgit.api.errors.TransportException;
+import org.eclipse.jgit.api.errors.JGitInternalException;
 
+public class App {
     public static void main(String[] args) {
         App main = new App();
         main.run();
@@ -22,12 +26,30 @@ public class App {
         List<String> result = extractor.extract();
         List<String[]> preprocessed = preprocess(result);
 
-        gitLoader.set_result_dir("D:\\repository_d\\LCE\\result");
-
+        gitLoader.set("D:\\repository_d\\SPI\\core\\LCE\\result", "D:\\repository_d\\SPI\\core\\LCE\\candidates");
+        gitLoader.purge();
+        gitLoader.copy("D:\\repository_d\\SPI\\core\\LCE\\gitignore\\.gitignore",
+                "D:\\repository_d\\SPI\\core\\LCE\\result\\.gitignore");
+        gitLoader.copy("D:\\repository_d\\SPI\\core\\LCE\\gitignore\\.gitignore",
+                "D:\\repository_d\\SPI\\core\\LCE\\candidates\\.gitignore");
+        int counter = 0;
         for (String[] line : preprocessed) {
+            gitLoader.count(counter);
             // System.out.println("[debug] > " + Arrays.toString(line));
             gitLoader.config(line[2], line[0], line[1]);
             gitLoader.run();
+            try {
+                gitLoader.clone_file();
+            } catch (InvalidRemoteException e) {
+                System.out.println("[debug] > InvalidRemoteException : " + e.getMessage());
+            } catch (TransportException e) {
+                System.out.println("[debug] > TransportException : " + e.getMessage());
+            } catch (GitAPIException e) {
+                System.out.println("[debug] > GitAPIException : " + e.getMessage());
+            } catch (JGitInternalException e) {
+                System.out.println("[debug] > JGitInternalException : " + e.getMessage());
+            }
+            counter++;
         }
     }
 
