@@ -93,7 +93,8 @@ public class GitLoader {
             System.out.println("[debug] > checkout done");
             System.out.println("[debug] > copy file : " + filepath + " as candidate_no_" + counter + ".java" + " to "
                     + candidate_dir);
-            copy(result_dir + "/" + name + "_" + counter + "/" + filepath, "candidate_no_" + counter + ".java");
+            copy(result_dir + "/" + name + "_" + counter + "/" + filepath,
+                    candidate_dir + "/" + "candidate_no_" + counter + ".java");
             System.out.println("[debug] > copy done");
         } else {
             System.out.println("[debug] > error : result_dir or candidate_dir is not set");
