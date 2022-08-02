@@ -17,14 +17,15 @@ public class App {
     public static final String ANSI_CYAN = "\u001B[36m";
     public static final String ANSI_WHITE = "\u001B[37m";
     public static void main(String[] args) {
+        String spi_path = args[0];
         System.out.println(ANSI_YELLOW + "==========================================================");
         System.out.println(ANSI_YELLOW + "[LCE] App Initiated");
         App main = new App();
         System.out.println(ANSI_YELLOW + "[debug] main.run()");
-        main.run();
+        main.run(spi_path);
     }
 
-    public void run() {
+    public void run(String spi_path) {
         Extractor extractor = new Extractor();
         GitLoader gitLoader = new GitLoader();
         System.out.println(ANSI_BLUE + "[debug] > Extractor running...");
@@ -34,15 +35,13 @@ public class App {
         System.out.println(ANSI_GREEN + "[debug] > extraction done");
         List<String[]> preprocessed = preprocess(result);
         System.out.println(ANSI_GREEN + "[debug] > preprocess success");
-        gitLoader.set("D:\\repository_d\\SPI\\core\\LCE\\result", "D:\\repository_d\\SPI\\core\\LCE\\candidates");
+        gitLoader.set(spi_path+"\\core\\LCE\\result", spi_path+"\\core\\LCE\\candidates");
         System.out.println(ANSI_BLUE + "[debug] > cleaning result and candidate directory");
         gitLoader.purge();
         System.out.println(ANSI_GREEN + "[debug] > cleaning done");
         System.out.println(ANSI_BLUE+ "[debug] > copying gitignore file to result directory and candidate directory");
-        gitLoader.copy("D:\\repository_d\\SPI\\core\\LCE\\gitignore\\.gitignore",
-                "D:\\repository_d\\SPI\\core\\LCE\\result\\.gitignore");
-        gitLoader.copy("D:\\repository_d\\SPI\\core\\LCE\\gitignore\\.gitignore",
-                "D:\\repository_d\\SPI\\core\\LCE\\candidates\\.gitignore");
+        gitLoader.copy(spi_path+"\\core\\LCE\\gitignore\\.gitignore", spi_path+"\\core\\LCE\\result\\.gitignore");
+        gitLoader.copy(spi_path+"\\core\\LCE\\gitignore\\.gitignore", spi_path+"\\core\\LCE\\candidates\\.gitignore");
         System.out.println(ANSI_GREEN + "[debug] > gitignore file copied");
         System.out.println(ANSI_BLUE + "[debug] > Initiating gitLoader");
         int counter = 0;
