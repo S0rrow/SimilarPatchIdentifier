@@ -17,16 +17,16 @@ public class App {
     public static final String ANSI_CYAN = "\u001B[36m";
     public static final String ANSI_WHITE = "\u001B[37m";
     public static void main(String[] args) {
-        String spi_path = args[0];
         System.out.println(ANSI_YELLOW + "==========================================================");
         System.out.println(ANSI_YELLOW + "[LCE] App Initiated");
         App main = new App();
         System.out.println(ANSI_YELLOW + "[debug] main.run()");
-        main.run(spi_path);
+        main.run(args);
     }
 
-    public void run(String spi_path) {
-        Extractor extractor = new Extractor();
+    public void run(String[] args) {
+        String spi_path = args[0];
+        Extractor extractor = new Extractor(args);
         GitLoader gitLoader = new GitLoader();
         System.out.println(ANSI_BLUE + "[debug] > Extractor running...");
         extractor.run();

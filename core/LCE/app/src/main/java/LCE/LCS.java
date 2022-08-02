@@ -44,36 +44,16 @@ public class LCS {
     }
 
     public float ScoreSimilarity(int[] target, int[] tester) {
-        // print elements of target and tester
-        // System.out.print("[debug] target = ");
-        // for (int i = 0; i < target.length; i++) {
-        // System.out.print(target[i] + " ");
-        // }
-        // System.out.println();
-        // System.out.print("[debug] tester = ");
-        // for (int i = 0; i < tester.length; i++) {
-        // System.out.print(tester[i] + " ");
-        // }
-        // System.out.println();
-        // score = (1 - sum / (target.length - dp.length)) * k / k_max
         float score = 1;
         int sum = 0;
         int[] dp = Backtrack(LongestCommonSubsequenceofIntegerArray(target, tester));
-        // print elements of dp
-        // System.out.print("[debug] dp = ");
-        // for (int i = 0; i < dp.length; i++) {
-        // System.out.print(dp[i] + " ");
-        // }
-        // System.out.println();
         int k_max = tester.length;
         int k = dp.length;
         int[] sigma = new int[k + 1];
-        // count and sum length of sequences within target that are not included in dp.
         int trigger = 0;
         for (int i = 0; i < dp.length; i++) {
             sigma[i] = 0;
             for (int j = trigger; j < target.length; j++) {
-                // find the first element of target that is not included in dp.
                 if (target[j] != dp[i]) {
                     sigma[i]++;
                 } else {
@@ -85,29 +65,12 @@ public class LCS {
                 sigma[i + 1] = target.length - trigger;
             }
         }
-        for (int i = 0; i < sigma.length; i++) {
-            // print elements of sigma
-            // System.out.println("[debug] sigma[" + i + "] = " + sigma[i] + " ");
-        }
         for (int i = 1; i < sigma.length - 1; i++) {
             sum += sigma[i];
         }
-        // print sum
-        // System.out.println("[debug] sum = " + sum);
-        // score = (1 - sum / (target.length - dp.length)) * k / k_max
-        // print sum / (target.length - dp.length) as floats
-        // System.out.println("[debug] sum / (target.length - dp.length) = " + (float)
-        // sum / (target.length - dp.length));
-        // prevent zero division
         if (target.length != k)
             score = 1 - (float) sum / (target.length - k);
-        // print score at this point
-        // System.out.println("[debug] score = " + score);
-        // print k/k_max as floats
-        // System.out.println("[debug] k / k_max = " + (float) k / k_max);
         score = score * ((float) k / k_max);
-        // print score
-        // System.out.println("[debug] score = " + score + "\n");
         return score;
     }
 }

@@ -22,18 +22,20 @@ public class Extractor {
     private String pool_dir;
     private String vector_dir;
     private String meta_pool_dir;
+    private String SPI_Path;
 
     private List<String> source_files;
     private int[] max_N_index_list;
     private List<List<String>> meta_pool_list = new ArrayList<>();
     private List<List<String>> cleaned_meta_pool_list = new ArrayList<>();
 
-    public Extractor() {
+    public Extractor(String[] args) {
         super();
         lcs = new LCS();
-        pool_dir = "D:\\repository_d\\LCE\\target\\gumtree_vector.csv";
-        vector_dir = "D:\\repository_d\\LCE\\target\\testVector.csv";
-        meta_pool_dir = "D:\\repository_d\\LCE\\target\\commit_file.csv";
+        this.SPI_Path = args[0];
+        pool_dir = SPI_Path + "/core/LCE/target/" + args[1];
+        vector_dir = SPI_Path + "/core/LCE/target/" + args[2];
+        meta_pool_dir = SPI_Path + "/core/LCE/target/" + args[3];
     }
 
     public void config(String pool_dir, String vector_dir, String meta_pool_dir, String result_dir) {
@@ -72,19 +74,6 @@ public class Extractor {
             max_N_index_list = indexesOfTopElements(sim_score_array, 10);
             System.out.println(ANSI_BLUE + "[debug] max_N_index_list size = " + max_N_index_list.length);
             print_array(max_N_index_list);
-
-            /*
-             * for (int i = 0; i < 10; i++) {
-             * System.out.println("[debug] target : ");
-             * print_array(cleaned_pool_array[max_N_index_list[i]]);
-             * System.out.println("[debug] tester : ");
-             * print_array(vector_array[0]);
-             * 
-             * System.out.println("[debug] max score : " +
-             * sim_score_array[max_N_index_list[i]]);
-             * }
-             */
-
         } catch (FileNotFoundException e) {
             System.out.println(ANSI_RED + "[error] file not found exception"); // ERROR
             e.printStackTrace();
