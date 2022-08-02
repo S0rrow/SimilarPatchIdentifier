@@ -9,6 +9,15 @@ import java.util.Scanner;
 import java.util.Vector;
 
 public class Extractor {
+    public static final String ANSI_RESET = "\u001B[0m";
+    public static final String ANSI_BLACK = "\u001B[30m";
+    public static final String ANSI_RED = "\u001B[31m";
+    public static final String ANSI_GREEN = "\u001B[32m";
+    public static final String ANSI_YELLOW = "\u001B[33m";
+    public static final String ANSI_BLUE = "\u001B[34m";
+    public static final String ANSI_PURPLE = "\u001B[35m";
+    public static final String ANSI_CYAN = "\u001B[36m";
+    public static final String ANSI_WHITE = "\u001B[37m";
     LCS lcs;
     private String pool_dir;
     private String vector_dir;
@@ -40,16 +49,16 @@ public class Extractor {
         Vector<Integer> index_list_to_remove = new Vector<Integer>();
         try {
             pool_array = list_to_int_array2d(CSV_to_ArrayList(pool_dir));
-            System.out.println("[debug] original pool array size = " + pool_array.length);
+            System.out.println(ANSI_BLUE + "[debug] original pool array size = " + pool_array.length);
 
             meta_pool_list = CSV_to_ArrayList(meta_pool_dir);
-            System.out.println("[debug] meta pool list size = " + meta_pool_list.size());
+            System.out.println(ANSI_BLUE +"[debug] meta pool list size = " + meta_pool_list.size());
 
             int[][] cleaned_pool_array = remove_empty_lines(pool_array, index_list_to_remove);
             cleaned_meta_pool_list = sync_removal(meta_pool_list, index_list_to_remove);
-            System.out.println("[debug] cleaned pool array size = " + cleaned_pool_array.length);
-            System.out.println("[debug] index_list_to_remove size : " + index_list_to_remove.size());
-            System.out.println("[debug] cleaned meta pool list size = " + cleaned_meta_pool_list.size());
+            System.out.println(ANSI_BLUE +"[debug] cleaned pool array size = " + cleaned_pool_array.length);
+            System.out.println(ANSI_BLUE +"[debug] index_list_to_remove size : " + index_list_to_remove.size());
+            System.out.println(ANSI_BLUE +"[debug] cleaned meta pool list size = " + cleaned_meta_pool_list.size());
 
             vector_array = list_to_int_array2d(CSV_to_ArrayList(vector_dir));
 
@@ -61,7 +70,7 @@ public class Extractor {
             }
 
             max_N_index_list = indexesOfTopElements(sim_score_array, 10);
-            System.out.println("[debug] max_N_index_list size = " + max_N_index_list.length);
+            System.out.println(ANSI_BLUE + "[debug] max_N_index_list size = " + max_N_index_list.length);
             print_array(max_N_index_list);
 
             /*
@@ -77,10 +86,10 @@ public class Extractor {
              */
 
         } catch (FileNotFoundException e) {
-            System.out.println("[error] file not found exception"); // ERROR
+            System.out.println(ANSI_RED + "[error] file not found exception"); // ERROR
             e.printStackTrace();
         } catch (Exception e) {
-            System.out.println("[error] exception"); // ERROR
+            System.out.println(ANSI_RED + "[error] exception"); // ERROR
             e.printStackTrace();
         }
     }
@@ -100,7 +109,7 @@ public class Extractor {
                 records.add(getRecordFromLine(scanner.nextLine()));
             }
         } catch (FileNotFoundException e) {
-            System.out.println("[debug] file not found : " + filename); // DEBUG
+            System.out.println(ANSI_RED + "[debug] file not found : " + filename); // DEBUG
             e.printStackTrace();
         }
         return records;

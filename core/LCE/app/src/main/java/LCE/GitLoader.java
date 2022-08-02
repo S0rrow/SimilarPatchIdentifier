@@ -15,6 +15,16 @@ import org.eclipse.jgit.api.errors.JGitInternalException;
 import org.apache.commons.io.FileUtils;
 
 public class GitLoader {
+    public static final String ANSI_RESET = "\u001B[0m";
+    public static final String ANSI_BLACK = "\u001B[30m";
+    public static final String ANSI_RED = "\u001B[31m";
+    public static final String ANSI_GREEN = "\u001B[32m";
+    public static final String ANSI_YELLOW = "\u001B[33m";
+    public static final String ANSI_BLUE = "\u001B[34m";
+    public static final String ANSI_PURPLE = "\u001B[35m";
+    public static final String ANSI_CYAN = "\u001B[36m";
+    public static final String ANSI_WHITE = "\u001B[37m";
+
     private int counter = -1;
     private String url; // git url
     private String name; // git repo name
@@ -48,7 +58,8 @@ public class GitLoader {
     }
 
     public void run() {
-        System.out.println("\n[info #" + counter + "] > git clone " + url);
+        System.out.println(ANSI_YELLOW + "==========================================================");
+        System.out.println(ANSI_BLUE + "[info #" + counter + "] > git clone " + url);
         print_debug_info();
         // TODO
     }
@@ -73,31 +84,61 @@ public class GitLoader {
     }
 
     private void print_debug_info() {
-        System.out.println("[debug] > url : " + url);
-        System.out.println("[debug] > repo_name : " + name);
-        System.out.println("[debug] > cid : " + cid);
-        System.out.println("[debug] > file_name : " + filename);
-        System.out.println("[debug] > result_dir : " + result_dir);
-        System.out.println("[debug] > candidate_dir : " + candidate_dir);
+        System.out.println(ANSI_BLUE + "[debug] > url : " + ANSI_RESET + url);
+        System.out.println(ANSI_BLUE + "[debug] > repo_name : " + ANSI_RESET + name);
+        System.out.println(ANSI_BLUE + "[debug] > cid : " + ANSI_RESET + cid);
+        System.out.println(ANSI_BLUE + "[debug] > file_name : " + ANSI_RESET + filename);
+        System.out.println(ANSI_BLUE + "[debug] > result_dir : " + ANSI_RESET + result_dir);
+        System.out.println(ANSI_BLUE + "[debug] > candidate_dir : " + ANSI_RESET + candidate_dir);
     }
 
-    public void clone_file() throws InvalidRemoteException, TransportException, GitAPIException, JGitInternalException {
+    private boolean clone() {
+        try{
+            System.out.print(ANSI_BLUE + "[debug] > cloning start");
+            ProcessBuilder pb = new ProcessBuilder();
+            System.out.print(".");
+            pb.directory(new File(result_dir));
+            System.out.print(".");
+            pb.command("git", "clone", url);
+            System.out.print(".");
+            Process p = pb.start();
+            System.out.println(".");
+            System.out.println(ANSI_GREEN + "[debug] > cloning done");
+            return true;
+        } catch(Exception e){
+            System.out.println(ANSI_RED + "[error] > " + e.getMessage());
+            return false;
+        }
+    }
+
+    private boolean checkout(String directory){
+        try{
+            System.out.print(ANSI_BLUE + "[debug] > git checkout : " + cid);
+            ProcessBuilder pb = new ProcessBuilder();
+            System.out.print(".");
+            pb.directory(new File(directory));
+            System.out.print(".");
+            pb.command("git", "checkout", cid);
+            System.out.print(".");
+            Process p = pb.start();
+            System.out.println(".");
+            System.out.println(ANSI_GREEN + "[debug] > git checkout success");
+            return true;
+        } catch(Exception e){
+            System.out.println(ANSI_RED + "[error] > " + e.getMessage());
+            return false;
+        }
+    }
+
+    public boolean load() {
         if (set) {
-            System.out.println("[debug] > cloning repository from " + url);
-            Git git = Git.cloneRepository().setURI(url).setDirectory(new File(result_dir + "/" + name + "_" + counter))
-                    .call();
-            git.reset().setMode(ResetType.HARD).setRef("HEAD").call();
-            System.out.println("[debug] > cloning done");
-            System.out.println("[debug] > checkout repository :" + cid);
-            git.checkout().setForce(true).setName(cid).call();
-            System.out.println("[debug] > checkout done");
-            System.out.println("[debug] > copy file : " + filepath + " as candidate_no_" + counter + ".java" + " to "
-                    + candidate_dir);
-            copy(result_dir + "/" + name + "_" + counter + "/" + filepath,
-                    candidate_dir + "/" + "candidate_no_" + counter + ".java");
-            System.out.println("[debug] > copy done");
+            if(!clone())
+                return false;
+            if(!checkout(result_dir + "/" + name))
+                return false;
+            return true;
         } else {
-            System.out.println("[debug] > error : result_dir or candidate_dir is not set");
+            return false;
         }
     }
 

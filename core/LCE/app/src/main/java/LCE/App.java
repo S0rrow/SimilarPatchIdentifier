@@ -12,6 +12,15 @@ import org.eclipse.jgit.api.errors.TransportException;
 import org.eclipse.jgit.api.errors.JGitInternalException;
 
 public class App {
+    public static final String ANSI_RESET = "\u001B[0m";
+    public static final String ANSI_BLACK = "\u001B[30m";
+    public static final String ANSI_RED = "\u001B[31m";
+    public static final String ANSI_GREEN = "\u001B[32m";
+    public static final String ANSI_YELLOW = "\u001B[33m";
+    public static final String ANSI_BLUE = "\u001B[34m";
+    public static final String ANSI_PURPLE = "\u001B[35m";
+    public static final String ANSI_CYAN = "\u001B[36m";
+    public static final String ANSI_WHITE = "\u001B[37m";
     public static void main(String[] args) {
         App main = new App();
         main.run();
@@ -20,34 +29,36 @@ public class App {
     public void run() {
         Extractor extractor = new Extractor();
         GitLoader gitLoader = new GitLoader();
-
+        System.out.println(ANSI_BLUE + "[debug] > Extractor running...");
         extractor.run();
-
+        System.out.println(ANSI_GREEN + "[debug] > extractor set");
         List<String> result = extractor.extract();
+        System.out.println(ANSI_GREEN + "[debug] > extraction done");
         List<String[]> preprocessed = preprocess(result);
-
+        System.out.println(ANSI_GREEN + "[debug] > preprocess success");
         gitLoader.set("D:\\repository_d\\SPI\\core\\LCE\\result", "D:\\repository_d\\SPI\\core\\LCE\\candidates");
+        System.out.println(ANSI_BLUE + "[debug] > cleaning result and candidate directory");
         gitLoader.purge();
+        System.out.println(ANSI_GREEN + "[debug] > cleaning done");
+        System.out.println(ANSI_BLUE+ "[debug] > copying gitignore file to result directory and candidate directory");
         gitLoader.copy("D:\\repository_d\\SPI\\core\\LCE\\gitignore\\.gitignore",
                 "D:\\repository_d\\SPI\\core\\LCE\\result\\.gitignore");
         gitLoader.copy("D:\\repository_d\\SPI\\core\\LCE\\gitignore\\.gitignore",
                 "D:\\repository_d\\SPI\\core\\LCE\\candidates\\.gitignore");
+        System.out.println(ANSI_GREEN + "[debug] > gitignore file copied");
         int counter = 0;
         for (String[] line : preprocessed) {
             gitLoader.count(counter);
-            // System.out.println("[debug] > " + Arrays.toString(line));
             gitLoader.config(line[2], line[0], line[1]);
             gitLoader.run();
             try {
-                gitLoader.clone_file();
-            } catch (InvalidRemoteException e) {
-                System.out.println("[debug] > InvalidRemoteException : " + e.getMessage());
-            } catch (TransportException e) {
-                System.out.println("[debug] > TransportException : " + e.getMessage());
-            } catch (GitAPIException e) {
-                System.out.println("[debug] > GitAPIException : " + e.getMessage());
-            } catch (JGitInternalException e) {
-                System.out.println("[debug] > JGitInternalException : " + e.getMessage());
+                if(gitLoader.load()) {
+                    System.out.println(ANSI_GREEN + "[debug] > gitLoader load success");
+                } else {
+                    System.out.println(ANSI_RED + "[debug] > gitLoader load failed");
+                }
+            } catch (Exception e) {
+                System.out.println(ANSI_RED + "[error] > Exception :" + e.getMessage());
             }
             counter++;
         }
