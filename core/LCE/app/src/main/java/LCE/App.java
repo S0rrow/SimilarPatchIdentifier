@@ -32,8 +32,7 @@ public class App {
         System.out.println(ANSI_GREEN + "[debug] > extractor set");
         List<String> result = extractor.extract();
         System.out.println(ANSI_GREEN + "[debug] > extraction done");
-        List<String[]> preprocessed_b = preprocess_before(result);
-        List<String[]> preprocessed_a = preprocess_after(result);
+        List<String[]> preprocessed = preprocess(result);
         System.out.println(ANSI_GREEN + "[debug] > preprocess success");
         gitLoader.set("D:\\repository_d\\SPI\\core\\LCE\\result", "D:\\repository_d\\SPI\\core\\LCE\\candidates");
         System.out.println(ANSI_BLUE + "[debug] > cleaning result and candidate directory");
@@ -45,11 +44,11 @@ public class App {
         gitLoader.copy("D:\\repository_d\\SPI\\core\\LCE\\gitignore\\.gitignore",
                 "D:\\repository_d\\SPI\\core\\LCE\\candidates\\.gitignore");
         System.out.println(ANSI_GREEN + "[debug] > gitignore file copied");
-        System.out.println(ANSI_BLUE + "[debug] > Initiating gitLoader for source codes before");
+        System.out.println(ANSI_BLUE + "[debug] > Initiating gitLoader");
         int counter = 0;
-        for (String[] line : preprocessed_b) {
+        for (String[] line : preprocessed) {
             gitLoader.count(counter);
-            gitLoader.config(line[2], line[0], line[1], "candidate_before_"+counter);
+            gitLoader.config(line[4], line[0], line[1], line[2], line[3]);
             gitLoader.run();
             try {
                 if(gitLoader.load()) {
@@ -62,26 +61,9 @@ public class App {
             }
             counter++;
         }
-        System.out.println(ANSI_GREEN + "[debug] > gitLoader for source codes before done");
-        System.out.println(ANSI_BLUE + "[debug] > Initiating gitLoader for source codes after");
-        counter = 0;
-        for(String[] line : preprocessed_a) {
-            gitLoader.count(counter);
-            gitLoader.config(line[2], line[0], line[1], "candidate_after_"+counter);
-            gitLoader.run();
-            try {
-                if(gitLoader.load()) {
-                    System.out.println(ANSI_GREEN + "[debug] > gitLoader load success");
-                } else {
-                    System.out.println(ANSI_RED + "[debug] > gitLoader load failed");
-                }
-            } catch (Exception e) {
-                System.out.println(ANSI_RED + "[error] > Exception :" + e.getMessage());
-            }
-            counter++;
-        }
-        System.out.println(ANSI_GREEN + "[debug] > gitLoader for source codes after done");
-        System.out.println(ANSI_YELLOW + "[debug] > App done");
+        System.out.println(ANSI_GREEN + "[debug] > gitLoader done");
+        System.out.println(ANSI_YELLOW + "==========================================================");
+        System.out.println(ANSI_YELLOW + "[debug] > App done" + ANSI_RESET);
     }
 
     private List<String[]> preprocess(List<String> result) {
