@@ -6,11 +6,6 @@ package LCE;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.eclipse.jgit.api.errors.GitAPIException;
-import org.eclipse.jgit.api.errors.InvalidRemoteException;
-import org.eclipse.jgit.api.errors.TransportException;
-import org.eclipse.jgit.api.errors.JGitInternalException;
-
 public class App {
     public static final String ANSI_RESET = "\u001B[0m";
     public static final String ANSI_BLACK = "\u001B[30m";
@@ -22,7 +17,10 @@ public class App {
     public static final String ANSI_CYAN = "\u001B[36m";
     public static final String ANSI_WHITE = "\u001B[37m";
     public static void main(String[] args) {
+        System.out.println(ANSI_YELLOW + "==========================================================");
+        System.out.println(ANSI_YELLOW + "[LCE] App Initiated");
         App main = new App();
+        System.out.println(ANSI_YELLOW + "[debug] main.run()");
         main.run();
     }
 
@@ -34,7 +32,8 @@ public class App {
         System.out.println(ANSI_GREEN + "[debug] > extractor set");
         List<String> result = extractor.extract();
         System.out.println(ANSI_GREEN + "[debug] > extraction done");
-        List<String[]> preprocessed = preprocess(result);
+        List<String[]> preprocessed_b = preprocess_before(result);
+        List<String[]> preprocessed_a = preprocess_after(result);
         System.out.println(ANSI_GREEN + "[debug] > preprocess success");
         gitLoader.set("D:\\repository_d\\SPI\\core\\LCE\\result", "D:\\repository_d\\SPI\\core\\LCE\\candidates");
         System.out.println(ANSI_BLUE + "[debug] > cleaning result and candidate directory");
@@ -46,10 +45,11 @@ public class App {
         gitLoader.copy("D:\\repository_d\\SPI\\core\\LCE\\gitignore\\.gitignore",
                 "D:\\repository_d\\SPI\\core\\LCE\\candidates\\.gitignore");
         System.out.println(ANSI_GREEN + "[debug] > gitignore file copied");
+        System.out.println(ANSI_BLUE + "[debug] > Initiating gitLoader for source codes before");
         int counter = 0;
-        for (String[] line : preprocessed) {
+        for (String[] line : preprocessed_b) {
             gitLoader.count(counter);
-            gitLoader.config(line[2], line[0], line[1]);
+            gitLoader.config(line[2], line[0], line[1], "candidate_before_"+counter);
             gitLoader.run();
             try {
                 if(gitLoader.load()) {
@@ -62,6 +62,26 @@ public class App {
             }
             counter++;
         }
+        System.out.println(ANSI_GREEN + "[debug] > gitLoader for source codes before done");
+        System.out.println(ANSI_BLUE + "[debug] > Initiating gitLoader for source codes after");
+        counter = 0;
+        for(String[] line : preprocessed_a) {
+            gitLoader.count(counter);
+            gitLoader.config(line[2], line[0], line[1], "candidate_after_"+counter);
+            gitLoader.run();
+            try {
+                if(gitLoader.load()) {
+                    System.out.println(ANSI_GREEN + "[debug] > gitLoader load success");
+                } else {
+                    System.out.println(ANSI_RED + "[debug] > gitLoader load failed");
+                }
+            } catch (Exception e) {
+                System.out.println(ANSI_RED + "[error] > Exception :" + e.getMessage());
+            }
+            counter++;
+        }
+        System.out.println(ANSI_GREEN + "[debug] > gitLoader for source codes after done");
+        System.out.println(ANSI_YELLOW + "[debug] > App done");
     }
 
     private List<String[]> preprocess(List<String> result) {
@@ -70,7 +90,7 @@ public class App {
             for (String line : result) {
                 // System.out.println("[debug] line : " + line);
                 String[] line_split = line.split(",");
-                String[] selection = new String[] { line_split[0], line_split[2], line_split[4] };
+                String[] selection = new String[] { line_split[0], line_split[1], line_split[2], line_split[3], line_split[4] };
                 result_split.add(selection);
             }
         } catch (Exception e) {
@@ -78,5 +98,4 @@ public class App {
         }
         return result_split;
     }
-
 }

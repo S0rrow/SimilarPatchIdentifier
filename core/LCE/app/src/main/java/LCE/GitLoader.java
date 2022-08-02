@@ -5,13 +5,6 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
-import org.eclipse.jgit.api.Git;
-import org.eclipse.jgit.api.ResetCommand.ResetType;
-import org.eclipse.jgit.api.errors.GitAPIException;
-import org.eclipse.jgit.api.errors.InvalidRemoteException;
-import org.eclipse.jgit.api.errors.TransportException;
-import org.eclipse.jgit.api.errors.JGitInternalException;
-
 import org.apache.commons.io.FileUtils;
 
 public class GitLoader {
@@ -28,8 +21,10 @@ public class GitLoader {
     private int counter = -1;
     private String url; // git url
     private String name; // git repo name
-    private String cid; // commit id
-    private String filepath; // file path
+    private String cid_before; // commit id before
+    private String cid_after; // commit id after
+    private String filepath_before; // file path before
+    private String filepath_after; // file path (after)
     private String filename; // file name
     private String result_dir; // result dir
     private String candidate_dir; // candidate dir
@@ -37,24 +32,32 @@ public class GitLoader {
 
     public GitLoader() {
         this.url = "";
-        this.name = "";
-        this.cid = "";
-        this.filepath = "";
+        this.name = ""
+        this.cid_before = "";
+        this.cid_after = "";
+        this.filepath_before = "";
+        this.filepath_after = "";
+        this.filename = "";
+        this.result_dir = "";
+        this.candidate_dir = "";
     }
 
-    public void config(String url, String cid, String filepath) {
+    public void config(String url, String cid_before, String cid_after, String filepath_before, String filepath_after) {
         this.url = url;
         this.name = get_repo_name_from_url(url);
-        this.cid = cid;
-        this.filepath = filepath;
-        this.filename = get_file_name_from_path(filepath);
+        this.cid_before = cid_before;
+        this.cid_after = cid_after;
+        this.filepath_before = filepath_before;
+        this.filepath_after = filepath_after;
+        this.filename = get_filename_from_filepath(filepath_before);
     }
 
     public void set(String path, String candidate_dir) {
         this.result_dir = path;
         this.candidate_dir = candidate_dir;
-        if (result_dir != null && candidate_dir != null)
+        if (result_dir != null && candidate_dir != null) {
             set = true;
+        }
     }
 
     public void run() {
@@ -92,17 +95,14 @@ public class GitLoader {
         System.out.println(ANSI_BLUE + "[debug] > candidate_dir : " + ANSI_RESET + candidate_dir);
     }
 
-    private boolean clone() {
+    private boolean clone(String directory) {
         try{
-            System.out.print(ANSI_BLUE + "[debug] > cloning start");
+            System.out.println(ANSI_BLUE + "[debug] > cloning start");
             ProcessBuilder pb = new ProcessBuilder();
-            System.out.print(".");
             pb.directory(new File(result_dir));
-            System.out.print(".");
-            pb.command("git", "clone", url);
-            System.out.print(".");
+            pb.command("git", "clone", url, directory);
             Process p = pb.start();
-            System.out.println(".");
+            p.waitFor();
             System.out.println(ANSI_GREEN + "[debug] > cloning done");
             return true;
         } catch(Exception e){
@@ -113,19 +113,16 @@ public class GitLoader {
 
     private boolean checkout(String directory){
         try{
-            System.out.print(ANSI_BLUE + "[debug] > git checkout : " + cid);
+            System.out.println(ANSI_BLUE + "[debug] > git checkout : " + cid);
             ProcessBuilder pb = new ProcessBuilder();
-            System.out.print(".");
             pb.directory(new File(directory));
-            System.out.print(".");
-            pb.command("git", "checkout", cid);
-            System.out.print(".");
+            pb.command("git", "checkout", "-f", cid);
             Process p = pb.start();
-            System.out.println(".");
+            p.waitFor();
             System.out.println(ANSI_GREEN + "[debug] > git checkout success");
             return true;
         } catch(Exception e){
-            System.out.println(ANSI_RED + "[error] > " + e.getMessage());
+            System.out.println(ANSI_RED + "\n[error] > " + e.getMessage());
             return false;
         }
     }
@@ -133,12 +130,12 @@ public class GitLoader {
     public boolean load() {
         try{
             if (set) {
-                System.out.print(ansi_BLUE + "[debug] > loading");
-                if(!clone())
+                System.out.print(ANSI_BLUE + "[debug] > loading");
+                if(!clone(result_dir + "/" + name + "_" + counter))
                     return false;
-                if(!checkout(result_dir + "/" + name))
+                if(!checkout(result_dir + "/" + name + "_" + counter))
                     return false;
-                if(!copy_file(result_dir + "/" + name + "/" + filepath, candidate_dir + "/" + filename))
+                if(!copy(result_dir + "/" + name + "_" + counter +"/" + filepath, candidate_dir + "/" + candidate_name + ".java"))
                     return false;
                 System.out.println(ANSI_GREEN + "[debug] > loading done");
                 return true;
