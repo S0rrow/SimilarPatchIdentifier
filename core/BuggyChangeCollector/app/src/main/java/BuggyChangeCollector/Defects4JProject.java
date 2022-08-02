@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.File;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.util.Map;
 
 import com.opencsv.CSVReader;
 import com.opencsv.CSVIterator;
@@ -61,6 +62,13 @@ public class Defects4JProject extends Project {
             ProcessBuilder fetcher = new ProcessBuilder("defects4j", "checkout",
                 "-p", project, "-v", String.format("%db", this.identifier),
                 "-w", this.projectDirectory);
+            Map<String, String> fetcherEnvs = fetcher.environment();
+
+            fetcherEnvs.put("PATH", "/home/codemodel/hans/paths/jdk1.8.0_311/bin" + File.pathSeparator + System.getenv("PATH"));
+            fetcherEnvs.put("JAVA_HOME", "/home/codemodel/hans/paths/jdk1.8.0_311");
+
+            fetcherEnvs.forEach((key, value) -> System.out.printf("%s : %s\n", key ,value));
+
             Process p = fetcher.start();
 
             p.waitFor();

@@ -46,7 +46,11 @@ public class App {
         File targetDirPath = new File(targetDir);
         File outputDirPath = new File(outputDir);
 
-        if(!targetDirPath.mkdirs() || !outputDirPath.mkdirs())
+        boolean isFailing = true;
+        if(!targetDirPath.isDirectory()) isFailing = targetDirPath.mkdirs();
+        if(!outputDirPath.isDirectory()) isFailing = outputDirPath.mkdirs();
+
+        if(!isFailing)
         {
             System.err.println("mkdirs for target/output directory failed.");
             System.exit(-1);
