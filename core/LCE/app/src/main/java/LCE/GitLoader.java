@@ -131,18 +131,27 @@ public class GitLoader {
     }
 
     public boolean load() {
-        if (set) {
-            if(!clone())
+        try{
+            if (set) {
+                System.out.print(ansi_BLUE + "[debug] > loading");
+                if(!clone())
+                    return false;
+                if(!checkout(result_dir + "/" + name))
+                    return false;
+                if(!copy_file(result_dir + "/" + name + "/" + filepath, candidate_dir + "/" + filename))
+                    return false;
+                System.out.println(ANSI_GREEN + "[debug] > loading done");
+                return true;
+            } else {
                 return false;
-            if(!checkout(result_dir + "/" + name))
-                return false;
-            return true;
-        } else {
+            }
+        } catch (Exception e){
+            System.out.println(ANSI_RED + "[error] > " + e.getMessage());
             return false;
         }
     }
 
-    public void copy(String path1, String path2) {
+    public boolean copy(String path1, String path2) {
         File file = new File(path1);
         File file2 = new File(path2);
         try {
@@ -155,8 +164,10 @@ public class GitLoader {
             }
             input.close();
             output.close();
+            return true;
         } catch (IOException e) {
             System.out.println("[debug] > IOException : " + e.getMessage());
+            return false;
         }
     }
 
