@@ -3,8 +3,11 @@
  */
 package LCE;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
 
 public class App {
     public static final String ANSI_RESET = "\u001B[0m";
@@ -16,53 +19,72 @@ public class App {
     public static final String ANSI_PURPLE = "\u001B[35m";
     public static final String ANSI_CYAN = "\u001B[36m";
     public static final String ANSI_WHITE = "\u001B[37m";
+
+    /*
+     * [debug] > result[0] : D:/repository_d/SPI/core/LCE/target/commit_file.csv
+     * [debug] > result[1] : D:/repository_d/SPI/core/LCE/result
+     * [debug] > result[2] : 14
+     * [debug] > result[3] : D:/repository_d/SPI/core/LCE/target/gumtree_vector.csv
+     * [debug] > result[4] : D:/repository_d/SPI/core/LCE/target/testVector.csv
+     * [debug] > result[5] : D:/repository_d/SPI/core/LCE/candidates
+     * [debug] > result[6] : Closure
+     * [debug] > result[7] : 10
+     * [debug] > result[8] : D:/repository_d/SPI/
+     */
+
     public static void main(String[] args) {
         System.out.println(ANSI_YELLOW + "==========================================================");
-        System.out.println(ANSI_YELLOW + "[LCE] App Initiated");
+        System.out.println(ANSI_YELLOW + "[status] App Initiated");
         App main = new App();
-        System.out.println(ANSI_YELLOW + "[debug] main.run()");
-        main.run(args);
+        String[] argv = main.loadProperties(args[0]);
+        if (argv == null)
+            System.out.println(ANSI_RED + "[error] > Properties file not found");
+        else {
+            System.out.println(ANSI_YELLOW + "[status] Properties file loaded");
+            System.out.println(ANSI_YELLOW + "[status] running LCE");
+            main.run(argv);
+        }
     }
 
-    public void run(String[] args) {
-        String spi_path = args[0];
-        Extractor extractor = new Extractor(args);
+    public void run(String[] argv) {
+        String spi_path = argv[8]; // argv
+        Extractor extractor = new Extractor(argv); // argv
         GitLoader gitLoader = new GitLoader();
-        System.out.println(ANSI_BLUE + "[debug] > Extractor running...");
+        System.out.println(ANSI_BLUE + "[status] > Extractor running...");
         extractor.run();
-        System.out.println(ANSI_GREEN + "[debug] > extractor set");
+        System.out.println(ANSI_GREEN + "[status] > extractor ready");
         List<String> result = extractor.extract();
-        System.out.println(ANSI_GREEN + "[debug] > extraction done");
+        System.out.println(ANSI_GREEN + "[status] > extraction done");
         List<String[]> preprocessed = preprocess(result);
-        System.out.println(ANSI_GREEN + "[debug] > preprocess success");
-        gitLoader.set(spi_path+"/core/LCE/result", spi_path+"/core/LCE/candidates");
-        System.out.println(ANSI_BLUE + "[debug] > cleaning result and candidate directory");
+        System.out.println(ANSI_GREEN + "[status] > preprocess success");
+        gitLoader.set(argv[1], argv[5]); // argv
+        System.out.println(ANSI_BLUE + "[status] > cleaning result and candidate directory");
         gitLoader.purge();
-        System.out.println(ANSI_GREEN + "[debug] > cleaning done");
-        System.out.println(ANSI_BLUE+ "[debug] > copying gitignore file to result directory and candidate directory");
-        gitLoader.copy(spi_path+"/core/LCE/gitignore/.gitignore", spi_path+"/core/LCE/result/.gitignore");
-        gitLoader.copy(spi_path+"/core/LCE/gitignore/.gitignore", spi_path+"/core/LCE/candidates/.gitignore");
-        System.out.println(ANSI_GREEN + "[debug] > gitignore file copied");
-        System.out.println(ANSI_BLUE + "[debug] > Initiating gitLoader");
+        System.out.println(ANSI_GREEN + "[status] > cleaning done");
+        System.out.println(ANSI_BLUE + "[status] > copying gitignore file to result directory and candidate directory");
+        gitLoader.copy(spi_path + "/core/LCE/gitignore/.gitignore", argv[1] + ".gitignore"); // argv
+        gitLoader.copy(spi_path + "/core/LCE/gitignore/.gitignore", argv[5] + ".gitignore"); // argv
+        System.out.println(ANSI_GREEN + "[status] > gitignore file copied");
+        System.out.println(ANSI_BLUE + "[status] > Initiating gitLoader");
         int counter = 0;
         for (String[] line : preprocessed) {
             gitLoader.count(counter);
-            gitLoader.config(line[4], line[0], line[1], line[2], line[3]);
+            gitLoader.config(line[4], line[0], line[1], line[2], line[3], argv[6], Integer.parseInt(argv[2])); // argv
             gitLoader.run();
             try {
-                if(gitLoader.load()) {
-                    System.out.println(ANSI_GREEN + "[debug] > gitLoader load success");
+                if (gitLoader.load()) {
+                    System.out.println(ANSI_GREEN + "[status] > gitLoader load success");
                 } else {
-                    System.out.println(ANSI_RED + "[debug] > gitLoader load failed");
+                    System.out.println(ANSI_RED + "[status] > gitLoader load failed");
                 }
             } catch (Exception e) {
                 System.out.println(ANSI_RED + "[error] > Exception :" + e.getMessage());
             }
             counter++;
         }
-        System.out.println(ANSI_GREEN + "[debug] > gitLoader done");
+        System.out.println(ANSI_GREEN + "[status] > gitLoader done");
         System.out.println(ANSI_YELLOW + "==========================================================");
-        System.out.println(ANSI_YELLOW + "[debug] > App done" + ANSI_RESET);
+        System.out.println(ANSI_YELLOW + "[status] > App done" + ANSI_RESET);
     }
 
     private List<String[]> preprocess(List<String> result) {
@@ -71,12 +93,34 @@ public class App {
             for (String line : result) {
                 // System.out.println("[debug] line : " + line);
                 String[] line_split = line.split(",");
-                String[] selection = new String[] { line_split[0], line_split[1], line_split[2], line_split[3], line_split[4] };
+                String[] selection = new String[] { line_split[0], line_split[1], line_split[2], line_split[3],
+                        line_split[4] };
                 result_split.add(selection);
             }
         } catch (Exception e) {
             System.out.println("[error] > " + e.getMessage());
         }
         return result_split;
+    }
+
+    public String[] loadProperties(String path) {
+        try {
+            System.out.println(ANSI_BLUE + "[status] > loading properties");
+            File file = new File(path);
+            Properties properties = new Properties();
+            properties.load(new FileInputStream(file));
+            String[] result = new String[properties.size()];
+            int i = 0;
+            for (String key : properties.stringPropertyNames()) {
+                result[i] = properties.getProperty(key);
+                System.out.println(ANSI_BLUE + "[debug] > result[" + i + "] : " + result[i]);
+                i++;
+            }
+            System.out.println(ANSI_GREEN + "[status] > properties loaded");
+            return result;
+        } catch (Exception e) {
+            System.out.println(ANSI_RED + "[error] > Exception : " + e.getMessage());
+            return null;
+        }
     }
 }

@@ -28,7 +28,11 @@ public class GitLoader {
     private String filename; // file name
     private String result_dir; // result dir
     private String candidate_dir; // candidate dir
-    private boolean set = false; // if result dir exist
+    private boolean set; // if result dir exist
+
+    // d4j
+    private String d4j_project_name; // d4j project name
+    private int d4j_project_num; // d4j project num
 
     public GitLoader() {
         this.url = "";
@@ -40,9 +44,13 @@ public class GitLoader {
         this.filename = "";
         this.result_dir = "";
         this.candidate_dir = "";
+        this.set = false;
+        this.d4j_project_name = "";
+        this.d4j_project_num = -1;
     }
 
-    public void config(String url, String cid_before, String cid_after, String filepath_before, String filepath_after) {
+    public void config(String url, String cid_before, String cid_after, String filepath_before, String filepath_after,
+            String d4j_name, int d4j_num) {
         this.url = url;
         this.name = get_repo_name_from_url(url);
         this.cid_before = cid_before;
@@ -50,6 +58,8 @@ public class GitLoader {
         this.filepath_before = filepath_before;
         this.filepath_after = filepath_after;
         this.filename = get_file_name_from_path(filepath_before);
+        this.d4j_project_name = d4j_name;
+        this.d4j_project_num = d4j_num;
     }
 
     public void set(String path, String candidate_dir) {
@@ -87,81 +97,84 @@ public class GitLoader {
     }
 
     private void print_debug_info() {
-        System.out.println(ANSI_BLUE + "[debug] > url : " + ANSI_RESET + url);
-        System.out.println(ANSI_BLUE + "[debug] > repo_name : " + ANSI_RESET + name);
-        System.out.println(ANSI_BLUE + "[debug] > cid_before : " + ANSI_RESET + cid_before);
-        System.out.println(ANSI_BLUE + "[debug] > cid_after : " + ANSI_RESET + cid_after);
-        System.out.println(ANSI_BLUE + "[debug] > file_name : " + ANSI_RESET + filename);
-        System.out.println(ANSI_BLUE + "[debug] > result_dir : " + ANSI_RESET + result_dir);
-        System.out.println(ANSI_BLUE + "[debug] > candidate_dir : " + ANSI_RESET + candidate_dir);
+        System.out.println(ANSI_BLUE + "[info] > url : " + ANSI_RESET + url);
+        System.out.println(ANSI_BLUE + "[info] > repo_name : " + ANSI_RESET + name);
+        System.out.println(ANSI_BLUE + "[info] > cid_before : " + ANSI_RESET + cid_before);
+        System.out.println(ANSI_BLUE + "[info] > cid_after : " + ANSI_RESET + cid_after);
+        System.out.println(ANSI_BLUE + "[info] > file_name : " + ANSI_RESET + filename);
+        System.out.println(ANSI_BLUE + "[info] > result_dir : " + ANSI_RESET + result_dir);
+        System.out.println(ANSI_BLUE + "[info] > candidate_dir : " + ANSI_RESET + candidate_dir);
     }
 
     private boolean clone(String directory) {
-        try{
-            System.out.println(ANSI_BLUE + "[debug] > cloning start");
+        try {
+            System.out.println(ANSI_BLUE + "[status] > cloning start");
             ProcessBuilder pb = new ProcessBuilder();
             pb.directory(new File(result_dir));
             pb.command("git", "clone", url, directory);
             Process p = pb.start();
             p.waitFor();
-            System.out.println(ANSI_GREEN + "[debug] > cloning done");
+            System.out.println(ANSI_GREEN + "[status] > cloning done");
             return true;
-        } catch(Exception e){
+        } catch (Exception e) {
             System.out.println(ANSI_RED + "[error] > " + e.getMessage());
             return false;
         }
     }
 
-    private boolean checkout(String directory){
-        try{
-            System.out.println(ANSI_BLUE + "[debug] > git checkout cid before : " + cid_before);
+    private boolean checkout(String directory) {
+        try {
+            String project = d4j_project_name + "-" + d4j_project_num;
+            System.out.println(ANSI_BLUE + "[status] > git checkout cid before : " + cid_before);
             ProcessBuilder pb = new ProcessBuilder();
             pb.directory(new File(directory));
             pb.command("git", "checkout", "-f", cid_before);
             Process p = pb.start();
             p.waitFor();
-            System.out.println(ANSI_GREEN + "[debug] > git checkout success");
-            if(!!copy(result_dir + "/" + name + "_" + counter +"/" + filepath_before, candidate_dir + "/" + "candidate_before_no_" + counter + ".java"))
-                System.out.println(ANSI_GREEN + "[debug] > copy success");
+            System.out.println(ANSI_GREEN + "[status] > git checkout success");
+            if (!!copy(result_dir + "/" + name + "_" + counter + "/" + filepath_before,
+                    candidate_dir + "/" + project + "rank_" + counter + "old.java"))
+                System.out.println(ANSI_GREEN + "[status] > copy success");
             else {
                 System.out.println(ANSI_RED + "[error] > copy failed");
                 return false;
             }
 
-            System.out.println(ANSI_BLUE + "[debug] > git checkout cid after : " + cid_after);
+            System.out.println(ANSI_BLUE + "[status] > git checkout cid after : " + cid_after);
             pb = new ProcessBuilder();
             pb.directory(new File(directory));
             pb.command("git", "checkout", "-f", cid_after);
             p = pb.start();
             p.waitFor();
-            System.out.println(ANSI_GREEN + "[debug] > git checkout success");
-            if(!!copy(result_dir + "/" + name + "_" + counter +"/" + filepath_after, candidate_dir + "/" + "candidate_after_no_" + counter + ".java"))
-                System.out.println(ANSI_GREEN + "[debug] > copy success");
+            System.out.println(ANSI_GREEN + "[status] > git checkout success");
+            if (!!copy(result_dir + "/" + name + "_" + counter + "/" + filepath_after,
+                    candidate_dir + "/" + project + "rank_" + counter + "_new.java"))
+                System.out.println(ANSI_GREEN + "[status] > copy success");
             else {
                 System.out.println(ANSI_RED + "[error] > copy failed");
                 return false;
             }
             return true;
-        } catch(Exception e){
-            System.out.println(ANSI_RED + "\n[error] > " + e.getMessage());
+        } catch (Exception e) {
+            System.out.println(ANSI_RED + "[error] > " + e.getMessage());
             return false;
         }
     }
 
     public boolean load() {
-        try{
+        try {
             if (set) {
-                System.out.print(ANSI_BLUE + "[debug] > loading");
-                if(!clone(result_dir + "/" + name + "_" + counter))
+                System.out.println(ANSI_BLUE + "[status] > loading");
+                if (!clone(result_dir + "/" + name + "_" + counter))
                     return false;
-                if(!checkout(result_dir + "/" + name + "_" + counter))
+                if (!checkout(result_dir + "/" + name + "_" + counter))
                     return false;
-                System.out.println(ANSI_GREEN + "[debug] > loading done");
+                System.out.println(ANSI_GREEN + "[status] > loading done");
                 return true;
             } else {
                 return false;
             }
-        } catch (Exception e){
+        } catch (Exception e) {
             System.out.println(ANSI_RED + "[error] > " + e.getMessage());
             return false;
         }
@@ -182,7 +195,7 @@ public class GitLoader {
             output.close();
             return true;
         } catch (IOException e) {
-            System.out.println("[debug] > IOException : " + e.getMessage());
+            System.out.println(ANSI_RED + "[error] > IOException : " + e.getMessage());
             return false;
         }
     }
@@ -191,10 +204,14 @@ public class GitLoader {
         try {
             File dir = new File(result_dir);
             File dir2 = new File(candidate_dir);
+            if (!dir.exists())
+                dir.mkdir();
+            if (!dir2.exists())
+                dir2.mkdir();
             FileUtils.cleanDirectory(dir);
             FileUtils.cleanDirectory(dir2);
         } catch (IOException e) {
-            System.out.println("[debug] > IOException : " + e.getMessage());
+            System.out.println(ANSI_RED + "[error] > IOException : " + e.getMessage());
         }
     }
 }
