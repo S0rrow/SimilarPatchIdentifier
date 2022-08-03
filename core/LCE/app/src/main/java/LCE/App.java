@@ -36,7 +36,7 @@ public class App {
         System.out.println(ANSI_YELLOW + "==========================================================");
         System.out.println(ANSI_YELLOW + "[status] App Initiated");
         App main = new App();
-        String[] argv = main.loadProperties(args[0]);
+        String[] argv = args.length == 0 ? main.loadProperties() : main.loadProperties(args[0]);
         if (argv == null)
             System.out.println(ANSI_RED + "[error] > Properties file not found");
         else {
@@ -101,6 +101,10 @@ public class App {
             System.out.println("[error] > " + e.getMessage());
         }
         return result_split;
+    }
+
+    public String[] loadProperties() {
+        return loadProperties("D:/repository_d/SPI/core/LCE/lce.properties");
     }
 
     public String[] loadProperties(String path) {
