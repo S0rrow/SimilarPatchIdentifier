@@ -4,7 +4,9 @@ import java.io.IOException;
 import java.io.File;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.io.FileInputStream;
 import java.util.Map;
+import java.util.Properties;
 
 import com.opencsv.CSVReader;
 import com.opencsv.CSVIterator;
@@ -15,18 +17,35 @@ public class Defects4JProject extends Project {
     // Defects4J Bug Name into String project
     private int identifier; // Defects4J Bug Identifier, not its name
 
+    private String jdk8Directory = null;
+    private String SPIPath = null;
+
     public Defects4JProject(String projectName, String projectDirectory)
     {
+        Properties D4JProps = new Properties();
+
+        try
+        {
+            D4JProps.load(new FileInputStream("BCC.properties"));
+
+            jdk8Directory = D4JProps.getProperty("JAVA_HOME.8");
+            SPIPath = D4JProps.getProperty("SPI.path");
+        }
+        catch(Exception ex)
+        {
+            ex.printStackTrace();
+
+            jdk8Directory = null;
+            SPIPath = null;
+        }
+
         String[] defects4jBug = projectName.split("-");
         this.project = defects4jBug[0];
         this.identifier = Integer.parseInt(defects4jBug[1]);
 
         this.projectDirectory = projectDirectory;
         
-        String root = System.getProperty("user.dir");
-        // String file = String.format("%s/components/commit_collector/Defects4J_bugs_info/%s.csv", root, this.project);
-        String file = String.format("/home/codemodel/turbstructor/SimilarPatchIdentifier/components/commit_collector/Defects4J_bugs_info/%s.csv", this.project);
-        
+        String file = String.format("%s/components/commit_collector/Defects4J_bugs_info/%s.csv", this.SPIPath, this.project);
         try
         {    
             CSVReader reader = new CSVReader(new FileReader(file));
@@ -64,8 +83,8 @@ public class Defects4JProject extends Project {
                 "-w", this.projectDirectory);
             Map<String, String> fetcherEnvs = fetcher.environment();
 
-            fetcherEnvs.put("PATH", "/home/codemodel/hans/paths/jdk1.8.0_311/bin" + File.pathSeparator + System.getenv("PATH"));
-            fetcherEnvs.put("JAVA_HOME", "/home/codemodel/hans/paths/jdk1.8.0_311");
+            fetcherEnvs.put("PATH", String.format("%s%s%s", this.jdk8Directory, File.pathSeparator, System.getenv("PATH")));
+            fetcherEnvs.put("JAVA_HOME", this.jdk8Directory);
 
             fetcherEnvs.forEach((key, value) -> System.out.printf("%s : %s\n", key ,value));
 
