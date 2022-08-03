@@ -104,7 +104,7 @@ public class App {
     }
 
     public String[] loadProperties() {
-        return loadProperties("D:/repository_d/SPI/core/LCE/lce.properties");
+        return loadProperties("../lce.properties");
     }
 
     public String[] loadProperties(String path) {
