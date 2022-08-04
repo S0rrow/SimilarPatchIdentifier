@@ -117,7 +117,8 @@ public class App {
             int i = 0;
             for (String key : properties.stringPropertyNames()) {
                 result[i] = properties.getProperty(key);
-                System.out.println(ANSI_BLUE + "[debug] > result[" + i + "] : " + result[i]);
+                // System.out.println(ANSI_BLUE + "[debug] > result[" + i + "] : " + result[i]);
+                // // DEBUG
                 i++;
             }
             System.out.println(ANSI_GREEN + "[status] > properties loaded");

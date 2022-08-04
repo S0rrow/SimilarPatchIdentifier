@@ -1,6 +1,6 @@
 package AllChangeCollector;
 
-public class PrepareGumtree{
+public class PrepareGumtree {
     public String repo_name;
     public String commit_id;
     public String current_commit_sha;
@@ -10,8 +10,9 @@ public class PrepareGumtree{
     public String before_current_id;
     public String before_current_path;
 
-    public PrepareGumtree(String repo_name, String current_commit_id, String current_commit_sha, String current_commit_path, String before_current_id, String before_current_sha, String before_current_path)
-    {
+    public PrepareGumtree(String repo_name, String current_commit_id, String current_commit_sha,
+            String current_commit_path, String before_current_id, String before_current_sha,
+            String before_current_path) {
         this.repo_name = repo_name;
         this.current_commit_id = current_commit_id;
         this.current_commit_sha = current_commit_sha;

@@ -46,8 +46,6 @@ import org.eclipse.jgit.treewalk.AbstractTreeIterator;
 import org.eclipse.jgit.treewalk.CanonicalTreeParser;
 import org.eclipse.jgit.treewalk.TreeWalk;
 
-
-
 public class Gumtree {
     // runs gumtree for all(just only runs individual function accumulately)
     public static void runGumtreeForAll(ArrayList<String> repo_name, ArrayList<String> repo_git) throws IOException {
@@ -58,8 +56,7 @@ public class Gumtree {
         }
     }
 
-    public static void runGumtreeForIndividual(String repo_name, String repo_git) throws IOException
-    {
+    public static void runGumtreeForIndividual(String repo_name, String repo_git) throws IOException {
         System.out.println("====> Task : " + repo_name); // DEBUG
         Repository repo = new FileRepository(repo_git);
         RevWalk walk = new RevWalk(repo);
@@ -72,7 +69,7 @@ public class Gumtree {
         // setting output directory
 
         while ((line = reader.readLine()) != null) {
-            //opening gumtree_log.txt file
+            // opening gumtree_log.txt file
             String git_dir = System.getProperty("user.dir") + "/data/" + repo_name;
             File file_log = new File(git_dir, "gumtree_log.txt");
             BufferedWriter writer = new BufferedWriter(new FileWriter(file_log, false));
@@ -129,22 +126,23 @@ public class Gumtree {
 
         reader.close();
     }
-    
-    public static void runGumtreeForLEC(String repo_name, String repo_git, String commit, String filename) throws IOException {
+
+    public static void runGumtreeForLEC(String repo_name, String repo_git, String commit, String filename)
+            throws IOException {
         System.out.println("====> LEC Task : " + repo_name); // DEBUG
         Repository repo = new FileRepository(repo_git);
         RevWalk walk = new RevWalk(repo);
 
-        String dir = System.getProperty("user.dir") + "/lec/" + repo_name;
-        String file = dir + "/diff_lec.txt";
+        String dir = System.getProperty("user.dir") + "/lce/" + repo_name;
+        String file = dir + "/diff_lce.txt";
         BufferedReader reader = new BufferedReader(new FileReader(file));
         String line = "";
 
         // setting output directory
 
         while ((line = reader.readLine()) != null) {
-            String git_dir = System.getProperty("user.dir") + "/lec/" + repo_name;
-            File file_log = new File(git_dir, "gumtree_lec_log.txt");
+            String git_dir = System.getProperty("user.dir") + "/lce/" + repo_name;
+            File file_log = new File(git_dir, "gumtree_lce_log.txt");
             BufferedWriter writer = new BufferedWriter(new FileWriter(file_log, false));
             // opening gumtree_log.txt file
 
@@ -188,9 +186,9 @@ public class Gumtree {
                 writer.write(line_log + "\n");
                 writer.close();
 
-                Vectorize.extract_vector_lec(repo_name);
+                Vectorize.extract_vector_lce(repo_name);
 
-                //removing files
+                // removing files
                 new File(src_byte).delete();
                 new File(dst_byte).delete();
             } catch (Exception e) {
@@ -205,10 +203,8 @@ public class Gumtree {
 
     }
 
-    
-    public static String getID_BIC(Repository repo, String sha, String path, String repo_name) 
-            throws RevisionSyntaxException, AmbiguousObjectException, IncorrectObjectTypeException, IOException 
-    {
+    public static String getID_BIC(Repository repo, String sha, String path, String repo_name)
+            throws RevisionSyntaxException, AmbiguousObjectException, IncorrectObjectTypeException, IOException {
         String utf_string = "";
         String dir = System.getProperty("user.dir") + "/data/" + repo_name;
         File file_content = new File(dir, "BIC.java");
@@ -227,7 +223,7 @@ public class Gumtree {
             byte[] data = reader.open(treewalk.getObjectId(0)).getBytes();
             reader.close();
 
-            //FileUtils.writeByteArrayToFile(file_content, data);
+            // FileUtils.writeByteArrayToFile(file_content, data);
 
             utf_string = StringUtils.newStringUtf8(data);
             FileUtils.writeStringToFile(file_content, utf_string, Charset.forName("utf8"));
@@ -238,7 +234,7 @@ public class Gumtree {
         }
         return file_content.getPath();
     }
-    
+
     public static String getID_BBIC(Repository repo, String sha, String path, String repo_name)
             throws RevisionSyntaxException, AmbiguousObjectException, IncorrectObjectTypeException, IOException {
         String dir = System.getProperty("user.dir") + "/data/" + repo_name;
@@ -259,8 +255,7 @@ public class Gumtree {
             byte[] data = reader.open(treewalk.getObjectId(0)).getBytes();
             reader.close();
 
-
-            //FileUtils.writeByteArrayToFile(file_content, data); // write to local file
+            // FileUtils.writeByteArrayToFile(file_content, data); // write to local file
 
             utf_string = StringUtils.newStringUtf8(data);
             FileUtils.writeStringToFile(file_content, utf_string, Charset.forName("utf8"));
@@ -273,12 +268,13 @@ public class Gumtree {
     }
 
     /*
-    role : finding changed files between two commits, in this case, current commit and one before
-    */
+     * role : finding changed files between two commits, in this case, current
+     * commit and one before
+     */
     public static void get_changed_file(String repo_git, String repo_name, String newCommit, String oldCommit)
             throws IOException, GitAPIException {
 
-        //setting output directory
+        // setting output directory
         String git_dir = System.getProperty("user.dir") + "/data/" + repo_name;
         File file = new File(git_dir, "diff.txt");
         BufferedWriter writer = new BufferedWriter(new FileWriter(file, true));
@@ -307,7 +303,8 @@ public class Gumtree {
                         for (DiffEntry entry : diffs) {
                             String str_new = entry.getNewPath();
                             String str_old = entry.getOldPath();
-                            if (str_new.endsWith(".java") && str_old.endsWith(".java")) { // only save file with extension of '.java'
+                            if (str_new.endsWith(".java") && str_old.endsWith(".java")) { // only save file with
+                                                                                          // extension of '.java'
                                 line = newCommit + " " + oldCommit + " " + entry.getNewPath() + " "
                                         + entry.getOldPath();
                                 writer.write(line + "\n");
@@ -321,14 +318,14 @@ public class Gumtree {
 
         writer.close();
     }
-    
-    public static void get_changed_file_lec(String repo_git, String repo_name, String newCommit, String filename)
+
+    public static void get_changed_file_lce(String repo_git, String repo_name, String newCommit, String filename)
             throws IOException, GitAPIException {
 
         // setting output directory
         System.out.println("====> getting Changes ...........");
-        String git_dir = System.getProperty("user.dir") + "/lec/" + repo_name;
-        File file = new File(git_dir, "diff_lec.txt");
+        String git_dir = System.getProperty("user.dir") + "/lce/" + repo_name;
+        File file = new File(git_dir, "diff_lce.txt");
         BufferedWriter writer = new BufferedWriter(new FileWriter(file, true));
         String line = "";
         boolean found = false;
@@ -354,7 +351,7 @@ public class Gumtree {
                     }
                 }
             }
-            
+
             ObjectId oldHead = repository.resolve(oldCommit + "^{tree}");
             ObjectId head = repository.resolve(newCommit + "^{tree}"); // current
             if (head == null || oldHead == null) {
@@ -376,7 +373,7 @@ public class Gumtree {
                             String str_new = entry.getNewPath();
                             String str_old = entry.getOldPath();
                             if (str_new.endsWith(".java") && str_old.endsWith(".java")) { // only save file with
-                                                                                            // extension of '.java'
+                                                                                          // extension of '.java'
                                 if (str_new.contains(filename)) {
                                     line = newCommit + " " + oldCommit + " " + entry.getNewPath() + " "
                                             + entry.getOldPath();
@@ -428,7 +425,8 @@ public class Gumtree {
                             String str_old = entry.getOldPath();
                             if (str_new.endsWith(".java") && str_old.endsWith(".java")) { // only save file with
                                                                                           // extension of '.java'
-                                line = newCommit + "," + oldCommit + "," + entry.getNewPath() +"," + entry.getOldPath() + "," + url;
+                                line = newCommit + "," + oldCommit + "," + entry.getNewPath() + "," + entry.getOldPath()
+                                        + "," + url;
                                 writer.write(line + "\n");
                             }
 
@@ -440,20 +438,22 @@ public class Gumtree {
 
         writer.close();
     }
+
     /*
-    executes 'git diff' for two commit
-    
-    requirements
-    repo -> current working repository
-    old commit -> one commit before current commit
-    new commit -> current commit
-    path -> 
-    
-    works to do
-    1. needs to save the log as file
-    2. not applied to main function
-    */
-    private static void runDiff(Repository repo, String oldCommit, String newCommit, String path) throws IOException, GitAPIException {
+     * executes 'git diff' for two commit
+     * 
+     * requirements
+     * repo -> current working repository
+     * old commit -> one commit before current commit
+     * new commit -> current commit
+     * path ->
+     * 
+     * works to do
+     * 1. needs to save the log as file
+     * 2. not applied to main function
+     */
+    private static void runDiff(Repository repo, String oldCommit, String newCommit, String path)
+            throws IOException, GitAPIException {
         DiffEntry diff = diffFile(repo,
                 oldCommit,
                 newCommit,
@@ -463,14 +463,15 @@ public class Gumtree {
         System.out.println("Showing diff of " + path);
         try (DiffFormatter formatter = new DiffFormatter(System.out)) {
             formatter.setRepository(repo);
-            //noinspection ConstantConditions
+            // noinspection ConstantConditions
             formatter.format(diff);
         }
     }
 
     private static AbstractTreeIterator prepareTreeParser(Repository repository, String objectId) throws IOException {
-        // from the commit we can build the tree which allows us to construct the TreeParser
-        //noinspection Duplicates
+        // from the commit we can build the tree which allows us to construct the
+        // TreeParser
+        // noinspection Duplicates
         try (RevWalk walk = new RevWalk(repository)) {
             RevCommit commit = walk.parseCommit(repository.resolve(objectId));
             RevTree tree = walk.parseTree(commit.getTree().getId());
@@ -487,16 +488,14 @@ public class Gumtree {
     }
 
     private static @NonNull DiffEntry diffFile(Repository repo, String oldCommit,
-                       String newCommit, String path) throws IOException, GitAPIException {
+            String newCommit, String path) throws IOException, GitAPIException {
         Config config = new Config();
         config.setBoolean("diff", null, "renames", true);
         DiffConfig diffConfig = config.get(DiffConfig.KEY);
         try (Git git = new Git(repo)) {
-            List<DiffEntry> diffList = git.diff().
-                setOldTree(prepareTreeParser(repo, oldCommit)).
-                setNewTree(prepareTreeParser(repo, newCommit)).
-                setPathFilter(FollowFilter.create(path, diffConfig)).
-                call();
+            List<DiffEntry> diffList = git.diff().setOldTree(prepareTreeParser(repo, oldCommit))
+                    .setNewTree(prepareTreeParser(repo, newCommit)).setPathFilter(FollowFilter.create(path, diffConfig))
+                    .call();
             if (diffList.size() == 0)
                 return null;
             if (diffList.size() > 1)

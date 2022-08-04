@@ -20,42 +20,36 @@ import org.eclipse.jgit.lib.TextProgressMonitor;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.revwalk.RevWalk;
 
-
 public class GitFunctions {
     // running git clone using Runtime
-    public static void clone_repo(ArrayList<String> repo_url) throws IOException, GitAPIException
-    {
+    public static void clone_repo(ArrayList<String> repo_url) throws IOException, GitAPIException {
         System.out.println("======    Starting Task : Cloning Repository    ========");
         ProcessBuilder processBuilder = new ProcessBuilder();
-        
+
         File directory = new File(System.getProperty("user.dir") + "/data");
-        
-        if (!directory.exists())
-        {
+
+        if (!directory.exists()) {
             directory.mkdir();
         }
-        
-        
+
         processBuilder.directory(directory);
-        
-        
-        for (String curr_url : repo_url)
-        {
+
+        for (String curr_url : repo_url) {
             System.out.println("Cloning from " + curr_url);
             /*
-            processBuilder.command("git", "clone", curr_url);
-            try {
-                System.out.println("Start cloning " + curr_url + ".............");
-                Process process = processBuilder.start();
-                //process = Runtime.getRuntime().exec("git clone " + curr_url);
-                printResult(process);
-            } catch (IOException e) {
-                System.out.println("Failed Cloning");
-                e.printStackTrace();
-            }
-            */
+             * processBuilder.command("git", "clone", curr_url);
+             * try {
+             * System.out.println("Start cloning " + curr_url + ".............");
+             * Process process = processBuilder.start();
+             * //process = Runtime.getRuntime().exec("git clone " + curr_url);
+             * printResult(process);
+             * } catch (IOException e) {
+             * System.out.println("Failed Cloning");
+             * e.printStackTrace();
+             * }
+             */
         }
-        
+
         System.out.println("Cloning Completed\n\n");
     }
 
@@ -88,10 +82,10 @@ public class GitFunctions {
             }
         }
     }
-    
-    public static String clone_designated_lcs(String url_lcs, String lcs_name) throws InvalidRemoteException, TransportException, GitAPIException
-    {
-        File curr_directory = new File(System.getProperty("user.dir") + "/lec/" + lcs_name);
+
+    public static String clone_designated_lcs(String url_lcs, String lcs_name)
+            throws InvalidRemoteException, TransportException, GitAPIException {
+        File curr_directory = new File(System.getProperty("user.dir") + "/lce/" + lcs_name);
 
         if (!curr_directory.exists()) {
             curr_directory.mkdir();
@@ -111,8 +105,7 @@ public class GitFunctions {
         return "error";
     }
 
-    public static void crawl_commit_id(ArrayList<String> repo_name)
-    {
+    public static void crawl_commit_id(ArrayList<String> repo_name) {
         System.out.println("===== Starting Task : Commit ID Collecting ======");
 
         ProcessBuilder processbuilder = new ProcessBuilder();
@@ -133,7 +126,6 @@ public class GitFunctions {
         }
         System.out.println("All commit ID extracted\n\n");
     }
-
 
     // UNUSED
     public static void ranged_commit(ArrayList<String> repo_list, ArrayList<String> repo_name)
@@ -166,26 +158,23 @@ public class GitFunctions {
                     if (count < 1000) {
                         start = 0;
                         end = count;
-                    }
-                    else if (count >= 1000 && count < 10000) {
+                    } else if (count >= 1000 && count < 10000) {
                         start = (int) (count * 0.8);
                         end = (int) (count * 0.9);
 
-                    }
-                    else {
+                    } else {
                         start = (int) (count * 0.7);
                         end = start + 1000;
                     }
                     // execution
                     for (int j = start; j < end; j++) {
-                        if (j - 1 > 0)
-                        {
+                        if (j - 1 > 0) {
                             Gumtree.get_changed_file(repo_list.get(i), repo_name.get(i), commit_sha_list.get(j),
                                     commit_sha_list.get(j - 1)); // (repo_git_directory, repo_name, current commit, old
                                                                  // commit)
                         }
                     }
-                    
+
                 }
                 i++;
             }
@@ -233,8 +222,7 @@ public class GitFunctions {
         }
     }
 
-    public static void printResult(Process process) throws IOException
-    {
+    public static void printResult(Process process) throws IOException {
         BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
         String line = "";
         while ((line = reader.readLine()) != null) {
@@ -243,8 +231,8 @@ public class GitFunctions {
         reader.close();
     }
 
-      // saves all the commitID in the filename 'commitID.txt'
-      public static void saveResult(Process process, String working_dir) throws IOException {
+    // saves all the commitID in the filename 'commitID.txt'
+    public static void saveResult(Process process, String working_dir) throws IOException {
         File file = new File(working_dir, "commitID.txt");
         BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
         BufferedWriter writer = new BufferedWriter(new FileWriter(file));
