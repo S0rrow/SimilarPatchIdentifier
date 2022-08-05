@@ -10,15 +10,18 @@ public class GitHubProject extends Project {
 
     public GitHubProject(String projectName, String projectLink, String projectDirectory, String faultyPath, int faultyLineBlame, int faultyLineFix)
     {
-        this.project = project;
+        this.project = projectName;
         this.projectLink = projectLink;
         
-        this.projectDirectory = projectDirectory;
+        this.projectDirectory = String.format("%s/%s", projectDirectory, projectName);
 
         this.faultyPath = faultyPath;
         this.faultyLineBlame = faultyLineBlame;
         this.faultyLineFix = faultyLineFix;
     }
+
+    public String getProjectName() { return this.project; }
+    public int getIdentifier() { return -1; }
 
     public void fetch()
     {

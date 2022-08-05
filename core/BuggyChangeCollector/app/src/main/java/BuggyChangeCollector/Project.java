@@ -13,6 +13,13 @@ public abstract class Project {
     protected int faultyLineBlame;
     protected int faultyLineFix;
 
+    public abstract int getIdentifier(); // Will return -1 for GItHubProject
+
+    public String getProjectName() { return this.project; }
+    public String getFaultyPath() { return this.faultyPath; }
+    public int getFaultyLineBlame() { return this.faultyLineBlame; }
+    public int getFaultyLineFix() { return this.faultyLineFix; }
+
     public abstract void fetch();
     public String[] getFICs()
     {
@@ -36,10 +43,11 @@ public abstract class Project {
                 strBuilder.append(line);
                 strBuilder.append(System.lineSeparator());
             }
-            FIC = strBuilder.toString().split(" ")[0];
+            FIC = strBuilder.toString().split(" ")[0].strip();
 
             // git rev-parse
-            ProcessBuilder parsePB = new ProcessBuilder("git", "-C", this.projectDirectory,
+            ProcessBuilder parsePB = new ProcessBuilder("git",
+                "-C", this.projectDirectory,
                 "rev-parse", String.format("%s~1", FIC));
             Process parseProc = parsePB.start();
             BufferedReader parseProcOutput = new BufferedReader(new InputStreamReader(parseProc.getInputStream()));
@@ -49,7 +57,7 @@ public abstract class Project {
                 strBuilder.append(line);
                 strBuilder.append(System.lineSeparator());
             }
-            BFIC = strBuilder.toString().split(" ")[0];
+            BFIC = strBuilder.toString().split(" ")[0].strip();
         }
         catch(IOException e)
         {

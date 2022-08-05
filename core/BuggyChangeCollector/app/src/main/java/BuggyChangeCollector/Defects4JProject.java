@@ -43,7 +43,7 @@ public class Defects4JProject extends Project {
         this.project = defects4jBug[0];
         this.identifier = Integer.parseInt(defects4jBug[1]);
 
-        this.projectDirectory = projectDirectory;
+        this.projectDirectory = String.format("%s/%s", projectDirectory, projectName);
         
         String file = String.format("%s/components/commit_collector/Defects4J_bugs_info/%s.csv", this.SPIPath, this.project);
         try
@@ -74,19 +74,23 @@ public class Defects4JProject extends Project {
         }
     }
 
+    public int getIdentifier() { return this.identifier; }
+
     public void fetch()
     {
         try
         {
             ProcessBuilder fetcher = new ProcessBuilder("defects4j", "checkout",
-                "-p", project, "-v", String.format("%db", this.identifier),
+                "-p", this.project, "-v", String.format("%db", this.identifier),
                 "-w", this.projectDirectory);
             Map<String, String> fetcherEnvs = fetcher.environment();
 
-            fetcherEnvs.put("PATH", String.format("%s%s%s", this.jdk8Directory, File.pathSeparator, System.getenv("PATH")));
+            // System.out.printf("defects4j checkout -p %s -v %db -w %s\n", this.project, this.identifier, this.projectDirectory);
+
+            fetcherEnvs.put("PATH", String.format("%s/bin:%s", this.jdk8Directory, System.getenv("PATH")));
             fetcherEnvs.put("JAVA_HOME", this.jdk8Directory);
 
-            fetcherEnvs.forEach((key, value) -> System.out.printf("%s : %s\n", key ,value));
+            // fetcherEnvs.forEach((key, value) -> System.out.printf("%s : %s\n", key ,value));
 
             Process p = fetcher.start();
 

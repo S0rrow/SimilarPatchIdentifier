@@ -6,11 +6,10 @@ package BuggyChangeCollector;
 import org.apache.commons.cli.*;
 import java.io.*;
 import java.util.*;
+import com.opencsv.CSVWriter;
 
 public class App {
-    // public String getGreeting() {
-    //     return "Hello World!";
-    // }
+    public static boolean isDebugging = false; // TODO: Implement verbose output option.
 
     private String hashID = new String();
     private boolean isDefects4j = false;
@@ -19,7 +18,6 @@ public class App {
 
     private String projectName = new String();
     private String projectLink = new String();
-    // private String buggyCommit = new String();
     private String faultyPath = new String();
     private int faultyLineFix = 0;
     private int faultyLineBlame = 0;
@@ -42,13 +40,15 @@ public class App {
 
         String targetDir = String.format("%s/target/%s", root, hashID);
         String outputDir = String.format("%s/outputs", targetDir);
-
+        String BCCDir = String.format("%s/BuggyChangeCollector", outputDir);
         File targetDirPath = new File(targetDir);
         File outputDirPath = new File(outputDir);
+        File BCCDirPath = new File(BCCDir);
 
         boolean isFailing = true;
-        if(!targetDirPath.isDirectory()) isFailing = targetDirPath.mkdirs();
-        if(!outputDirPath.isDirectory()) isFailing = outputDirPath.mkdirs();
+        if(!targetDirPath.isDirectory())    isFailing = targetDirPath.mkdirs();
+        if(!outputDirPath.isDirectory())    isFailing = outputDirPath.mkdirs();
+        if(!BCCDirPath.isDirectory())       isFailing = BCCDirPath.mkdirs();
 
         if(!isFailing)
         {
@@ -56,16 +56,29 @@ public class App {
             System.exit(-1);
         }
 
-        targetProject = (isDefects4j)   ? (new Defects4JProject(this.projectName, outputDir))
-                                        : (new GitHubProject(this.projectName, this.projectLink, outputDir, this.faultyPath, this.faultyLineBlame, this.faultyLineFix));
+        targetProject = (isDefects4j)   ? (new Defects4JProject(this.projectName, targetDir))
+                                        : (new GitHubProject(this.projectName, this.projectLink, targetDir, this.faultyPath, this.faultyLineBlame, this.faultyLineFix));
 
         targetProject.fetch();
-        String[] FICs = targetProject.getFICs();
-        String BFIC = FICs[0];
-        String FIC = FICs[1];
 
-        System.out.printf("BFIC : %s\n", BFIC);
-        System.out.printf("FIC : %s\n", FIC);
+        String[] FICs = targetProject.getFICs(); // {BFIC, FIC}
+        System.out.printf("BFIC : %s\n", FICs[0]);
+        System.out.printf("FIC : %s\n", FICs[1]);
+
+        try
+        {
+            CSVWriter writer = new CSVWriter(new FileWriter(String.format("%s//BFIC.csv", BCCDir)));
+            String[] headers = "Project,D4J ID,Faulty file path,faulty line,FIC_sha,BFIC_sha".split(",");
+            String[] entries = {targetProject.getProjectName(), String.format("%d", targetProject.getIdentifier()), targetProject.getFaultyPath(), String.format("%d", targetProject.getFaultyLineFix()), FICs[1], FICs[0]};
+            writer.writeNext(headers);
+            writer.writeNext(entries);
+            writer.close();
+        }
+        catch(IOException ex)
+        {
+            ex.printStackTrace();
+            System.exit(-1);
+        }
     }
 
     public void parseArgs(String[] args)
@@ -108,14 +121,13 @@ public class App {
             if(line.hasOption("hash")) this.hashID = line.getOptionValue("hash");
             if(line.hasOption("file"))
             {
-                this.bugInfoFile = String.format("%s/%s", root, line.getOptionValue("file"));
+                this.bugInfoFile = line.getOptionValue("file");
                 
                 Properties bugProps = new Properties();
                 bugProps.load(new FileInputStream(bugInfoFile));
 
                 this.projectName        = bugProps.getProperty("projectName");
                 this.projectLink        = bugProps.getProperty("projectLink");
-                // this.buggyCommit        = bugProps.getProperty("buggyCommit");            
                 this.faultyPath         = bugProps.getProperty("faultyPath");
                 this.faultyLineBlame    = Integer.parseInt(bugProps.getProperty("faultyLineBlame"));
                 this.faultyLineFix      = Integer.parseInt(bugProps.getProperty("faultyLineFix"));
@@ -126,7 +138,6 @@ public class App {
 
                 this.projectName        = bugInfo[0];
                 this.projectLink        = bugInfo[1];
-                // this.buggyCommit        = bugInfo[2];
                 this.faultyPath         = bugInfo[2];
                 this.faultyLineBlame    = Integer.parseInt(bugInfo[3]);
                 this.faultyLineFix      = Integer.parseInt(bugInfo[4]);
@@ -143,53 +154,4 @@ public class App {
             ex.printStackTrace();
         }
     }
-
-
-    //    if(!isDefects4j && !bugInfoFile.equals(""))
-    //    {
-    //         try
-    //         {
-    //             bugProps.load(new FileInputStream(bugInfoFile));
-    //         }
-    //         catch (IOException e)
-    //         {
-    //             e.printStackTrace();
-    //         }
-    //         // System.out.printf("Direct input requested, as %s\n", bugInfoFile);
-
-    //         projectName     = bugProps.getProperty("projectName");
-    //         projectLink     = bugProps.getProperty("projectLink");
-    //         faultyPath      = bugProps.getProperty("faultyPath");
-    //         faultyLineFix   = bugProps.getProperty("faultyLineFix");
-    //         faultyLineBlame = bugProps.getProperty("faultyLineBlame");
-    //         buggyCommit     = bugProps.getProperty("buggyCommit");
-    //    }
-    //    else if(isDefects4j)
-    //    {
-    //         String[] bug_id = projectName.split("-");
-    //         // read csv file.
-
-    //         // projectName      =
-    //         // projectLink      =
-    //         // faultyPath       =
-    //         // faultyLineFix    = 
-    //         // faultyLineBlame  = 
-    //         // buggyCommit      = 
-    //    }
-
-
-    //     // if(bugInfoFile.equals("")) // Direct input not given
-    //     // {
-    //     //     // String d4jCSVPath = String.format("");
-    //     //     // File d4jCSV = new File("");
-
-
-    //     // }
-    //     // else
-    //     // {
-    //     // }
-
-
-
-    //     // System.out.println(new App().getGreeting());
 }
