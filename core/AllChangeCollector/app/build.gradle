@@ -66,8 +66,7 @@ configurations{
     jar.archiveName = 'AllChangeCollector.jar'
 }
 
-task appRun(type: JavaExec)
-{
+task appRun(type: JavaExec) {
     description 'exec App Class.'
     main 'App'
     classpath sourceSets.main.runtimeClasspath

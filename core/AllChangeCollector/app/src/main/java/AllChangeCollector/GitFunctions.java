@@ -22,7 +22,7 @@ import org.eclipse.jgit.revwalk.RevWalk;
 
 public class GitFunctions {
     // running git clone using Runtime
-    public static void clone_repo(ArrayList<String> repo_url) throws IOException, GitAPIException {
+    public void clone_repo(ArrayList<String> repo_url) throws IOException, GitAPIException {
         System.out.println("======    Starting Task : Cloning Repository    ========");
         ProcessBuilder processBuilder = new ProcessBuilder();
 
@@ -54,7 +54,7 @@ public class GitFunctions {
     }
 
     // Cloning Git repo using JGit
-    public static void clone_repo_jgit(ArrayList<String> repo_url, ArrayList<String> repo_list)
+    public void clone_repo_jgit(ArrayList<String> repo_url, ArrayList<String> repo_list)
             throws IOException, GitAPIException {
 
         for (String curr : repo_url) {
@@ -83,7 +83,7 @@ public class GitFunctions {
         }
     }
 
-    public static String clone_designated_lcs(String url_lcs, String lcs_name)
+    public String clone_designated_lcs(String url_lcs, String lcs_name)
             throws InvalidRemoteException, TransportException, GitAPIException {
         File curr_directory = new File(System.getProperty("user.dir") + "/lce/" + lcs_name);
 
@@ -105,7 +105,7 @@ public class GitFunctions {
         return "error";
     }
 
-    public static void crawl_commit_id(ArrayList<String> repo_name) {
+    public void crawl_commit_id(ArrayList<String> repo_name) {
         System.out.println("===== Starting Task : Commit ID Collecting ======");
 
         ProcessBuilder processbuilder = new ProcessBuilder();
@@ -128,8 +128,9 @@ public class GitFunctions {
     }
 
     // UNUSED
-    public static void ranged_commit(ArrayList<String> repo_list, ArrayList<String> repo_name)
+    public void ranged_commit(ArrayList<String> repo_list, ArrayList<String> repo_name)
             throws IOException, GitAPIException {
+        Gumtree gumtree = new Gumtree();
         System.out.println("===== Starting Task : Commit ID Collecting(ranged commit) ======");
         int i = 0; // to keep the connection between repo_list and repo_name
         for (String name : repo_list) {
@@ -169,7 +170,7 @@ public class GitFunctions {
                     // execution
                     for (int j = start; j < end; j++) {
                         if (j - 1 > 0) {
-                            Gumtree.get_changed_file(repo_list.get(i), repo_name.get(i), commit_sha_list.get(j),
+                            gumtree.get_changed_file(repo_list.get(i), repo_name.get(i), commit_sha_list.get(j),
                                     commit_sha_list.get(j - 1)); // (repo_git_directory, repo_name, current commit, old
                                                                  // commit)
                         }
@@ -184,8 +185,9 @@ public class GitFunctions {
         }
     }
 
-    public static void all_commit(ArrayList<String> repo_list, ArrayList<String> repo_name)
+    public void all_commit(ArrayList<String> repo_list, ArrayList<String> repo_name)
             throws IOException, GitAPIException {
+        Gumtree gumtree = new Gumtree();
         System.out.println("====== Starting Task : Commit ID Collecting(all commit) ======");
         int i = 0; // to keep the connection between repo_list and repo_name
         for (String name : repo_list) {
@@ -207,9 +209,9 @@ public class GitFunctions {
                             commit_sha_list.add(beforeCommit);
                             count++;
                         } else {
-                            Gumtree.get_changed_file(repo_list.get(i), repo_name.get(i), commit_sha_list.get(count - 1),
+                            gumtree.get_changed_file(repo_list.get(i), repo_name.get(i), commit_sha_list.get(count - 1),
                                     beforeCommit); // (repo_git_directory, repo_name, current commit, old commit)
-                            Gumtree.get_log(repo_list.get(i), repo_name.get(i),
+                            gumtree.get_log(repo_list.get(i), repo_name.get(i),
                                     commit_sha_list.get(count - 1), beforeCommit);
                             commit_sha_list.add(beforeCommit);
                             count++;
@@ -222,7 +224,7 @@ public class GitFunctions {
         }
     }
 
-    public static void printResult(Process process) throws IOException {
+    public void printResult(Process process) throws IOException {
         BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
         String line = "";
         while ((line = reader.readLine()) != null) {
@@ -232,7 +234,7 @@ public class GitFunctions {
     }
 
     // saves all the commitID in the filename 'commitID.txt'
-    public static void saveResult(Process process, String working_dir) throws IOException {
+    public void saveResult(Process process, String working_dir) throws IOException {
         File file = new File(working_dir, "commitID.txt");
         BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
         BufferedWriter writer = new BufferedWriter(new FileWriter(file));

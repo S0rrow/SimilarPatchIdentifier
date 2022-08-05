@@ -48,7 +48,7 @@ import org.eclipse.jgit.treewalk.TreeWalk;
 
 public class Gumtree {
     // runs gumtree for all(just only runs individual function accumulately)
-    public static void runGumtreeForAll(ArrayList<String> repo_name, ArrayList<String> repo_git) throws IOException {
+    public void runGumtreeForAll(ArrayList<String> repo_name, ArrayList<String> repo_git) throws IOException {
 
         System.out.println("====  Starting Task : Gumtree ====");
         for (int i = 0; i < repo_name.size(); i++) {
@@ -56,7 +56,7 @@ public class Gumtree {
         }
     }
 
-    public static void runGumtreeForIndividual(String repo_name, String repo_git) throws IOException {
+    public void runGumtreeForIndividual(String repo_name, String repo_git) throws IOException {
         System.out.println("====> Task : " + repo_name); // DEBUG
         Repository repo = new FileRepository(repo_git);
         RevWalk walk = new RevWalk(repo);
@@ -127,7 +127,7 @@ public class Gumtree {
         reader.close();
     }
 
-    public static void runGumtreeForLEC(String repo_name, String repo_git, String commit, String filename)
+    public void runGumtreeForLCE(String repo_name, String repo_git, String commit, String filename)
             throws IOException {
         System.out.println("====> LEC Task : " + repo_name); // DEBUG
         Repository repo = new FileRepository(repo_git);
@@ -203,7 +203,7 @@ public class Gumtree {
 
     }
 
-    public static String getID_BIC(Repository repo, String sha, String path, String repo_name)
+    public String getID_BIC(Repository repo, String sha, String path, String repo_name)
             throws RevisionSyntaxException, AmbiguousObjectException, IncorrectObjectTypeException, IOException {
         String utf_string = "";
         String dir = System.getProperty("user.dir") + "/data/" + repo_name;
@@ -235,7 +235,7 @@ public class Gumtree {
         return file_content.getPath();
     }
 
-    public static String getID_BBIC(Repository repo, String sha, String path, String repo_name)
+    public String getID_BBIC(Repository repo, String sha, String path, String repo_name)
             throws RevisionSyntaxException, AmbiguousObjectException, IncorrectObjectTypeException, IOException {
         String dir = System.getProperty("user.dir") + "/data/" + repo_name;
         File file_content = new File(dir, "BBIC.java");
@@ -271,7 +271,7 @@ public class Gumtree {
      * role : finding changed files between two commits, in this case, current
      * commit and one before
      */
-    public static void get_changed_file(String repo_git, String repo_name, String newCommit, String oldCommit)
+    public void get_changed_file(String repo_git, String repo_name, String newCommit, String oldCommit)
             throws IOException, GitAPIException {
 
         // setting output directory
@@ -319,7 +319,7 @@ public class Gumtree {
         writer.close();
     }
 
-    public static void get_changed_file_lce(String repo_git, String repo_name, String newCommit, String filename)
+    public void get_changed_file_lce(String repo_git, String repo_name, String newCommit, String filename)
             throws IOException, GitAPIException {
 
         // setting output directory
@@ -390,7 +390,7 @@ public class Gumtree {
         System.out.println("Completed");
     }
 
-    public static void get_log(String repo_git, String repo_name, String newCommit, String oldCommit)
+    public void get_log(String repo_git, String repo_name, String newCommit, String oldCommit)
             throws IOException, GitAPIException {
 
         // setting output directory
@@ -452,7 +452,7 @@ public class Gumtree {
      * 1. needs to save the log as file
      * 2. not applied to main function
      */
-    private static void runDiff(Repository repo, String oldCommit, String newCommit, String path)
+    private void runDiff(Repository repo, String oldCommit, String newCommit, String path)
             throws IOException, GitAPIException {
         DiffEntry diff = diffFile(repo,
                 oldCommit,
@@ -468,7 +468,7 @@ public class Gumtree {
         }
     }
 
-    private static AbstractTreeIterator prepareTreeParser(Repository repository, String objectId) throws IOException {
+    private AbstractTreeIterator prepareTreeParser(Repository repository, String objectId) throws IOException {
         // from the commit we can build the tree which allows us to construct the
         // TreeParser
         // noinspection Duplicates
@@ -487,7 +487,7 @@ public class Gumtree {
         }
     }
 
-    private static @NonNull DiffEntry diffFile(Repository repo, String oldCommit,
+    private @NonNull DiffEntry diffFile(Repository repo, String oldCommit,
             String newCommit, String path) throws IOException, GitAPIException {
         Config config = new Config();
         config.setBoolean("diff", null, "renames", true);
