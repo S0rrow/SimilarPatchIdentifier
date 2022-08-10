@@ -67,7 +67,6 @@ public class GitFunctions {
 
             if (!curr_directory.exists()) {
                 curr_directory.mkdir();
-
                 // cloning repository
                 System.out.println("Cloning from " + curr);
                 try (Git result = Git.cloneRepository()
