@@ -48,7 +48,6 @@ public class App {
         // ae9ee1dba1a71461b89f05e903a4a627f95af434
         // Closure-14
         // /home/codemodel/turbstructor/M48A2/target/062299_Closure-14/Closure
-
         GitFunctions gitFunctions = new GitFunctions();
         Gumtree gumtree = new Gumtree();
         String filename = "";
