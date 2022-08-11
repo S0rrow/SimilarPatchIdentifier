@@ -16,7 +16,7 @@ public class Vectorize {
     static HashMap<String, Integer> map = new HashMap<>();
     static ArrayList<Integer> astType = new ArrayList<>();
 
-    public static void extract_vector(String repo_name) throws FileNotFoundException, IOException {
+    public void extract_vector(String repo_name) throws FileNotFoundException, IOException {
 
         // reading change file extracted by gumtree
         String dir = System.getProperty("user.dir") + "/data/" + repo_name + "/gumtree_log.txt";
@@ -107,7 +107,7 @@ public class Vectorize {
         writer.close();
     }
 
-    public static void extract_vector_lce(String repo_name) throws FileNotFoundException, IOException {
+    public void extract_vector_lce(String repo_name) throws FileNotFoundException, IOException {
 
         // reading change file extracted by gumtree
         System.out.println("======>Vectorizing");
@@ -199,7 +199,7 @@ public class Vectorize {
         writer.close();
     }
 
-    public static void extract_vector_csv(String repo_name) throws FileNotFoundException, IOException {
+    public void extract_vector_csv(String repo_name) throws FileNotFoundException, IOException {
         System.out.println("=====> Parsing");
         System.out.println("===========> " + repo_name);
 
@@ -281,7 +281,7 @@ public class Vectorize {
         }
     }
 
-    public static int decide_node(String str) {
+    public int decide_node(String str) {
         // on node types
         if (str.equals("delete-node")) {
 
@@ -309,7 +309,7 @@ public class Vectorize {
         return -1;
     }
 
-    static public String[] nodes = {
+    public String[] nodes = {
             /* 4. */ "AnnotationTypeDeclaration",
             /* 5. */ "AnnotationTypeMemberDeclaration",
             /* 6. */ "AnonymousClassDeclaration",
@@ -419,7 +419,7 @@ public class Vectorize {
             /* 110. */ "ReturnStatement"
     };
 
-    static public String[] expanded_node = {
+    public String[] expanded_node = {
             /* 1. */ "ABSTRACT",
             /* 2. */ "ANNOTATION_PROPERTY",
             /* 3. */ "AnnotationTypeDeclaration",

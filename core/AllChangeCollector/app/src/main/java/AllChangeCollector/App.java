@@ -12,7 +12,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 import org.apache.commons.cli.ParseException;
-
+//import org.apache.commons.logging.impl.Log4JLogger;
+import org.apache.logging.log4j.Log4JLogger;
+import org.apache.logging.log4j.LogManager;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import java.util.Properties;
 
@@ -36,10 +38,26 @@ public class App {
     static boolean lce = false;
     static String file_all, file_selected;
 
+    Properties properties;
+    static Log4JLogger logger = new Log4JLogger(App.class.getName());
+
     public static void main(String[] args) throws IOException, ParseException, GitAPIException {
         // cli options
-        App main = new App();
+        App main = new App(args);
         main.run(args);
+    }
+
+    public App(String[] args) {
+        try {
+            properties = loadProperties(args[0]);
+            output = properties.getProperty("output").equals("true");
+            all = properties.getProperty("all").equals("true");
+            lce = properties.getProperty("lce").equals("true");
+            file_all = properties.getProperty("file_all");
+            file_selected = properties.getProperty("file_selected");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     public void run(String[] args) {
@@ -54,15 +72,9 @@ public class App {
         String filename_lce = "";
         File file;
         File file_lce;
-
-        Properties properties = loadProperties(args[0]);
-        output = properties.getProperty("output").equals("true");
-        all = properties.getProperty("all").equals("true");
-        lce = properties.getProperty("lce").equals("true");
-        file_all = properties.getProperty("file_all");
-        file_selected = properties.getProperty("file_selected");
-
+        logger.info("> testing log4j logger");
         if (output) {
+            logger.info("> properties : Output is enabled");
             System.out.println(ANSI_YELLOW + "[info] > properties : Output is enabled");
         }
         if (lce) {
@@ -157,14 +169,13 @@ public class App {
     }
 
     public Properties loadProperties() {
-        return loadProperties("D:/repository_d/SPI/core/AllChangeCollector/acc.properties");
+        return loadProperties("D:/repository_d/SPI/core/AllChangeCollector/app/Properties/acc.properties");
     }
 
     public Properties loadProperties(String path) {
         try {
             System.out.println(ANSI_BLUE + "[status] > loading properties");
             File file = new File(path);
-            Properties properties = new Properties();
             properties.load(new FileInputStream(file));
             System.out.println(ANSI_GREEN + "[status] > properties loaded");
             return properties;
