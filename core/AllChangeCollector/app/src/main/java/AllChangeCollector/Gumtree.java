@@ -73,7 +73,7 @@ public class Gumtree {
             String git_dir = System.getProperty("user.dir") + "/data/" + repo_name;
             File file_log = new File(git_dir, "gumtree_log.txt");
             BufferedWriter writer = new BufferedWriter(new FileWriter(file_log, false));
-
+            Vectorize vectorize = new Vectorize();
             String[] token = line.split("\\s+");
 
             RevCommit commitBIC = walk.parseCommit(repo.resolve(token[0]));
@@ -115,7 +115,7 @@ public class Gumtree {
                 writer.write(line_log + "\n");
                 writer.close();
 
-                Vectorize.extract_vector(repo_name);
+                vectorize.extract_vector(repo_name);
             } catch (Exception e) {
                 System.out.println(
                         "Error on commit: " + token[0] + " " + token[1] + "\nfilepath: " + token[2] + " " + token[3]);
@@ -132,7 +132,7 @@ public class Gumtree {
         System.out.println("====> LEC Task : " + repo_name); // DEBUG
         Repository repo = new FileRepository(repo_git);
         RevWalk walk = new RevWalk(repo);
-
+        Vectorize vectorize = new Vectorize();
         String dir = System.getProperty("user.dir") + "/lce/" + repo_name;
         String file = dir + "/diff_lce.txt";
         BufferedReader reader = new BufferedReader(new FileReader(file));
@@ -186,7 +186,7 @@ public class Gumtree {
                 writer.write(line_log + "\n");
                 writer.close();
 
-                Vectorize.extract_vector_lce(repo_name);
+                vectorize.extract_vector_lce(repo_name);
 
                 // removing files
                 new File(src_byte).delete();
