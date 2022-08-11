@@ -12,9 +12,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 import org.apache.commons.cli.ParseException;
-//import org.apache.commons.logging.impl.Log4JLogger;
-import org.apache.logging.log4j.Log4JLogger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import java.util.Properties;
 
@@ -39,7 +38,7 @@ public class App {
     static String file_all, file_selected;
 
     Properties properties;
-    static Log4JLogger logger = new Log4JLogger(App.class.getName());
+    static Logger logger = LogManager.getLogger(App.class);
 
     public static void main(String[] args) throws IOException, ParseException, GitAPIException {
         // cli options
@@ -48,6 +47,7 @@ public class App {
     }
 
     public App(String[] args) {
+        properties = new Properties();
         try {
             properties = loadProperties(args[0]);
             output = properties.getProperty("output").equals("true");
@@ -55,8 +55,18 @@ public class App {
             lce = properties.getProperty("lce").equals("true");
             file_all = properties.getProperty("file_all");
             file_selected = properties.getProperty("file_selected");
+        } catch (ArrayIndexOutOfBoundsException e) {
+            logger.error("> No properties file provided");
+            logger.info("> applying default properties");
+            properties = loadProperties();
+            output = properties.getProperty("output").equals("true");
+            all = properties.getProperty("all").equals("true");
+            lce = properties.getProperty("lce").equals("true");
+            file_all = properties.getProperty("file_all");
+            file_selected = properties.getProperty("file_selected");
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("> Exception : " + e.getMessage());
+            System.exit(1);
         }
     }
 
@@ -181,6 +191,7 @@ public class App {
             return properties;
         } catch (Exception e) {
             System.out.println(ANSI_RED + "[error] > Exception : " + e.getMessage());
+            System.exit(1);
             return null;
         }
     }
