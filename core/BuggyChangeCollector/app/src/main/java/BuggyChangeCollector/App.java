@@ -8,6 +8,13 @@ import java.io.*;
 import java.util.*;
 import com.opencsv.CSVWriter;
 
+// import org.slf4j.Logger;
+// import org.slf4j.LoggerFactory;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.core.config.Configurator;
+
 public class App {
     public static boolean isDebugging = false; // TODO: Implement verbose output option.
 
@@ -22,8 +29,12 @@ public class App {
     private int faultyLineFix = 0;
     private int faultyLineBlame = 0;
     
+    private static final Logger logger = LogManager.getLogger(App.class);
+    // private static final Logger logger = Logger.getRootLogger();
 
     public static void main(String[] args) {
+        Configurator.setLevel(App.class, Level.INFO);
+
         App main = new App();
         main.run(args);
     }
@@ -37,6 +48,8 @@ public class App {
         Project targetProject;
 
         parseArgs(args);
+
+        System.out.printf("Configuration file set as %s\n", System.getProperty("log4j.configurationFile"));
 
         String targetDir = String.format("%s/target/%s", root, hashID);
         String outputDir = String.format("%s/outputs", targetDir);
@@ -62,6 +75,10 @@ public class App {
         targetProject.fetch();
 
         String[] FICs = targetProject.getFICs(); // {BFIC, FIC}
+
+        logger.info(String.format("BFIC ID extracted as %s", FICs[0]));
+        logger.info(String.format(" FIC ID extracted as %s", FICs[1]));
+
         System.out.printf("BFIC : %s\n", FICs[0]);
         System.out.printf("FIC : %s\n", FICs[1]);
 
