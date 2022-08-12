@@ -13,8 +13,8 @@ import java.util.HashMap;
 import java.util.StringTokenizer;
 
 public class Vectorize {
-    static HashMap<String, Integer> map = new HashMap<>();
-    static ArrayList<Integer> astType = new ArrayList<>();
+    HashMap<String, Integer> map = new HashMap<>();
+    ArrayList<Integer> astType = new ArrayList<>();
 
     public void extract_vector(String repo_name) throws FileNotFoundException, IOException {
 
@@ -108,9 +108,8 @@ public class Vectorize {
     }
 
     public void extract_vector_lce(String repo_name) throws FileNotFoundException, IOException {
-
         // reading change file extracted by gumtree
-        System.out.println("======>Vectorizing");
+        System.out.println("======> Vectorizing");
         String dir = System.getProperty("user.dir") + "/lce/" + repo_name + "/gumtree_lce_log.txt";
         File file = new File(dir);
 

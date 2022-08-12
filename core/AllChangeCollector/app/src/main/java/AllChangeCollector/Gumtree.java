@@ -94,22 +94,14 @@ public class Gumtree {
             String dst_byte = getID_BBIC(repo, commitBBIC.getName(), pathBBIC, repo_name);
 
             try {
-                Tree src = TreeGenerators.getInstance().getTree(src_byte).getRoot(); // retrieves and applies the
-                                                                                     // default
-                                                                                     // parser for the file
-                Tree dst = TreeGenerators.getInstance().getTree(dst_byte).getRoot(); // retrieves and applies the
-                                                                                     // default
-                                                                                     // parser for the file
+                Tree src = TreeGenerators.getInstance().getTree(src_byte).getRoot();
+                Tree dst = TreeGenerators.getInstance().getTree(dst_byte).getRoot();
 
-                Matcher defaultMatcher = Matchers.getInstance().getMatcher(); // retrieves the default matcher
-                MappingStore mappings = defaultMatcher.match(src, dst); // computes the mappings between the trees
-                EditScriptGenerator editScriptGenerator = new SimplifiedChawatheScriptGenerator(); // instantiates the
-                                                                                                   // simplified
-                                                                                                   // Chawathe
-                                                                                                   // script generator
-                EditScript actions = editScriptGenerator.computeActions(mappings); // computes the edit script
+                Matcher defaultMatcher = Matchers.getInstance().getMatcher();
+                MappingStore mappings = defaultMatcher.match(src, dst);
+                EditScriptGenerator editScriptGenerator = new SimplifiedChawatheScriptGenerator();
+                EditScript actions = editScriptGenerator.computeActions(mappings);
 
-                // prints the changes as a list in string format
                 String line_log = actions.asList().toString();
 
                 writer.write(line_log + "\n");
@@ -138,8 +130,6 @@ public class Gumtree {
         BufferedReader reader = new BufferedReader(new FileReader(file));
         String line = "";
 
-        // setting output directory
-
         while ((line = reader.readLine()) != null) {
             String git_dir = System.getProperty("user.dir") + "/lce/" + repo_name;
             File file_log = new File(git_dir, "gumtree_lce_log.txt");
@@ -165,22 +155,14 @@ public class Gumtree {
             String dst_byte = getID_BBIC(repo, commitBBIC.getName(), pathBBIC, repo_name);
 
             try {
-                Tree src = TreeGenerators.getInstance().getTree(src_byte).getRoot(); // retrieves and applies the
-                                                                                     // default
-                // parser for the file
-                Tree dst = TreeGenerators.getInstance().getTree(dst_byte).getRoot(); // retrieves and applies the
-                                                                                     // default
-                                                                                     // parser for the file
+                Tree src = TreeGenerators.getInstance().getTree(src_byte).getRoot();
+                Tree dst = TreeGenerators.getInstance().getTree(dst_byte).getRoot();
 
-                Matcher defaultMatcher = Matchers.getInstance().getMatcher(); // retrieves the default matcher
-                MappingStore mappings = defaultMatcher.match(src, dst); // computes the mappings between the trees
-                EditScriptGenerator editScriptGenerator = new SimplifiedChawatheScriptGenerator(); // instantiates the
-                                                                                                   // simplified
-                                                                                                   // Chawathe
-                                                                                                   // script generator
-                EditScript actions = editScriptGenerator.computeActions(mappings); // computes the edit script
+                Matcher defaultMatcher = Matchers.getInstance().getMatcher();
+                MappingStore mappings = defaultMatcher.match(src, dst);
+                EditScriptGenerator editScriptGenerator = new SimplifiedChawatheScriptGenerator();
+                EditScript actions = editScriptGenerator.computeActions(mappings);
 
-                // prints the changes as a list in string format
                 String line_log = actions.asList().toString();
 
                 writer.write(line_log + "\n");
@@ -223,8 +205,6 @@ public class Gumtree {
             byte[] data = reader.open(treewalk.getObjectId(0)).getBytes();
             reader.close();
 
-            // FileUtils.writeByteArrayToFile(file_content, data);
-
             utf_string = StringUtils.newStringUtf8(data);
             FileUtils.writeStringToFile(file_content, utf_string, Charset.forName("utf8"));
 
@@ -255,8 +235,6 @@ public class Gumtree {
             byte[] data = reader.open(treewalk.getObjectId(0)).getBytes();
             reader.close();
 
-            // FileUtils.writeByteArrayToFile(file_content, data); // write to local file
-
             utf_string = StringUtils.newStringUtf8(data);
             FileUtils.writeStringToFile(file_content, utf_string, Charset.forName("utf8"));
 
@@ -267,14 +245,9 @@ public class Gumtree {
         return file_content.getPath();
     }
 
-    /*
-     * role : finding changed files between two commits, in this case, current
-     * commit and one before
-     */
     public void get_changed_file(String repo_git, String repo_name, String newCommit, String oldCommit)
             throws IOException, GitAPIException {
 
-        // setting output directory
         String git_dir = System.getProperty("user.dir") + "/data/" + repo_name;
         File file = new File(git_dir, "diff.txt");
         BufferedWriter writer = new BufferedWriter(new FileWriter(file, true));
@@ -286,15 +259,14 @@ public class Gumtree {
             ObjectId head = repository.resolve(newCommit + "^{tree}"); // current
 
             if (head == null || oldHead == null) {
-                // For exception (when it comes to first commit)
+                System.out.println("No such commit");
+                return;
             } else {
-                // prepare the two iterators to compute the diff between
                 try (ObjectReader reader = repository.newObjectReader()) {
                     CanonicalTreeParser oldTreeIter = new CanonicalTreeParser();
                     oldTreeIter.reset(reader, oldHead);
                     CanonicalTreeParser newTreeIter = new CanonicalTreeParser();
                     newTreeIter.reset(reader, head);
-                    // finally get the list of changed files
                     try (Git git = new Git(repository)) {
                         List<DiffEntry> diffs = git.diff()
                                 .setNewTree(newTreeIter)
@@ -303,8 +275,7 @@ public class Gumtree {
                         for (DiffEntry entry : diffs) {
                             String str_new = entry.getNewPath();
                             String str_old = entry.getOldPath();
-                            if (str_new.endsWith(".java") && str_old.endsWith(".java")) { // only save file with
-                                                                                          // extension of '.java'
+                            if (str_new.endsWith(".java") && str_old.endsWith(".java")) {
                                 line = newCommit + " " + oldCommit + " " + entry.getNewPath() + " "
                                         + entry.getOldPath();
                                 writer.write(line + "\n");
@@ -423,8 +394,7 @@ public class Gumtree {
                         for (DiffEntry entry : diffs) {
                             String str_new = entry.getNewPath();
                             String str_old = entry.getOldPath();
-                            if (str_new.endsWith(".java") && str_old.endsWith(".java")) { // only save file with
-                                                                                          // extension of '.java'
+                            if (str_new.endsWith(".java") && str_old.endsWith(".java")) {
                                 line = newCommit + "," + oldCommit + "," + entry.getNewPath() + "," + entry.getOldPath()
                                         + "," + url;
                                 writer.write(line + "\n");
@@ -437,35 +407,6 @@ public class Gumtree {
         }
 
         writer.close();
-    }
-
-    /*
-     * executes 'git diff' for two commit
-     * 
-     * requirements
-     * repo -> current working repository
-     * old commit -> one commit before current commit
-     * new commit -> current commit
-     * path ->
-     * 
-     * works to do
-     * 1. needs to save the log as file
-     * 2. not applied to main function
-     */
-    private void runDiff(Repository repo, String oldCommit, String newCommit, String path)
-            throws IOException, GitAPIException {
-        DiffEntry diff = diffFile(repo,
-                oldCommit,
-                newCommit,
-                path);
-
-        // Display the diff
-        System.out.println("Showing diff of " + path);
-        try (DiffFormatter formatter = new DiffFormatter(System.out)) {
-            formatter.setRepository(repo);
-            // noinspection ConstantConditions
-            formatter.format(diff);
-        }
     }
 
     private AbstractTreeIterator prepareTreeParser(Repository repository, String objectId) throws IOException {

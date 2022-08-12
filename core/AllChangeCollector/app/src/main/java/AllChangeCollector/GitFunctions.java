@@ -94,7 +94,7 @@ public class GitFunctions {
             try (Git result = Git.cloneRepository()
                     .setURI(url_lcs)
                     .setDirectory(curr_directory)
-                    .setProgressMonitor(new TextProgressMonitor()) // SimpleProgressMonitor -> TextProgressMonitor
+                    .setProgressMonitor(new TextProgressMonitor())
                     .call()) {
                 System.out.println("LCE repository: " + result.getRepository().getDirectory());
                 String output = result.getRepository().getDirectory().toString();
@@ -193,7 +193,7 @@ public class GitFunctions {
             try (Repository repo = new FileRepository(name)) {
 
                 // get a list of all known heads, tags, remotes, ...
-                Collection<Ref> allRefs = repo.getAllRefs().values();
+                Collection<Ref> allRefs = repo.getRefDatabase().getRefs();
 
                 // a RevWalk allows to walk over commits based on some filtering that is defined
                 try (RevWalk revWalk = new RevWalk(repo)) {

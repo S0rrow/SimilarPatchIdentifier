@@ -12,8 +12,10 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 import org.apache.commons.cli.ParseException;
+import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.core.config.Configurator;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import java.util.Properties;
 
@@ -41,6 +43,7 @@ public class App {
     static Logger logger = LogManager.getLogger(App.class);
 
     public static void main(String[] args) throws IOException, ParseException, GitAPIException {
+        Configurator.setLevel(App.class, Level.TRACE);
         // cli options
         App main = new App(args);
         main.run(args);

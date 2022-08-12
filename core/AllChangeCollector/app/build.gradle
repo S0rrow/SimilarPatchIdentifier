@@ -10,7 +10,6 @@ plugins {
     // Apply the application plugin to add support for building a CLI application in Java.
     id 'application'
 }
-apply plugin : "java"
 
 repositories {
     // Use Maven Central for resolving dependencies.
@@ -23,6 +22,9 @@ dependencies {
 
     // This dependency is used by the application.
     implementation 'com.google.guava:guava:30.1.1-jre'
+
+    implementation 'org.apache.logging.log4j:log4j-api:2.18.0'
+    implementation 'org.apache.logging.log4j:log4j-core:2.18.0'
 
     // https://mvnrepository.com/artifact/org.eclipse.jgit/org.eclipse.jgit
     implementation group: 'org.eclipse.jgit', name: 'org.eclipse.jgit', version: '6.0.0.202111291000-r'
@@ -47,9 +49,6 @@ dependencies {
     // https://mvnrepository.com/artifact/commons-codec/commons-codec
     implementation group: 'commons-codec', name: 'commons-codec', version: '1.15'
 
-
-    implementation group: 'org.apache.logging.log4j', name: 'log4j-api', version: '2.18.0'
-    implementation group: 'org.apache.logging.log4j', name: 'log4j-core', version: '2.18.0'
     // compile 'org.apache.logging.log4j:log4j-api:2.18.0'
     // compile 'org.apache.logging.log4j:log4j-core:2.18.0'
 }
@@ -63,6 +62,7 @@ tasks.named('test') {
     // Use JUnit Platform for unit tests.
     useJUnitPlatform()
 }
+/*
 
 configurations{
     jar.archiveName = 'AllChangeCollector.jar'
@@ -73,3 +73,4 @@ task appRun(type: JavaExec) {
     main 'App'
     classpath sourceSets.main.runtimeClasspath
 }
+*/
