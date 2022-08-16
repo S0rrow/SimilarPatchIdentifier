@@ -68,7 +68,7 @@ public class App {
         System.out.println(ANSI_BLUE + "[status] > Initiating gitLoader");
         int counter = 0;
         for (String[] line : preprocessed) {
-            gitLoader.count(counter);
+            gitLoader.getCounter(counter);
             gitLoader.config(line[4], line[0], line[1], line[2], line[3], argv[6], Integer.parseInt(argv[2])); // argv
             gitLoader.run();
             try {
