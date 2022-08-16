@@ -5,8 +5,13 @@ import java.io.File;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+
 public class GitHubProject extends Project {
     private String projectLink; // URL of the GitHub Repository
+
+    private static final Logger logger = LogManager.getLogger();
 
     public GitHubProject(String projectName, String projectLink, String projectDirectory, String faultyPath, int faultyLineBlame, int faultyLineFix)
     {
@@ -32,9 +37,9 @@ public class GitHubProject extends Project {
 
             p.waitFor();
         }
-        catch(IOException | InterruptedException e)
+        catch(IOException | InterruptedException ex)
         {
-            e.printStackTrace();
+            logger.error(Debug.getStackTrace(ex));
         }
     }
 }

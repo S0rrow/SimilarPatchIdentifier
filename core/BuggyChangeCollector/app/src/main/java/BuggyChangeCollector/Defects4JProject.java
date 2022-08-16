@@ -2,6 +2,7 @@ package BuggyChangeCollector;
 
 import java.io.IOException;
 import java.io.File;
+import java.io.FileReader;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.FileInputStream;
@@ -11,7 +12,8 @@ import java.util.Properties;
 import com.opencsv.CSVReader;
 import com.opencsv.CSVIterator;
 import com.opencsv.exceptions.CsvValidationException;
-import java.io.FileReader;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 public class Defects4JProject extends Project {
     // Defects4J Bug Name into String project
@@ -19,6 +21,8 @@ public class Defects4JProject extends Project {
 
     private String jdk8Directory = null;
     private String SPIPath = null;
+
+    private static final Logger logger = LogManager.getLogger();
 
     public Defects4JProject(String projectName, String projectDirectory)
     {
@@ -33,7 +37,7 @@ public class Defects4JProject extends Project {
         }
         catch(Exception ex)
         {
-            ex.printStackTrace();
+            logger.error(Debug.getStackTrace(ex));
 
             jdk8Directory = null;
             SPIPath = null;
@@ -66,7 +70,7 @@ public class Defects4JProject extends Project {
         }
         catch(IOException | CsvValidationException ex)
         {
-            ex.printStackTrace();
+            logger.error(Debug.getStackTrace(ex));
 
             this.faultyPath = null;
             this.faultyLineBlame = -1;
@@ -96,9 +100,9 @@ public class Defects4JProject extends Project {
 
             p.waitFor();
         }
-        catch(IOException | InterruptedException e)
+        catch(IOException | InterruptedException ex)
         {
-            e.printStackTrace();
+            logger.error(Debug.getStackTrace(ex));
         }
     }
     
