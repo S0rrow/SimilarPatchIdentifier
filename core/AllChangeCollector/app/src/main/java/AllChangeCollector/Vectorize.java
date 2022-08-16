@@ -198,7 +198,7 @@ public class Vectorize {
         writer.close();
     }
 
-    public void extract_vector_csv(String repo_name) throws FileNotFoundException, IOException {
+    private void extract_vector_csv(String repo_name) throws FileNotFoundException, IOException {
         System.out.println("=====> Parsing");
         System.out.println("===========> " + repo_name);
 
