@@ -33,13 +33,16 @@ public class GitHubProject extends Project {
         try
         {
             ProcessBuilder fetcher = new ProcessBuilder("git", "clone", this.projectLink, this.projectDirectory);
+
+            Debug.logDebug(logger, "Performing Git Clone...");
             Process p = fetcher.start();
 
-            p.waitFor();
+            int ret = p.waitFor();
+            Debug.logDebug(logger, String.format("Process Git Clone exited with code %d", ret));
         }
         catch(IOException | InterruptedException ex)
         {
-            logger.error(Debug.getStackTrace(ex));
+            Debug.logError(logger, Debug.getStackTrace(ex));
         }
     }
 }

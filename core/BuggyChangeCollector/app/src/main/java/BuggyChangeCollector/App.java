@@ -30,10 +30,10 @@ public class App {
     protected static final Logger logger = LogManager.getLogger();
 
     public static void main(String[] args) {
-        Configurator.setLevel(App.class, Level.INFO);
-        Configurator.setLevel(Project.class, Level.INFO);
-        Configurator.setLevel(Defects4JProject.class, Level.INFO);
-        Configurator.setLevel(GitHubProject.class, Level.INFO);
+        Configurator.setLevel(App.class,                Level.INFO);
+        Configurator.setLevel(Project.class,            Level.INFO);
+        Configurator.setLevel(Defects4JProject.class,   Level.INFO);
+        Configurator.setLevel(GitHubProject.class,      Level.INFO);
 
         App main = new App();
         main.run(args);
@@ -63,7 +63,7 @@ public class App {
 
         if(!isFailing)
         {
-            logger.error("Command `mkdirs` for target, output, or BCC directories have failed. Aborting the program.");
+            Debug.logFatal(logger, "Command `mkdirs` for target, output, or BCC directories have failed. Aborting the program.");
             System.exit(-1);
         }
 
@@ -85,7 +85,7 @@ public class App {
         }
         catch(IOException ex)
         {
-            logger.error(Debug.getStackTrace(ex));
+            Debug.logFatal(logger, Debug.getStackTrace(ex));
             System.exit(-1);
         }
     }
@@ -93,7 +93,7 @@ public class App {
     public void parseArgs(String[] args)
     {
         Options options = new Options();
-        Option[] option = new Option[5];
+        Option[] option = new Option[7];
         String root = System.getProperty("user.dir");
 
         option[0] = Option.builder("?").longOpt("help")
@@ -110,6 +110,10 @@ public class App {
         option[4] = Option.builder("i").longOpt("input")
             .hasArg().argName("directInput")
             .desc("Tells that direct input is given in one line, separated in comma. Assumes that GitHub project is used.").build();
+        option[5] = Option.builder("v").longOpt("verbose")
+            .desc("Enables verbose output, especially for debug purpose.").build();
+        option[6] = Option.builder("q").longOpt("quiet")
+            .desc("Disables output except warnings, errors and fatal errors.").build();
 
         for(int i = 0; i < option.length; i++) options.addOption(option[i]);
 
@@ -117,6 +121,29 @@ public class App {
         try
         {
             CommandLine line = parser.parse(options, args);
+
+            if(line.hasOption("verbose"))
+            {
+                Configurator.setLevel(App.class,                Level.DEBUG);
+                Configurator.setLevel(Project.class,            Level.DEBUG);
+                Configurator.setLevel(Defects4JProject.class,   Level.DEBUG);
+                Configurator.setLevel(GitHubProject.class,      Level.DEBUG);
+
+                Debug.logInfo(logger, "Enabled verbose output.");
+            }
+            if(line.hasOption("quiet"))
+            {
+                if(line.hasOption("verbose")) Debug.logInfo(logger, "Quiet output option ignored since verbose output has been enabled.");
+                else
+                {
+                    Configurator.setLevel(App.class,                Level.WARN);
+                    Configurator.setLevel(Project.class,            Level.WARN);
+                    Configurator.setLevel(Defects4JProject.class,   Level.WARN);
+                    Configurator.setLevel(GitHubProject.class,      Level.WARN);
+                }
+
+                Debug.logInfo(logger, "Silenced unnecessary output.");
+            }
 
             // Checks whether 'hash' option is given.
             if(!line.hasOption("hash"))
@@ -134,7 +161,7 @@ public class App {
             {
                 this.hashID = line.getOptionValue("hash");
 
-                logger.info(String.format("Hash ID used as %s", this.hashID));
+                Debug.logDebug(logger, String.format("Hash ID used as %s", this.hashID));
             }
 
             // Checks whether the target project is from GitHub or Defects4J
@@ -143,18 +170,20 @@ public class App {
                 this.projectName = line.getOptionValue("defects4j");
                 this.isDefects4j = true;
 
-                logger.info(String.format("Defects4J Bug %s used as target.", this.projectName));
+                Debug.logDebug(logger, String.format("Defects4J Bug %s used as target.", this.projectName));
             }
             else
             {
-                logger.info("Using custom GitHub project...");
-
-                if(line.hasOption("file"))
+                if(!line.hasOption("file") && !line.hasOption("input"))
+                    throw new MissingOptionException("No project information given.");
+                else if(line.hasOption("file"))
                 {
+                    Debug.logDebug(logger, "Using custom GitHub project...");
+
                     this.bugInfoFile = line.getOptionValue("file");
                     
                     Properties bugProps = new Properties();
-                    logger.info(String.format(String.format("Loading configuration file %s...", this.bugInfoFile)));
+                    Debug.logInfo(logger, String.format(String.format("Loading configuration file %s...", this.bugInfoFile)));
                     bugProps.load(new FileInputStream(bugInfoFile));
 
                     this.projectName        = bugProps.getProperty("projectName");
@@ -163,14 +192,14 @@ public class App {
                     this.faultyLineBlame    = Integer.parseInt(bugProps.getProperty("faultyLineBlame"));
                     this.faultyLineFix      = Integer.parseInt(bugProps.getProperty("faultyLineFix"));
 
-                    logger.info(String.format("Project : %s (URL : %s)", this.projectName, this.projectLink));
-                    logger.info(String.format("(Relative) Path of faulty file : %s", this.faultyPath));
-                    logger.info(String.format("Faulty line number (to blame) : %d", this.faultyLineBlame));
-                    logger.info(String.format("Faulty line number (to fix)   : %d", this.faultyLineFix));
+                    Debug.logDebug(logger, String.format("Project : %s (URL : %s)", this.projectName, this.projectLink));
+                    Debug.logDebug(logger, String.format("(Relative) Path of faulty file : %s", this.faultyPath));
+                    Debug.logDebug(logger, String.format("Faulty line number (to blame) : %d", this.faultyLineBlame));
+                    Debug.logDebug(logger, String.format("Faulty line number (to fix)   : %d", this.faultyLineFix));
                 }
-                else if(line.hasOption("input"))
+                else // else if(line.hasOption("input"))
                 {
-                    logger.info("Using custom GitHub project...");
+                    Debug.logDebug(logger, "Using custom GitHub project...");
 
                     String[] bugInfo = line.getOptionValue("input").split(",");
 
@@ -180,18 +209,18 @@ public class App {
                     this.faultyLineBlame    = Integer.parseInt(bugInfo[3]);
                     this.faultyLineFix      = Integer.parseInt(bugInfo[4]);
 
-                    logger.info(String.format("Project : %s (URL : %s)", this.projectName, this.projectLink));
-                    logger.info(String.format("(Relative) Path of faulty file : %s", this.faultyPath));
-                    logger.info(String.format("Faulty line number (to blame) : %d", this.faultyLineBlame));
-                    logger.info(String.format("Faulty line number (to fix)   : %d", this.faultyLineFix));
+                    Debug.logDebug(logger, String.format("Project : %s (URL : %s)", this.projectName, this.projectLink));
+                    Debug.logDebug(logger, String.format("(Relative) Path of faulty file : %s", this.faultyPath));
+                    Debug.logDebug(logger, String.format("Faulty line number (to blame) : %d", this.faultyLineBlame));
+                    Debug.logDebug(logger, String.format("Faulty line number (to fix)   : %d", this.faultyLineFix));
                 }
-                else throw new MissingOptionException("Missing details about custom GitHub Project");
             }
         }
         catch (ParseException | IOException ex)
         {
-            logger.error("Parsing failed. Reason: " + ex.getMessage());
-            logger.error(Debug.getStackTrace(ex));
+            Debug.logFatal(logger, "Parsing failed. Reason: " + ex.getMessage());
+            Debug.logFatal(logger, Debug.getStackTrace(ex));
+            Debug.logFatal(logger, "Invalid options/arguments given, terminating the program.");
             System.exit(-1);
         }
     }
