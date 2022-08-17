@@ -46,9 +46,9 @@ public class App {
         }
     }
 
-    public void run(String[] argv) {
-        String spi_path = argv[8]; // argv
-        Extractor extractor = new Extractor(argv); // argv
+    public void run(String[] properties) {
+        String spi_path = properties[8]; // argv
+        Extractor extractor = new Extractor(properties); // argv
         GitLoader gitLoader = new GitLoader();
         System.out.println(ANSI_BLUE + "[status] > Extractor running...");
         extractor.run();
@@ -57,19 +57,20 @@ public class App {
         System.out.println(ANSI_GREEN + "[status] > extraction done");
         List<String[]> preprocessed = preprocess(result);
         System.out.println(ANSI_GREEN + "[status] > preprocess success");
-        gitLoader.set(argv[1], argv[5]); // argv
+        gitLoader.set(properties[1], properties[5]); // argv
         System.out.println(ANSI_BLUE + "[status] > cleaning result and candidate directory");
         gitLoader.purge();
         System.out.println(ANSI_GREEN + "[status] > cleaning done");
         System.out.println(ANSI_BLUE + "[status] > copying gitignore file to result directory and candidate directory");
-        gitLoader.copy(spi_path + "/core/LCE/gitignore/.gitignore", argv[1] + ".gitignore"); // argv
-        gitLoader.copy(spi_path + "/core/LCE/gitignore/.gitignore", argv[5] + ".gitignore"); // argv
+        gitLoader.copy(spi_path + "/core/LCE/gitignore/.gitignore", properties[1] + ".gitignore"); // argv
+        gitLoader.copy(spi_path + "/core/LCE/gitignore/.gitignore", properties[5] + ".gitignore"); // argv
         System.out.println(ANSI_GREEN + "[status] > gitignore file copied");
         System.out.println(ANSI_BLUE + "[status] > Initiating gitLoader");
         int counter = 0;
         for (String[] line : preprocessed) {
             gitLoader.getCounter(counter);
-            gitLoader.config(line[4], line[0], line[1], line[2], line[3], argv[6], Integer.parseInt(argv[2])); // argv
+            gitLoader.config(line[4], line[0], line[1], line[2], line[3], properties[6],
+                    Integer.parseInt(properties[2])); // argv
             gitLoader.run();
             try {
                 if (gitLoader.load()) {

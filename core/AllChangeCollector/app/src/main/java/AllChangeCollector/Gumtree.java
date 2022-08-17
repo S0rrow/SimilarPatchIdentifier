@@ -185,7 +185,7 @@ public class Gumtree {
 
     }
 
-    public String getID_BIC(Repository repo, String sha, String path, String repo_name)
+    private String getID_BIC(Repository repo, String sha, String path, String repo_name)
             throws RevisionSyntaxException, AmbiguousObjectException, IncorrectObjectTypeException, IOException {
         String utf_string = "";
         String dir = System.getProperty("user.dir") + "/data/" + repo_name;
@@ -215,7 +215,7 @@ public class Gumtree {
         return file_content.getPath();
     }
 
-    public String getID_BBIC(Repository repo, String sha, String path, String repo_name)
+    private String getID_BBIC(Repository repo, String sha, String path, String repo_name)
             throws RevisionSyntaxException, AmbiguousObjectException, IncorrectObjectTypeException, IOException {
         String dir = System.getProperty("user.dir") + "/data/" + repo_name;
         File file_content = new File(dir, "BBIC.java");
