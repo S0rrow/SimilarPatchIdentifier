@@ -1,7 +1,3 @@
-# pool repository for storing old / new java files to compare
-pool/
-LAS/
-venv/
 # Ignore Gradle project-specific cache directory
 .gradle
 
