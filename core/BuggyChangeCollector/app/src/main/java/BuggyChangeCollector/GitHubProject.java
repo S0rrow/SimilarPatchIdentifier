@@ -5,8 +5,13 @@ import java.io.File;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+
 public class GitHubProject extends Project {
     private String projectLink; // URL of the GitHub Repository
+
+    private static final Logger logger = LogManager.getLogger();
 
     public GitHubProject(String projectName, String projectLink, String projectDirectory, String faultyPath, int faultyLineBlame, int faultyLineFix)
     {
@@ -28,13 +33,16 @@ public class GitHubProject extends Project {
         try
         {
             ProcessBuilder fetcher = new ProcessBuilder("git", "clone", this.projectLink, this.projectDirectory);
+
+            Debug.logDebug(logger, "Performing Git Clone...");
             Process p = fetcher.start();
 
-            p.waitFor();
+            int ret = p.waitFor();
+            Debug.logDebug(logger, String.format("Process Git Clone exited with code %d", ret));
         }
-        catch(IOException | InterruptedException e)
+        catch(IOException | InterruptedException ex)
         {
-            e.printStackTrace();
+            Debug.logError(logger, Debug.getStackTrace(ex));
         }
     }
 }

@@ -8,6 +8,11 @@ import java.io.*;
 import java.util.*;
 import com.opencsv.CSVWriter;
 
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.core.config.Configurator;
+
 public class App {
     public static boolean isDebugging = false; // TODO: Implement verbose output option.
 
@@ -22,8 +27,15 @@ public class App {
     private int faultyLineFix = 0;
     private int faultyLineBlame = 0;
     
+    protected static final Logger logger = LogManager.getLogger();
+    private static final String root = System.getProperty("user.dir");
 
     public static void main(String[] args) {
+        Configurator.setLevel(App.class,                Level.INFO);
+        Configurator.setLevel(Project.class,            Level.INFO);
+        Configurator.setLevel(Defects4JProject.class,   Level.INFO);
+        Configurator.setLevel(GitHubProject.class,      Level.INFO);
+
         App main = new App();
         main.run(args);
     }
@@ -32,18 +44,16 @@ public class App {
     {
         Properties bugProps = new Properties();
 
-        String root = System.getProperty("user.dir");
-
         Project targetProject;
 
         parseArgs(args);
 
-        String targetDir = String.format("%s/target/%s", root, hashID);
-        String outputDir = String.format("%s/outputs", targetDir);
-        String BCCDir = String.format("%s/BuggyChangeCollector", outputDir);
-        File targetDirPath = new File(targetDir);
-        File outputDirPath = new File(outputDir);
-        File BCCDirPath = new File(BCCDir);
+        String targetDir    = String.format("%s/target/%s", root, hashID);
+        String outputDir    = String.format("%s/outputs", targetDir);
+        String BCCDir       = String.format("%s/BuggyChangeCollector", outputDir);
+        File targetDirPath  = new File(targetDir);
+        File outputDirPath  = new File(outputDir);
+        File BCCDirPath     = new File(BCCDir);
 
         boolean isFailing = true;
         if(!targetDirPath.isDirectory())    isFailing = targetDirPath.mkdirs();
@@ -52,7 +62,7 @@ public class App {
 
         if(!isFailing)
         {
-            System.err.println("mkdirs for target/output directory failed.");
+            Debug.logFatal(logger, "Command `mkdirs` for target, output, or BCC directories have failed. Aborting the program.");
             System.exit(-1);
         }
 
@@ -62,12 +72,10 @@ public class App {
         targetProject.fetch();
 
         String[] FICs = targetProject.getFICs(); // {BFIC, FIC}
-        System.out.printf("BFIC : %s\n", FICs[0]);
-        System.out.printf("FIC : %s\n", FICs[1]);
 
         try
         {
-            CSVWriter writer = new CSVWriter(new FileWriter(String.format("%s//BFIC.csv", BCCDir)));
+            CSVWriter writer = new CSVWriter(new FileWriter(String.format("%s/BFIC.csv", BCCDir)));
             String[] headers = "Project,D4J ID,Faulty file path,faulty line,FIC_sha,BFIC_sha".split(",");
             String[] entries = {targetProject.getProjectName(), String.format("%d", targetProject.getIdentifier()), targetProject.getFaultyPath(), String.format("%d", targetProject.getFaultyLineFix()), FICs[1], FICs[0]};
             writer.writeNext(headers);
@@ -76,7 +84,7 @@ public class App {
         }
         catch(IOException ex)
         {
-            ex.printStackTrace();
+            Debug.logFatal(logger, Debug.getStackTrace(ex));
             System.exit(-1);
         }
     }
@@ -84,74 +92,134 @@ public class App {
     public void parseArgs(String[] args)
     {
         Options options = new Options();
-        Option[] option = new Option[5];
-        String root = System.getProperty("user.dir");
+        Option[] option = new Option[7];
 
-        option[0] = Option.builder("d").longOpt("defects4j")
+        option[0] = Option.builder("?").longOpt("help")
+            .desc("Prints out this help message.").build();
+        option[1] = Option.builder("h").longOpt("hash")
+            .hasArg().argName("hashID")
+            .desc("(Required) Tells where to set workspasce.").build();
+        option[2] = Option.builder("d").longOpt("defects4j")
             .hasArg().argName("defects4jBug")
             .desc("Tells that Defects4J Bug is passed as an argument.").build();
-        option[1] = Option.builder("i").longOpt("input")
-            .hasArg().argName("directInput")
-            .desc("Tells that direct input is given in one line, separated in comma.").build();
-        option[2] = Option.builder("f").longOpt("file")
-            .hasArg().argName("bugInfoFile")
-            .desc("Tells that defect properties are directly given via .properties file.").build();
-        option[3] = Option.builder("h").longOpt("hash")
-            .required()
-            .hasArg().argName("hashID")
-            .desc("Tells that previously made byproducts will be used.").build();
-        option[4] = Option.builder("?").longOpt("help")
-            .desc("Prints out this help message.").build();
+        option[3] = Option.builder("g").longOpt("github")
+            .hasArg().argName("GitHubProjectInfo")
+            .desc("Tells that bug info about GitHub project is passed in one line, separated in comma.").build();
+        option[4] = Option.builder("f").longOpt("file")
+            .hasArg().argName("")
+            .desc("Like --github option, tells that bug info about GitHub project is passed via .properties file.").build();
+        option[5] = Option.builder("v").longOpt("verbose")
+            .desc("Enables verbose output, especially for debug purpose.").build();
+        option[6] = Option.builder("q").longOpt("quiet")
+            .desc("Disables output except warnings, errors and fatal errors.").build();
 
-        for(int i = 0; i < option.length; i++)  options.addOption(option[i]);
+        for(int i = 0; i < option.length; i++) options.addOption(option[i]);
 
         CommandLineParser parser = new DefaultParser();
         try
         {
             CommandLine line = parser.parse(options, args);
 
-            if(line.hasOption("help"))
+            if(line.hasOption("verbose"))
             {
-                HelpFormatter formatter = new HelpFormatter();
-                formatter.printHelp("BuggyChangeCollector", options);
+                Configurator.setLevel(App.class,                Level.DEBUG);
+                Configurator.setLevel(Project.class,            Level.DEBUG);
+                Configurator.setLevel(Defects4JProject.class,   Level.DEBUG);
+                Configurator.setLevel(GitHubProject.class,      Level.DEBUG);
 
-                System.exit(0);
+                Debug.logInfo(logger, "Enabled verbose output.");
+            }
+            if(line.hasOption("quiet"))
+            {
+                if(line.hasOption("verbose")) Debug.logInfo(logger, "Quiet output option ignored since verbose output has been enabled.");
+                else
+                {
+                    Configurator.setLevel(App.class,                Level.WARN);
+                    Configurator.setLevel(Project.class,            Level.WARN);
+                    Configurator.setLevel(Defects4JProject.class,   Level.WARN);
+                    Configurator.setLevel(GitHubProject.class,      Level.WARN);
+                }
+
+                Debug.logInfo(logger, "Silenced unnecessary output.");
             }
 
-            if(line.hasOption("hash")) this.hashID = line.getOptionValue("hash");
-            if(line.hasOption("file"))
+            // Checks whether 'hash' option is given.
+            if(!line.hasOption("hash"))
             {
-                this.bugInfoFile = line.getOptionValue("file");
-                
-                Properties bugProps = new Properties();
-                bugProps.load(new FileInputStream(bugInfoFile));
+                if(line.hasOption("help"))
+                {
+                    HelpFormatter formatter = new HelpFormatter();
+                    formatter.printHelp("BuggyChangeCollector", options);
 
-                this.projectName        = bugProps.getProperty("projectName");
-                this.projectLink        = bugProps.getProperty("projectLink");
-                this.faultyPath         = bugProps.getProperty("faultyPath");
-                this.faultyLineBlame    = Integer.parseInt(bugProps.getProperty("faultyLineBlame"));
-                this.faultyLineFix      = Integer.parseInt(bugProps.getProperty("faultyLineFix"));
+                    System.exit(0);
+                }
+                else throw new MissingOptionException("Missing required option: h");
             }
-            if(line.hasOption("input"))
+            else
             {
-                String[] bugInfo = line.getOptionValue("input").split(",");
+                this.hashID = line.getOptionValue("hash");
 
-                this.projectName        = bugInfo[0];
-                this.projectLink        = bugInfo[1];
-                this.faultyPath         = bugInfo[2];
-                this.faultyLineBlame    = Integer.parseInt(bugInfo[3]);
-                this.faultyLineFix      = Integer.parseInt(bugInfo[4]);
+                Debug.logDebug(logger, String.format("Hash ID used as %s", this.hashID));
             }
+
+            // Checks whether the target project is from GitHub or Defects4J
             if(line.hasOption("defects4j"))
             {
                 this.projectName = line.getOptionValue("defects4j");
                 this.isDefects4j = true;
+
+                Debug.logDebug(logger, String.format("Defects4J Bug %s used as target.", this.projectName));
+            }
+            else
+            {
+                if(!line.hasOption("file") && !line.hasOption("github"))
+                    throw new MissingOptionException("No project information given.");
+                else if(line.hasOption("file"))
+                {
+                    Debug.logDebug(logger, "Using custom GitHub project...");
+
+                    this.bugInfoFile = line.getOptionValue("file");
+                    
+                    Properties bugProps = new Properties();
+                    Debug.logInfo(logger, String.format(String.format("Loading configuration file %s...", this.bugInfoFile)));
+                    bugProps.load(new FileInputStream(bugInfoFile));
+
+                    this.projectName        = bugProps.getProperty("projectName");
+                    this.projectLink        = bugProps.getProperty("projectLink");
+                    this.faultyPath         = bugProps.getProperty("faultyPath");
+                    this.faultyLineBlame    = Integer.parseInt(bugProps.getProperty("faultyLineBlame"));
+                    this.faultyLineFix      = Integer.parseInt(bugProps.getProperty("faultyLineFix"));
+
+                    Debug.logDebug(logger, String.format("Project : %s (URL : %s)", this.projectName, this.projectLink));
+                    Debug.logDebug(logger, String.format("(Relative) Path of faulty file : %s", this.faultyPath));
+                    Debug.logDebug(logger, String.format("Faulty line number (to blame) : %d", this.faultyLineBlame));
+                    Debug.logDebug(logger, String.format("Faulty line number (to fix)   : %d", this.faultyLineFix));
+                }
+                else // else if(line.hasOption("github"))
+                {
+                    Debug.logDebug(logger, "Using custom GitHub project...");
+
+                    String[] bugInfo = line.getOptionValue("github").split(",");
+
+                    this.projectName        = bugInfo[0];
+                    this.projectLink        = bugInfo[1];
+                    this.faultyPath         = bugInfo[2];
+                    this.faultyLineBlame    = Integer.parseInt(bugInfo[3]);
+                    this.faultyLineFix      = Integer.parseInt(bugInfo[4]);
+
+                    Debug.logDebug(logger, String.format("Project : %s (URL : %s)", this.projectName, this.projectLink));
+                    Debug.logDebug(logger, String.format("(Relative) Path of faulty file : %s", this.faultyPath));
+                    Debug.logDebug(logger, String.format("Faulty line number (to blame) : %d", this.faultyLineBlame));
+                    Debug.logDebug(logger, String.format("Faulty line number (to fix)   : %d", this.faultyLineFix));
+                }
             }
         }
         catch (ParseException | IOException ex)
         {
-            System.err.println("Parsing failed. Reason: " + ex.getMessage());
-            ex.printStackTrace();
+            Debug.logFatal(logger, "Parsing failed. Reason: " + ex.getMessage());
+            Debug.logFatal(logger, Debug.getStackTrace(ex));
+            Debug.logFatal(logger, "Invalid options/arguments given, terminating the program.");
+            System.exit(-1);
         }
     }
 }
