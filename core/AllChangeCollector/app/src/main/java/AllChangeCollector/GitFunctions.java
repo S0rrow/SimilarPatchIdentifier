@@ -1,16 +1,19 @@
 package AllChangeCollector;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.List;
+
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.diff.DiffEntry;
-import org.eclipse.jgit.lib.TextProgressMonitor;
-import org.eclipse.jgit.revwalk.*;
-import org.eclipse.jgit.treewalk.*;
-
-import java.io.*;
-import java.util.*;
-
 import org.eclipse.jgit.internal.storage.file.FileRepository;
-import org.eclipse.jgit.lib.*;
+import org.eclipse.jgit.lib.ObjectId;
+import org.eclipse.jgit.lib.ObjectReader;
+import org.eclipse.jgit.lib.Repository;
+import org.eclipse.jgit.lib.TextProgressMonitor;
+import org.eclipse.jgit.treewalk.CanonicalTreeParser;
 
 public class GitFunctions {
     public String name;

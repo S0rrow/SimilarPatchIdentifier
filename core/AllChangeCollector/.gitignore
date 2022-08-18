@@ -1,0 +1,3 @@
+# build files from AllChangeCollector
+.gradle/*
+app/build/*
