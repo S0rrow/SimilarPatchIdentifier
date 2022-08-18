@@ -77,7 +77,7 @@ public class GitLoader {
         // TODO
     }
 
-    public void count(int counter) {
+    public void getCounter(int counter) {
         this.counter = counter;
     }
 
