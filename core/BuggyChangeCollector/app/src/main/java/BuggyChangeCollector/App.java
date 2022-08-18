@@ -28,6 +28,7 @@ public class App {
     private int faultyLineBlame = 0;
     
     protected static final Logger logger = LogManager.getLogger();
+    private static final String root = System.getProperty("user.dir");
 
     public static void main(String[] args) {
         Configurator.setLevel(App.class,                Level.INFO);
@@ -42,8 +43,6 @@ public class App {
     public void run(String[] args)
     {
         Properties bugProps = new Properties();
-
-        String root = System.getProperty("user.dir");
 
         Project targetProject;
 
@@ -94,7 +93,6 @@ public class App {
     {
         Options options = new Options();
         Option[] option = new Option[7];
-        String root = System.getProperty("user.dir");
 
         option[0] = Option.builder("?").longOpt("help")
             .desc("Prints out this help message.").build();
@@ -104,12 +102,12 @@ public class App {
         option[2] = Option.builder("d").longOpt("defects4j")
             .hasArg().argName("defects4jBug")
             .desc("Tells that Defects4J Bug is passed as an argument.").build();
-        option[3] = Option.builder("f").longOpt("file")
-            .hasArg().argName("bugInfoFile")
-            .desc("Tells that defect properties are directly given via .properties file. Assumes that GitHub project is used.").build();
-        option[4] = Option.builder("i").longOpt("input")
-            .hasArg().argName("directInput")
-            .desc("Tells that direct input is given in one line, separated in comma. Assumes that GitHub project is used.").build();
+        option[3] = Option.builder("g").longOpt("github")
+            .hasArg().argName("GitHubProjectInfo")
+            .desc("Tells that bug info about GitHub project is passed in one line, separated in comma.").build();
+        option[4] = Option.builder("f").longOpt("file")
+            .hasArg().argName("")
+            .desc("Like --github option, tells that bug info about GitHub project is passed via .properties file.").build();
         option[5] = Option.builder("v").longOpt("verbose")
             .desc("Enables verbose output, especially for debug purpose.").build();
         option[6] = Option.builder("q").longOpt("quiet")
@@ -174,7 +172,7 @@ public class App {
             }
             else
             {
-                if(!line.hasOption("file") && !line.hasOption("input"))
+                if(!line.hasOption("file") && !line.hasOption("github"))
                     throw new MissingOptionException("No project information given.");
                 else if(line.hasOption("file"))
                 {
@@ -197,11 +195,11 @@ public class App {
                     Debug.logDebug(logger, String.format("Faulty line number (to blame) : %d", this.faultyLineBlame));
                     Debug.logDebug(logger, String.format("Faulty line number (to fix)   : %d", this.faultyLineFix));
                 }
-                else // else if(line.hasOption("input"))
+                else // else if(line.hasOption("github"))
                 {
                     Debug.logDebug(logger, "Using custom GitHub project...");
 
-                    String[] bugInfo = line.getOptionValue("input").split(",");
+                    String[] bugInfo = line.getOptionValue("github").split(",");
 
                     this.projectName        = bugInfo[0];
                     this.projectLink        = bugInfo[1];
