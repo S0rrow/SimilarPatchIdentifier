@@ -20,28 +20,14 @@ public class Defects4JProject extends Project {
     private int identifier; // Defects4J Bug Identifier, not its name
 
     private String jdk8Directory = null;
-    private String SPIPath = null;
+    private String SPIDirectory = null;
 
     private static final Logger logger = LogManager.getLogger();
 
-    public Defects4JProject(String projectName, String projectDirectory)
+    public Defects4JProject(String projectName, String projectDirectory, String jdk8Directory, String SPIDirectory)
     {
-        Properties D4JProps = new Properties();
-
-        try
-        {
-            D4JProps.load(new FileInputStream("BCC.properties"));
-
-            jdk8Directory = D4JProps.getProperty("JAVA_HOME.8");
-            SPIPath = D4JProps.getProperty("SPI.path");
-        }
-        catch(Exception ex)
-        {
-            Debug.logError(logger, Debug.getStackTrace(ex));
-
-            jdk8Directory = null;
-            SPIPath = null;
-        }
+        this.jdk8Directory = jdk8Directory;
+        this.SPIDirectory=  SPIDirectory;
 
         String[] defects4jBug = projectName.split("-");
         this.project = defects4jBug[0];
@@ -49,7 +35,7 @@ public class Defects4JProject extends Project {
 
         this.projectDirectory = String.format("%s/%s", projectDirectory, projectName);
         
-        String file = String.format("%s/components/commit_collector/Defects4J_bugs_info/%s.csv", this.SPIPath, this.project);
+        String file = String.format("%s/components/commit_collector/Defects4J_bugs_info/%s.csv", this.SPIDirectory, this.project);
         try
         {    
             CSVReader reader = new CSVReader(new FileReader(file));
