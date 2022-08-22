@@ -100,7 +100,8 @@ public class GitFunctions {
             String line = "";
             while ((line = reader.readLine()) != null) {
                 if (line.contains(".java")) {
-                    App.logger.debug(App.ANSI_PURPLE + "[debug] > line : " + line + App.ANSI_RESET);
+                    // App.logger.debug(App.ANSI_PURPLE + "[debug] > line : " + line +
+                    // App.ANSI_RESET);
                     files.add(line);
                 }
             }
@@ -115,17 +116,9 @@ public class GitFunctions {
     public ArrayList<String[]> extract_diff(String repo_git) {
         ArrayList<String[]> results = new ArrayList<>();
         ArrayList<String> hashes = log(repo_git);
-        HashMap<String, ArrayList<String>> commits = new HashMap<>();
-
         for (String hash : hashes) {
             ArrayList<String> files = list_tree(repo_git, hash);
-            commits.put(hash, files);
-        }
-        for (String hash : hashes) {
-            for (String file_name : commits.get(hash)) {
-                App.logger.debug(App.ANSI_PURPLE + "[debug] > repo_git : " + repo_git + App.ANSI_RESET);
-                App.logger.debug(App.ANSI_PURPLE + "[debug] > file_name : " + file_name + App.ANSI_RESET);
-                App.logger.debug(App.ANSI_PURPLE + "[debug] > hash : " + hash + App.ANSI_RESET);
+            for (String file_name : files) {
                 String[] diff = extract_diff(repo_git, file_name, hash);
                 if (diff != null) {
                     results.add(diff);
@@ -155,9 +148,17 @@ public class GitFunctions {
                 if (cid.equals(new_cid)) {
                     found = true;
                 }
+                if (commit_hashes.indexOf(cid) == commit_hashes.size() - 1 && !found) {
+                    App.logger.debug(App.ANSI_PURPLE + "[debug] > " + App.ANSI_YELLOW + repo_name + App.ANSI_PURPLE
+                            + " does not have "
+                            + App.ANSI_YELLOW + new_cid + App.ANSI_RESET);
+                    return null;
+                }
             }
-            if (!found) {
-                App.logger.error(App.ANSI_RED + "[error] > Failed to find commit " + new_cid + App.ANSI_RESET);
+            if (!found || old_cid.equals("")) {
+                App.logger
+                        .debug(App.ANSI_PURPLE + "[debug] > no commit ids found before : " + App.ANSI_YELLOW + new_cid
+                                + App.ANSI_RESET);
                 return null;
             }
         } catch (Exception e) {
@@ -176,10 +177,10 @@ public class GitFunctions {
         try {
             Git git = Git.open(new File(repo_git));
             Repository repository = git.getRepository();
-            App.logger.info(App.ANSI_YELLOW + "[status] > repo " + repo_name + App.ANSI_RESET + " is "
+            App.logger.trace(App.ANSI_BLUE + "[status] > repo " + App.ANSI_YELLOW + repo_name + App.ANSI_RESET + " is "
                     + App.ANSI_YELLOW + repository.getDirectory().getAbsolutePath() + App.ANSI_RESET);
-            App.logger.trace(App.ANSI_YELLOW + "[status] > old cid : " + old_cid + App.ANSI_RESET);
-            App.logger.trace(App.ANSI_YELLOW + "[status] > new cid : " + new_cid + App.ANSI_RESET);
+            App.logger.trace(App.ANSI_BLUE + "[status] > old cid : " + App.ANSI_YELLOW + old_cid + App.ANSI_RESET);
+            App.logger.trace(App.ANSI_BLUE + "[status] > new cid : " + App.ANSI_YELLOW + new_cid + App.ANSI_RESET);
 
             ObjectReader reader = repository.newObjectReader();
 

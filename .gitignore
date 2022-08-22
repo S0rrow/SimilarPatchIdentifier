@@ -217,3 +217,4 @@ misc/
 
 ## SimFin( (will be replaced by other models, currently on .gitignore due to its size)
 #pool/simfin/
+core/AllChangeCollector/.gradle/file-system.probe

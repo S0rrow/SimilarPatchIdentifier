@@ -13,7 +13,6 @@ import java.util.StringTokenizer;
 import org.apache.commons.codec.binary.StringUtils;
 import org.apache.commons.io.FileUtils;
 import org.eclipse.jgit.api.Git;
-import org.eclipse.jgit.internal.storage.file.FileRepository;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.ObjectReader;
 import org.eclipse.jgit.lib.Repository;
@@ -101,8 +100,12 @@ public class Extractor {
         return true;
     }
 
-    // extract change vectors from gumtree log
     public int extract_vector(String repo_name, String gumtree_log, String result_path) {
+        return extract_vector(repo_name, gumtree_log, result_path, false);
+    }
+
+    // extract change vectors from gumtree log
+    public int extract_vector(String repo_name, String gumtree_log, String result_path, boolean all_diffs) {
         App.logger.trace(App.ANSI_BLUE + "[status] > extracting change vectors from " + gumtree_log
                 + App.ANSI_RESET + " to " + App.ANSI_BLUE + result_path + App.ANSI_RESET);
         File gumtree = new File(gumtree_log);
@@ -123,10 +126,15 @@ public class Extractor {
 
             BufferedReader log_reader = new BufferedReader(new FileReader(gumtree));
 
-            while ((line = log_reader.readLine()) != null && !no_change) {
+            while ((line = log_reader.readLine()) != null && (!no_change || all_diffs)) {
+                // App.logger.debug(App.ANSI_PURPLE + "[debug] > reading each line ..." +
+                // App.ANSI_RESET);
                 StringTokenizer st = new StringTokenizer(line);
+                write_line = "";
                 while (st.hasMoreTokens()) {
                     String token = st.nextToken();
+                    // App.logger.debug(App.ANSI_PURPLE + "[debug] > reading each token : " + token
+                    // + App.ANSI_RESET);
                     if (token.equals("[]")) {
                         no_change = true;
                     }
@@ -140,10 +148,10 @@ public class Extractor {
                         AST_types.clear();
                         oper = getNodeNum(token);
                     }
-                    if (token.equals("---")) {
+                    if (token.matches("---")) {
                         add = true;
                     }
-                    if (token.equals("===")) {
+                    if (token.matches("===")) {
                         add = false;
                     }
                     if (add == true) {
@@ -158,15 +166,19 @@ public class Extractor {
                         }
                     }
                 }
+                vector_writer.write(write_line);
+                if (!write_line.equals("") && all_diffs) {
+                    vector_writer.newLine();
+                }
             }
-            vector_writer.write(write_line + '\n');
             vector_writer.close();
             log_reader.close();
         } catch (Exception e) {
             App.logger.error(App.ANSI_RED + "[error] Exception : " + e.getMessage() + App.ANSI_RESET);
             return -1;
         }
-        return no_change ? 1 : 0;
+        int result = no_change ? 1 : 0;
+        return all_diffs ? 0 : result;
     }
 
     private String get_source(Repository repo, String sha, String file_path, String file_name, String repo_name,
