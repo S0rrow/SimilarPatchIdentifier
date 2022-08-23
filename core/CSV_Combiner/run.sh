@@ -1,0 +1,2 @@
+# $1 = result directory, ex) /home/codemodel/turbstructor/M48A2/CSV_Combiner/result
+python3 combiner.py -p /home/codemodel/timatree/AllChangeCollector/app/build/distributions/app/bin/vector -f /home/codemodel/timatree/AllChangeCollector/app/build/distributions/app/bin/commit_file -r $1
