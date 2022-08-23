@@ -91,6 +91,24 @@ public class App {
             }
             logger.info(ANSI_GREEN + "[info] > Successfully extracted diffs" + ANSI_RESET);
 
+            try {
+                BufferedWriter writer = new BufferedWriter(new FileWriter(
+                        new File(output_dir, GitFunctions.get_repo_name_from_url(git_url) + "_commit_file.csv")));
+                for (String[] diff : all_diffs) {
+                    for (String line : diff) {
+                        writer.write(line + ",");
+                    }
+                    writer.write(git_url);
+                    writer.newLine();
+                }
+                writer.close();
+            } catch (Exception e) {
+                logger.error(ANSI_RED + "[fatal] > Exception : " + e.getMessage() + ANSI_RESET);
+                return;
+            }
+            logger.info(ANSI_GREEN + "[info] > Successfully created " + GitFunctions.get_repo_name_from_url(git_url)
+                    + "_commit_file.csv" + ANSI_RESET);
+
             String diff_path = output_dir + "/diff.txt";
 
             if (!extractor.extract_log(repo_git, diff_path, output_dir)) {
@@ -130,6 +148,22 @@ public class App {
                 return;
             }
             logger.info(ANSI_GREEN + "[info] > Extracted diff successfully" + ANSI_RESET);
+
+            try {
+                BufferedWriter writer = new BufferedWriter(new FileWriter(
+                        new File(output_dir, GitFunctions.get_repo_name_from_url(git_url) + "_commit_file.csv")));
+                for (String line : diff) {
+                    writer.write(line + ",");
+                }
+                writer.write(git_url);
+                writer.newLine();
+                writer.close();
+            } catch (Exception e) {
+                logger.error(ANSI_RED + "[fatal] > Exception : " + e.getMessage() + ANSI_RESET);
+                return;
+            }
+            logger.info(ANSI_GREEN + "[info] > Successfully created " + GitFunctions.get_repo_name_from_url(git_url)
+                    + "_commit_file.csv" + ANSI_RESET);
 
             String diff_path = output_dir + "/diff.txt";
 
