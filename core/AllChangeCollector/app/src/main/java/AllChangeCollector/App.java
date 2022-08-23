@@ -163,7 +163,7 @@ public class App {
                 return;
             }
             logger.info(ANSI_GREEN + "[info] > Successfully created " + GitFunctions.get_repo_name_from_url(git_url)
-                    + "_commit_file.csv" + ANSI_RESET);
+                    + "_commit_file.csv for single file " + file_name + ANSI_RESET);
 
             String diff_path = output_dir + "/diff.txt";
 
