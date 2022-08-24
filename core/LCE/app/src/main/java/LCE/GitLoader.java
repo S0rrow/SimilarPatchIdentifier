@@ -4,20 +4,12 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import org.apache.logging.log4j.*;
+import org.apache.logging.log4j.core.config.Configurator;
 
 import org.apache.commons.io.FileUtils;
 
 public class GitLoader {
-    public static final String ANSI_RESET = "\u001B[0m";
-    public static final String ANSI_BLACK = "\u001B[30m";
-    public static final String ANSI_RED = "\u001B[31m";
-    public static final String ANSI_GREEN = "\u001B[32m";
-    public static final String ANSI_YELLOW = "\u001B[33m";
-    public static final String ANSI_BLUE = "\u001B[34m";
-    public static final String ANSI_PURPLE = "\u001B[35m";
-    public static final String ANSI_CYAN = "\u001B[36m";
-    public static final String ANSI_WHITE = "\u001B[37m";
-
     private int counter = -1;
     private String url; // git url
     private String name; // git repo name
@@ -30,11 +22,13 @@ public class GitLoader {
     private String candidate_dir; // candidate dir
     private boolean set; // if result dir exist
 
+    static Logger gitLogger = LogManager.getLogger(GitLoader.class.getName());
     // d4j
     private String d4j_project_name; // d4j project name
     private int d4j_project_num; // d4j project num
 
     public GitLoader() {
+        Configurator.setLevel(GitLoader.class, Level.TRACE);
         this.url = "";
         this.name = "";
         this.cid_before = "";
@@ -71,8 +65,10 @@ public class GitLoader {
     }
 
     public void run() {
-        System.out.println(ANSI_YELLOW + "==========================================================");
-        System.out.println(ANSI_BLUE + "[info #" + counter + "] > git clone " + url);
+        gitLogger
+                .trace(App.ANSI_YELLOW + "==========================================================" + App.ANSI_RESET);
+        gitLogger
+                .trace(App.ANSI_BLUE + "[info #" + counter + "] > git clone " + App.ANSI_YELLOW + url + App.ANSI_RESET);
         print_debug_info();
         // TODO
     }
@@ -97,27 +93,27 @@ public class GitLoader {
     }
 
     private void print_debug_info() {
-        System.out.println(ANSI_BLUE + "[info] > url : " + ANSI_RESET + url);
-        System.out.println(ANSI_BLUE + "[info] > repo_name : " + ANSI_RESET + name);
-        System.out.println(ANSI_BLUE + "[info] > cid_before : " + ANSI_RESET + cid_before);
-        System.out.println(ANSI_BLUE + "[info] > cid_after : " + ANSI_RESET + cid_after);
-        System.out.println(ANSI_BLUE + "[info] > file_name : " + ANSI_RESET + filename);
-        System.out.println(ANSI_BLUE + "[info] > result_dir : " + ANSI_RESET + result_dir);
-        System.out.println(ANSI_BLUE + "[info] > candidate_dir : " + ANSI_RESET + candidate_dir);
+        gitLogger.trace(App.ANSI_BLUE + "[info] > url : " + App.ANSI_YELLOW + url + App.ANSI_RESET);
+        gitLogger.trace(App.ANSI_BLUE + "[info] > repo_name : " + App.ANSI_YELLOW + name + App.ANSI_RESET);
+        gitLogger.trace(App.ANSI_BLUE + "[info] > cid_before : " + App.ANSI_YELLOW + cid_before + App.ANSI_RESET);
+        gitLogger.trace(App.ANSI_BLUE + "[info] > cid_after : " + App.ANSI_YELLOW + cid_after + App.ANSI_RESET);
+        gitLogger.trace(App.ANSI_BLUE + "[info] > file_name : " + App.ANSI_YELLOW + filename + App.ANSI_RESET);
+        gitLogger.trace(App.ANSI_BLUE + "[info] > result_dir : " + App.ANSI_YELLOW + result_dir + App.ANSI_RESET);
+        gitLogger.trace(App.ANSI_BLUE + "[info] > candidate_dir : " + App.ANSI_YELLOW + candidate_dir + App.ANSI_RESET);
     }
 
     private boolean clone(String directory) {
         try {
-            System.out.println(ANSI_BLUE + "[status] > cloning start");
+            gitLogger.trace(App.ANSI_BLUE + "[status] > cloning start" + App.ANSI_RESET);
             ProcessBuilder pb = new ProcessBuilder();
             pb.directory(new File(result_dir));
             pb.command("git", "clone", url, directory);
             Process p = pb.start();
             p.waitFor();
-            System.out.println(ANSI_GREEN + "[status] > cloning done");
+            gitLogger.trace(App.ANSI_GREEN + "[status] > cloning done" + App.ANSI_RESET);
             return true;
         } catch (Exception e) {
-            System.out.println(ANSI_RED + "[error] > " + e.getMessage());
+            gitLogger.error(App.ANSI_RED + "[error] > " + e.getMessage() + App.ANSI_RESET);
             return false;
         }
     }
@@ -125,38 +121,40 @@ public class GitLoader {
     private boolean checkout(String directory) {
         try {
             String project = d4j_project_name + "-" + d4j_project_num;
-            System.out.println(ANSI_BLUE + "[status] > git checkout cid before : " + cid_before);
+            gitLogger.trace(App.ANSI_BLUE + "[status] > git checkout cid before : " + App.ANSI_YELLOW + cid_before
+                    + App.ANSI_RESET);
             ProcessBuilder pb = new ProcessBuilder();
             pb.directory(new File(directory));
             pb.command("git", "checkout", "-f", cid_before);
             Process p = pb.start();
             p.waitFor();
-            System.out.println(ANSI_GREEN + "[status] > git checkout success");
+            gitLogger.trace(App.ANSI_GREEN + "[status] > git checkout success" + App.ANSI_RESET);
             if (!!copy(result_dir + "/" + name + "_" + counter + "/" + filepath_before,
                     candidate_dir + "/" + project + "rank_" + counter + "old.java"))
-                System.out.println(ANSI_GREEN + "[status] > copy success");
+                gitLogger.trace(App.ANSI_GREEN + "[status] > copy success" + App.ANSI_RESET);
             else {
-                System.out.println(ANSI_RED + "[error] > copy failed");
+                gitLogger.error(App.ANSI_RED + "[error] > copy failed" + App.ANSI_RESET);
                 return false;
             }
 
-            System.out.println(ANSI_BLUE + "[status] > git checkout cid after : " + cid_after);
+            gitLogger.trace(App.ANSI_BLUE + "[status] > git checkout cid after : " + App.ANSI_YELLOW + cid_after
+                    + App.ANSI_RESET);
             pb = new ProcessBuilder();
             pb.directory(new File(directory));
             pb.command("git", "checkout", "-f", cid_after);
             p = pb.start();
             p.waitFor();
-            System.out.println(ANSI_GREEN + "[status] > git checkout success");
+            gitLogger.trace(App.ANSI_GREEN + "[status] > git checkout success" + App.ANSI_RESET);
             if (!!copy(result_dir + "/" + name + "_" + counter + "/" + filepath_after,
                     candidate_dir + "/" + project + "rank_" + counter + "_new.java"))
-                System.out.println(ANSI_GREEN + "[status] > copy success");
+                gitLogger.trace(App.ANSI_GREEN + "[status] > copy success" + App.ANSI_RESET);
             else {
-                System.out.println(ANSI_RED + "[error] > copy failed");
+                gitLogger.error(App.ANSI_RED + "[error] > copy failed" + App.ANSI_RESET);
                 return false;
             }
             return true;
         } catch (Exception e) {
-            System.out.println(ANSI_RED + "[error] > " + e.getMessage());
+            gitLogger.error(App.ANSI_RED + "[error] > " + e.getMessage() + App.ANSI_RESET);
             return false;
         }
     }
@@ -164,18 +162,18 @@ public class GitLoader {
     public boolean load() {
         try {
             if (set) {
-                System.out.println(ANSI_BLUE + "[status] > loading");
+                gitLogger.trace(App.ANSI_BLUE + "[status] > loading" + App.ANSI_RESET);
                 if (!clone(result_dir + "/" + name + "_" + counter))
                     return false;
                 if (!checkout(result_dir + "/" + name + "_" + counter))
                     return false;
-                System.out.println(ANSI_GREEN + "[status] > loading done");
+                gitLogger.trace(App.ANSI_GREEN + "[status] > loading done" + App.ANSI_RESET);
                 return true;
             } else {
                 return false;
             }
         } catch (Exception e) {
-            System.out.println(ANSI_RED + "[error] > " + e.getMessage());
+            gitLogger.error(App.ANSI_RED + "[error] > " + e.getMessage() + App.ANSI_RESET);
             return false;
         }
     }
@@ -195,7 +193,7 @@ public class GitLoader {
             output.close();
             return true;
         } catch (IOException e) {
-            System.out.println(ANSI_RED + "[error] > IOException : " + e.getMessage());
+            gitLogger.error(App.ANSI_RED + "[error] > IOException : " + e.getMessage() + App.ANSI_RESET);
             return false;
         }
     }
@@ -211,7 +209,7 @@ public class GitLoader {
             FileUtils.cleanDirectory(dir);
             FileUtils.cleanDirectory(dir2);
         } catch (IOException e) {
-            System.out.println(ANSI_RED + "[error] > IOException : " + e.getMessage());
+            gitLogger.error(App.ANSI_RED + "[error] > IOException : " + e.getMessage() + App.ANSI_RESET);
         }
     }
 }

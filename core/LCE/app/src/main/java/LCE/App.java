@@ -8,6 +8,8 @@ import java.io.FileInputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
+import org.apache.logging.log4j.*;
+import org.apache.logging.log4j.core.config.Configurator;
 
 public class App {
     public static final String ANSI_RESET = "\u001B[0m";
@@ -20,72 +22,70 @@ public class App {
     public static final String ANSI_CYAN = "\u001B[36m";
     public static final String ANSI_WHITE = "\u001B[37m";
 
-    /*
-     * [debug] > result[0] : D:/repository_d/SPI/core/LCE/target/commit_file.csv
-     * [debug] > result[1] : D:/repository_d/SPI/core/LCE/result
-     * [debug] > result[2] : 14
-     * [debug] > result[3] : D:/repository_d/SPI/core/LCE/target/gumtree_vector.csv
-     * [debug] > result[4] : D:/repository_d/SPI/core/LCE/target/testVector.csv
-     * [debug] > result[5] : D:/repository_d/SPI/core/LCE/candidates
-     * [debug] > result[6] : Closure
-     * [debug] > result[7] : 10
-     * [debug] > result[8] : D:/repository_d/SPI/
-     */
+    static Logger appLogger = LogManager.getLogger(App.class.getName());
 
     public static void main(String[] args) {
-        System.out.println(ANSI_YELLOW + "==========================================================");
-        System.out.println(ANSI_YELLOW + "[status] App Initiated");
+        appLogger.info(ANSI_YELLOW + "==========================================================" + ANSI_RESET);
+        appLogger.info(ANSI_YELLOW + "[status] App Initiated" + ANSI_RESET);
         App main = new App();
-        String[] argv = args.length == 0 ? main.loadProperties() : main.loadProperties(args[0]);
+        Configurator.setLevel(App.class, Level.TRACE);
+        Properties argv = args.length == 0 ? main.loadProperties() : main.loadProperties(args[0]);
         if (argv == null)
-            System.out.println(ANSI_RED + "[error] > Properties file not found");
+            appLogger.error(ANSI_RED + "[error] > Properties file not found" + ANSI_RESET);
         else {
-            System.out.println(ANSI_YELLOW + "[status] Properties file loaded");
-            System.out.println(ANSI_YELLOW + "[status] running LCE");
+            appLogger.info(ANSI_YELLOW + "[status] Properties file loaded" + ANSI_RESET);
+            appLogger.info(ANSI_YELLOW + "[status] running LCE" + ANSI_RESET);
             main.run(argv);
         }
     }
 
-    public void run(String[] properties) {
-        String spi_path = properties[8]; // argv
+    public void run(Properties properties) {
+        String spi_path = properties.getProperty("SPI.dir"); // argv
         Extractor extractor = new Extractor(properties); // argv
         GitLoader gitLoader = new GitLoader();
-        System.out.println(ANSI_BLUE + "[status] > Extractor running...");
+        appLogger.trace(ANSI_BLUE + "[status] > Extractor running..." + ANSI_RESET);
         extractor.run();
-        System.out.println(ANSI_GREEN + "[status] > extractor ready");
+        appLogger.trace(ANSI_GREEN + "[status] > extractor ready" + ANSI_RESET);
         List<String> result = extractor.extract();
-        System.out.println(ANSI_GREEN + "[status] > extraction done");
+        appLogger.trace(ANSI_GREEN + "[status] > extraction done" + ANSI_RESET);
         List<String[]> preprocessed = preprocess(result);
-        System.out.println(ANSI_GREEN + "[status] > preprocess success");
-        gitLoader.set(properties[1], properties[5]); // argv
-        System.out.println(ANSI_BLUE + "[status] > cleaning result and candidate directory");
-        gitLoader.purge();
-        System.out.println(ANSI_GREEN + "[status] > cleaning done");
-        System.out.println(ANSI_BLUE + "[status] > copying gitignore file to result directory and candidate directory");
-        gitLoader.copy(spi_path + "/core/LCE/gitignore/.gitignore", properties[1] + ".gitignore"); // argv
-        gitLoader.copy(spi_path + "/core/LCE/gitignore/.gitignore", properties[5] + ".gitignore"); // argv
-        System.out.println(ANSI_GREEN + "[status] > gitignore file copied");
-        System.out.println(ANSI_BLUE + "[status] > Initiating gitLoader");
+        appLogger.trace(ANSI_GREEN + "[status] > preprocess success" + ANSI_RESET);
+        gitLoader.set(properties.getProperty("pool.dir"), properties.getProperty("candidates.dir")); // argv
+        boolean doClean = properties.getProperty("doClean").equals("true");
+        if (doClean) { // DEBUG : to clean the output directory and generate
+                       // gitignore files
+            appLogger.trace(ANSI_BLUE + "[status] > cleaning result and candidate directory" + ANSI_RESET);
+            gitLoader.purge();
+            appLogger.trace(ANSI_GREEN + "[status] > cleaning done" + ANSI_RESET);
+            appLogger.trace(ANSI_BLUE + "[status] > copying gitignore file to result directory and candidate directory"
+                    + ANSI_RESET);
+            gitLoader.copy(spi_path + "/core/LCE/gitignore/.gitignore",
+                    properties.getProperty("pool.dir") + ".gitignore"); // argv
+            gitLoader.copy(spi_path + "/core/LCE/gitignore/.gitignore",
+                    properties.getProperty("candidates.dir") + ".gitignore"); // argv
+            appLogger.trace(ANSI_GREEN + "[status] > gitignore file copied" + ANSI_RESET);
+        }
+        appLogger.trace(ANSI_BLUE + "[status] > Initiating gitLoader" + ANSI_RESET);
         int counter = 0;
         for (String[] line : preprocessed) {
             gitLoader.getCounter(counter);
-            gitLoader.config(line[4], line[0], line[1], line[2], line[3], properties[6],
-                    Integer.parseInt(properties[2])); // argv
+            gitLoader.config(line[4], line[0], line[1], line[2], line[3], properties.getProperty("d4j_project_name"),
+                    Integer.parseInt(properties.getProperty("d4j_project_num"))); // argv
             gitLoader.run();
             try {
                 if (gitLoader.load()) {
-                    System.out.println(ANSI_GREEN + "[status] > gitLoader load success");
+                    appLogger.trace(ANSI_GREEN + "[status] > gitLoader load success" + ANSI_RESET);
                 } else {
-                    System.out.println(ANSI_RED + "[status] > gitLoader load failed");
+                    appLogger.error(ANSI_RED + "[status] > gitLoader load failed" + ANSI_RESET);
                 }
             } catch (Exception e) {
-                System.out.println(ANSI_RED + "[error] > Exception :" + e.getMessage());
+                appLogger.error(ANSI_RED + "[error] > Exception :" + e.getMessage() + ANSI_RESET);
             }
             counter++;
         }
-        System.out.println(ANSI_GREEN + "[status] > gitLoader done");
-        System.out.println(ANSI_YELLOW + "==========================================================");
-        System.out.println(ANSI_YELLOW + "[status] > App done" + ANSI_RESET);
+        appLogger.trace(ANSI_GREEN + "[status] > gitLoader done" + ANSI_RESET);
+        appLogger.info(ANSI_YELLOW + "==========================================================" + ANSI_RESET);
+        appLogger.info(ANSI_YELLOW + "[status] > App done" + ANSI_RESET);
     }
 
     private List<String[]> preprocess(List<String> result) {
@@ -104,28 +104,20 @@ public class App {
         return result_split;
     }
 
-    public String[] loadProperties() {
+    public Properties loadProperties() {
         return loadProperties("../lce.properties");
     }
 
-    public String[] loadProperties(String path) {
+    public Properties loadProperties(String path) {
         try {
-            System.out.println(ANSI_BLUE + "[status] > loading properties");
+            appLogger.trace(ANSI_BLUE + "[status] > loading properties" + ANSI_RESET);
             File file = new File(path);
             Properties properties = new Properties();
             properties.load(new FileInputStream(file));
-            String[] result = new String[properties.size()];
-            int i = 0;
-            for (String key : properties.stringPropertyNames()) {
-                result[i] = properties.getProperty(key);
-                // System.out.println(ANSI_BLUE + "[debug] > result[" + i + "] : " + result[i]);
-                // // DEBUG
-                i++;
-            }
-            System.out.println(ANSI_GREEN + "[status] > properties loaded");
-            return result;
+            appLogger.trace(ANSI_GREEN + "[status] > properties loaded" + ANSI_RESET);
+            return properties;
         } catch (Exception e) {
-            System.out.println(ANSI_RED + "[error] > Exception : " + e.getMessage());
+            appLogger.error(ANSI_RED + "[error] > Exception : " + e.getMessage() + ANSI_RESET);
             return null;
         }
     }

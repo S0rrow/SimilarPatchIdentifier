@@ -5,19 +5,13 @@ import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Properties;
 import java.util.Scanner;
 import java.util.Vector;
+import org.apache.logging.log4j.*;
+import org.apache.logging.log4j.core.config.Configurator;
 
 public class Extractor {
-    public static final String ANSI_RESET = "\u001B[0m";
-    public static final String ANSI_BLACK = "\u001B[30m";
-    public static final String ANSI_RED = "\u001B[31m";
-    public static final String ANSI_GREEN = "\u001B[32m";
-    public static final String ANSI_YELLOW = "\u001B[33m";
-    public static final String ANSI_BLUE = "\u001B[34m";
-    public static final String ANSI_PURPLE = "\u001B[35m";
-    public static final String ANSI_CYAN = "\u001B[36m";
-    public static final String ANSI_WHITE = "\u001B[37m";
     LCS lcs;
     private String gumtree_vector_path;
     private String target_vector_path;
@@ -29,13 +23,17 @@ public class Extractor {
     private List<List<String>> cleaned_meta_pool_list = new ArrayList<>();
     private int nummax;
 
-    public Extractor(String[] args) {
+    static Logger extractionLogger = LogManager.getLogger(Extractor.class.getName());
+
+    public Extractor(Properties argv) {
         super();
+        Configurator.setLevel(Extractor.class, Level.TRACE);
         lcs = new LCS();
-        gumtree_vector_path = args[3]; // gumtree vector path
-        commit_file_path = args[0]; // commit file path
-        target_vector_path = args[4]; // target dir
-        nummax = args[7].equals("") ? 10 : Integer.parseInt(args[7]); // nummax
+        gumtree_vector_path = argv.getProperty("pool_file.dir"); // gumtree vector path
+        commit_file_path = argv.getProperty("meta_pool_file.dir"); // commit file path
+        target_vector_path = argv.getProperty("target_vector.dir"); // target dir
+        nummax = argv.getProperty("candidate_number").equals("") ? 10
+                : Integer.parseInt(argv.getProperty("candidate_number")); // nummax
     }
 
     public void config(String pool_dir, String vector_dir, String meta_pool_dir, String result_dir) {
@@ -51,16 +49,23 @@ public class Extractor {
         Vector<Integer> index_list_to_remove = new Vector<Integer>();
         try {
             pool_array = list_to_int_array2d(CSV_to_ArrayList(gumtree_vector_path));
-            System.out.println(ANSI_BLUE + "[status] original pool array size = " + pool_array.length);
+            extractionLogger
+                    .trace(App.ANSI_BLUE + "[status] original pool array size = " + pool_array.length + App.ANSI_RESET);
 
             meta_pool_list = CSV_to_ArrayList(commit_file_path);
-            System.out.println(ANSI_BLUE + "[status] meta pool list size = " + meta_pool_list.size());
+            extractionLogger
+                    .trace(App.ANSI_BLUE + "[status] meta pool list size = " + meta_pool_list.size() + App.ANSI_RESET);
 
             int[][] cleaned_pool_array = remove_empty_lines(pool_array, index_list_to_remove);
             cleaned_meta_pool_list = sync_removal(meta_pool_list, index_list_to_remove);
-            System.out.println(ANSI_BLUE + "[status] cleaned pool array size = " + cleaned_pool_array.length);
-            System.out.println(ANSI_BLUE + "[status] index_list_to_remove size : " + index_list_to_remove.size());
-            System.out.println(ANSI_BLUE + "[status] cleaned meta pool list size = " + cleaned_meta_pool_list.size());
+            extractionLogger.trace(
+                    App.ANSI_BLUE + "[status] cleaned pool array size = " + cleaned_pool_array.length + App.ANSI_RESET);
+            extractionLogger
+                    .trace(App.ANSI_BLUE + "[status] index_list_to_remove size : " + index_list_to_remove.size()
+                            + App.ANSI_RESET);
+            extractionLogger
+                    .trace(App.ANSI_BLUE + "[status] cleaned meta pool list size = " + cleaned_meta_pool_list.size()
+                            + App.ANSI_RESET);
 
             vector_array = list_to_int_array2d(CSV_to_ArrayList(target_vector_path));
 
@@ -72,12 +77,13 @@ public class Extractor {
             }
 
             max_N_index_list = indexesOfTopElements(sim_score_array, nummax);
-            System.out.println(ANSI_BLUE + "[status] max_N_index_list size = " + max_N_index_list.length);
+            extractionLogger.trace(
+                    App.ANSI_BLUE + "[status] max_N_index_list size = " + max_N_index_list.length + App.ANSI_RESET);
         } catch (FileNotFoundException e) {
-            System.out.println(ANSI_RED + "[error] file not found exception"); // ERROR
+            extractionLogger.error(App.ANSI_RED + "[error] file not found exception" + App.ANSI_RESET); // ERROR
             e.printStackTrace();
         } catch (Exception e) {
-            System.out.println(ANSI_RED + "[error] exception"); // ERROR
+            extractionLogger.error(App.ANSI_RED + "[error] exception" + App.ANSI_RESET); // ERROR
             e.printStackTrace();
         }
     }
@@ -97,7 +103,8 @@ public class Extractor {
                 records.add(getRecordFromLine(scanner.nextLine()));
             }
         } catch (FileNotFoundException e) {
-            System.out.println(ANSI_RED + "[status] file not found : " + filename); // DEBUG
+            extractionLogger
+                    .error(App.ANSI_RED + "[status] file not found : " + App.ANSI_YELLOW + filename + App.ANSI_RESET); // DEBUG
             e.printStackTrace();
         }
         return records;
@@ -165,7 +172,7 @@ public class Extractor {
             if (!index_list.contains(i)) {
                 synced_meta_pool.add(meta_pool.get(i));
             } else {
-                // System.out.println("[debug] index " + i + " is removed"); // DEBUG
+                // extractionLogger.trace("[debug] index " + i + " is removed"); // DEBUG
             }
         }
         return synced_meta_pool;
