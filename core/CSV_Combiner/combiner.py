@@ -1,10 +1,7 @@
 import csv
 import getopt
 import sys
-import os
 import numpy as np
-import pandas as pd
-from subprocess import call
 from os import listdir
 from os.path import isfile, join
 
@@ -31,7 +28,7 @@ def files_to_list(dir_path):
 
 def main(argv):
     try:
-        opts, args = getopt.getopt(argv[1:], "p:f:r:", ["cvp_directory","cfl_directory","result_directory"])
+        opts = getopt.getopt(argv[1:], "p:f:r:", ["cvp_directory","cfl_directory","result_directory"])
     except getopt.GetoptError as err:
         print(f"[debug.log] ERROR on argument options: -p = change vector pool directory, -f = commit file list directory, -r = result directory")
         sys.exit(2)
