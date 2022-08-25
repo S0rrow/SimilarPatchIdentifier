@@ -14,20 +14,28 @@ import subprocess
         - Config .properties files here. DO NOT additionally make shell scripts.
 '''
 
-def print_help(cmd):
-    options_list = ['repository', 'commit_id', 'faulty_file', 'faulty_line', 'source_path', 'target_path', 'test_list', 'test_target_path', 'compile_target_path', 'build_tool']
+# def print_help(cmd):
+#     options_list = ['repository', 'commit_id', 'faulty_file', 'faulty_line', 'source_path', 'target_path', 'test_list', 'test_target_path', 'compile_target_path', 'build_tool']
 
-    print("Usage :")
-    print(f"- Defects4J check         : {cmd} [-d / --defects4j] <Identifier>-<Bug-ID>")
-    print(f"- Custom repository check : {cmd} [-c / --custom] <custom_project_config_file")
-    print(f"- Defects4J check w/batch : {cmd} [-b / --defects4j_batch] <cases_file>")
-    print()
+#     print("Usage :")
+#     print(f"- Defects4J check         : {cmd} [-d / --defects4j] <Identifier>-<Bug-ID>")
+#     print(f"- Custom repository check : {cmd} [-c / --custom] <custom_project_config_file")
+#     print(f"- Defects4J check w/batch : {cmd} [-b / --defects4j_batch] <cases_file>")
+#     print()
 
 def parse_argv():
     parser = argparse.ArgumentParser()
-    parser.add_argument("-d", "--defects4j",    nargs = "?",   dest = "bug",    default = "Closure-14",             help = "Specifies on which Defects4J bug to run SPI. Runs SPI on Closure-14 if BUG is not given.")
-    parser.add_argument("-b", "--batch",        nargs = "?",   dest = "batch_file",   default = "batch_of_D4J_bugs.txt",  help = "Specifies on which Defects4J bugs to run SPI. Retrieves bug names from patch_of_D4J_bugs.txt if FILE is not given.")
-    parser.add_argument("-c", "--custom",       nargs = "?",   dest = "custom_file",   default = "custom_project.txt",     help = "Specifies (in detail) on which GitHub project to run SPI. Retrieves data from custom_project.txt if FILE is not given.")
+    # parser.add_argument("-d", "--defects4j",    nargs = "?",   dest = "bug",          default = "Closure-14",             help = "Specifies on which Defects4J bug to run SPI. Runs SPI on Closure-14 if BUG is not given.")
+    # parser.add_argument("-b", "--batch",        nargs = "?",   dest = "file_batch",   default = "batch_of_D4J_bugs.txt",  help = "Specifies on which Defects4J bugs to run SPI. Retrieves bug names from patch_of_D4J_bugs.txt if filename is not given.")
+    # parser.add_argument("-g", "--github",       nargs = "?",   dest = "file_github",  default = "custom_project.txt",     help = "Specifies (in detail) on which GitHub project to run SPI. Retrieves data from custom_project.txt if filename is not given.")
+    # parser.add_argument("-d", "--defects4j",    nargs = "?",   dest = "bug",            default = "Closure-14",             help = "Specifies on which Defects4J bug to run SPI. Runs SPI on Closure-14 if BUG is not given.")
+    # parser.add_argument("-b", "--batch",        nargs = "?",   dest = "file_batch",     default = "batch_of_D4J_bugs.txt",  help = "Specifies on which Defects4J bugs to run SPI. Retrieves bug names from patch_of_D4J_bugs.txt if filename is not given.")
+    # parser.add_argument("-g", "--github",       nargs = "?",   dest = "file_github",    default = "custom_project.txt",     help = "Specifies (in detail) on which GitHub project to run SPI. Retrieves data from custom_project.txt if filename is not given.")
+
+    parser.add_argument("-m", "--mode",     choices = ("github", "batch", "defects4j"))
+    parser.add_argument("-t", "--target",   type = str)
+
+    parser.add_argument("-d", "--debug",    action = "store_true")
 
     parser.add_argument("-r", "--rebuild",      action = "store_true",          help = "Rebuilds all SPI submodules if enabled.")
 
@@ -35,7 +43,40 @@ def parse_argv():
     parser.add_argument("-v", "--verbose",      action = 'store_true',          help = "Detailed output. Use it to debug.")
 
     args = parser.parse_args()
-    print(args)
+    # print(args)
+
+    case = dict()
+    settings = dict()
+    if args.debug == True:
+        case['mode'] = 'defects4j'
+        case['project'] = 'Closure-14'
+    else:
+        case['mode'] = args.mode
+
+        if args.mode == 'defects4j':
+            case['project_name'] = argument
+            case['identifier'], case['bug_id'] = argument.split('-')
+
+        elif args.mode == 'batch':
+            with open(argument, 'r') as infile:
+                for each in infile.read().splitlines():
+                    case = dict()
+                    case['project_name'] = each
+                    case['identifier'], case['bug_id'] = each.split('-')
+
+        elif args.mode == 'github':
+            case.update(custom['Project'])
+            case['project_name'] = case['repository'].rsplit('/', 1)[-1]
+            case['identifier'] = case['project_name']
+
+    settings['verbose'] = args.verbose
+    settings['quiet'] = False if args.verbose else args.quiet # suppresses quiet option if verbose option is given
+    settings['rebuild'] = args.rebuild
+
+    
+    # elif args.mode == "github":
+    #     pass
+    # elif args.mode == ""
 
     # SPI_config = configparser.ConfigParser()
     # SPI_config.read("SPI_config.ini")
@@ -57,9 +98,6 @@ def parse_argv():
     # cases = []
 
     # for option, argument in opts:
-    #     if option == '--help':
-    #         print_help(argv[0])
-    #         sys.exit(0)
 
     #     elif option in ['-d', '--defects4j']:
     #         case = dict()
@@ -90,13 +128,7 @@ def parse_argv():
                     
     #                 cases.append(case)
 
-    #     elif option in ['-q', '--quiet']:
-    #         is_quiet = True
-
-    #     elif option in ['--TUI']:
-    #         is_on_TUI = True
-
-    return None # return target data
+    return case, settings # return target data
 
 
 def main(argv):
