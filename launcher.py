@@ -35,42 +35,43 @@ def parse_argv():
 
     args = parser.parse_args()
 
+    cases = list()
     case = dict()
     settings = dict()
     if args.debug == True:
-        case['mode'] = 'defects4j'
-        case['project_name'] = 'Closure-14'
-        case['identifier'], case['bug_id'] = case['project_name'].split('-')
+        cases.append(dict())
+        cases[-1]['mode'] = 'defects4j'
+        cases[-1]['project_name'] = 'Closure-14'
+        cases[-1]['identifier'], cases[-1]['bug_id'] = cases[-1]['project_name'].split('-')
     else:
-        case['mode'] = args.mode
+        settings['mode'] = args.mode
 
         if args.mode == 'defects4j':
-            case['project_name'] = args.target
-            case['identifier'], case['bug_id'] = case['project_name'].split('-')
+            cases.append(dict())
+            cases[-1]['project_name'] = args.target
+            cases[-1]['identifier'], cases[-1]['bug_id'] = cases[-1]['project_name'].split('-')
 
         elif args.mode == 'batch':
-            case['project_name'] = list()
-            case['identifier'] = list()
-            case['bug_id'] = list()
-
             with open(args.target, 'r') as infile:
-                for each in infile.read().splitlines():
-                    case['project_name'].append(each)
-                    identifier, bug_id = each.split('-')
-                    case['identifier'].append(identifier)
-                    case['bug_id'].append(bug_id)
+                for bug in infile.read().splitlines():
+                    cases.append(dict())
+                    cases[-1]['project_name'] = bug
+                    identifier, bug_id = bug.split('-')
+                    cases[-1]['identifier'] = identifier
+                    cases[-1]['bug_id'] = bug_id
                 
 
         elif args.mode == 'github':
-            case.update(custom['Project'])
-            case['project_name'] = case['repository'].rsplit('/', 1)[-1]
-            case['identifier'] = case['project_name']
+            # Enhance reading options here
+            cases.append(dict())
+            cases[-1]['project_name'] = cases[-1]['repository'].rsplit('/', 1)[-1]
+            cases[-1]['identifier'] = cases[-1]['project_name']
 
     settings['verbose'] = args.verbose
     settings['quiet'] = False if args.verbose else args.quiet # suppresses quiet option if verbose option is given
     settings['rebuild'] = args.rebuild
 
-    return case, settings # return target data
+    return cases, settings # return target data
 
 def rebuild(module_name : str) -> bool:
     try:
@@ -97,7 +98,7 @@ def rebuild_confix() -> bool:
         assert subprocess.run(("cp", "target/confix-0.0.1-SNAPSHOT-jar-with-dependencies.jar", "../lib/confix-ami_torun.jar"), cwd = "./core/confix/ConFix-code")
 
     except AssertionError as e:
-        print(">!  Error occurred while rebuilding ConFix.")
+        print("> ! Error occurred while rebuilding ConFix.")
         print()
         return False
 
@@ -117,11 +118,11 @@ def rebuild_all():
         print()
 
     except AssertionError as e:
-        print(">!  Error occurred while rebuilding modules.")
+        print("> ! Error occurred while rebuilding modules.")
         print()
         return False
     except Exception as e:
-        print(">!  Error occurred: directory 'pkg' cannot be removed.")
+        print("> ! Error occurred: directory 'pkg' cannot be removed.")
         print()
         return False
 
@@ -132,7 +133,7 @@ def rebuild_all():
 
 
 def main(argv):
-    case, settings = parse_argv()
+    cases, settings = parse_argv()
 
     if settings["rebuild"]:
         print("Have been requested to rebuild all submodules. Commencing...")
@@ -141,7 +142,7 @@ def main(argv):
     # print(case)
     # print(settings)
 
-    if case["mode"] is None:
+    if settings["mode"] is None:
         print("You have not told me what to fix. Exiting program.")
         sys.exit(0)
 
@@ -149,12 +150,7 @@ def main(argv):
     # Run SPI modules one by one
 
     hash_suffix = str(abs(hash(f"{dt.datetime.now().strftime('%Y%m%d%H%M%S')}")))[-6:]
-    if len(cases) > 1:
-        hash_suffix = f"batch_{hash_suffix}"
-
-    # if not is_test:
-    #     case['hash_id'] = abs(hash(f"{case['project_name']}-{dt.datetime.now().strftime('%Y%m%d%H%M%S')}"))
-    # print(f"Hash ID generated as {case['hash_id']}. Find byproducts in ./target/{case['hash_id']}")
+    # print(f"[Hash ID generated as {case['hash_id']}]. Find byproducts in ./target/{case['hash_id']}")
 
     # Run SimonFix Engine from those orders
     
@@ -168,7 +164,7 @@ def main(argv):
 
     root = os.getcwd()
     SPI_core_directory = f"{root}/core"
-    target_dir = SPI_config['Default']['target_directory']
+    target_dir = f"{root}/target"
 
     whole_start = dt.datetime.now()
 
@@ -176,68 +172,42 @@ def main(argv):
 
     # Run SPI modules one by one
 
-    # hash_prefix = str(abs(hash(f"{dt.datetime.now().strftime('%Y%m%d%H%M%S')}")))[-6:]
-    # if len(cases) > 1:
-    #     hash_prefix = f"{hash_prefix}_batch"
-
-    # # if not is_test:
-    # #     case['hash_id'] = abs(hash(f"{case['project_name']}-{dt.datetime.now().strftime('%Y%m%d%H%M%S')}"))
-    # # print(f"Hash ID generated as {case['hash_id']}. Find byproducts in ./target/{case['hash_id']}")
-
-    # # Run SimonFix Engine from those orders
-    
-    # exit_code = 0
-    # executing_command = ""
-
-    # success = 0
-    # fail = 0
-
-    # step = 0
-
-    # root = os.getcwd()
-    # SPI_core_directory = f"{root}/core"
-    # target_dir = SPI_config['Default']['target_directory']
-
     # whole_start = dt.datetime.now()
 
     # out, err = None, None
     # elif is_quiet:
     #     out, err = subprocess.DEVNULL, subprocess.DEVNULL
 
-    # for case in cases:
-    #     # case['hash_id'] = f"{hash_prefix}_{case['project_name']}"
-    #     case['hash_id'] = f"{hash_prefix}_{case['project_name']}"
+    for case in cases:
+        # case['hash_id'] = f"{hash_prefix}_{case['project_name']}"
+        case["hash_id"] = f"batch_{hash_suffix}_{case['project_name']}" if settings["mode"] == "batch" else f"{case['project_name']}_{hash_suffix}"
 
+        each_exit_code = None
+        each_start = dt.datetime.now()
 
-    #     each_exit_code = None
-    #     each_start = dt.datetime.now()
+        with open(f"{root}/log_{case['hash_id']}.txt", "a") as outfile:
+            outfile.write(f"Launching SPI upon {case['project_name']}... Start time at {each_start.strftime('%Y-%m-%d %H:%M:%S')}\n")
 
-    #     with open(f"{root}/log_{hash_prefix}.txt", "a") as outfile:
-    #         outfile.write(f"Launching SPI upon {case['project_name']}... Start time at {each_start.strftime('%Y-%m-%d %H:%M:%S')}\n")
+        target_dir = f"{root}/target/{case['hash_id']}"
+        os.makedirs(target_dir)
 
-    #     target_dir = f"{root}/target/{case['hash_id']}"
-    #     os.makedirs(target_dir)
-
-    #     if is_on_TUI:
-    #         print(f"EOS0 {case['hash_id']} {target_dir}")
-
-    #     step = 0
+        step = 0
         
-    #     try:
-    #         step = 1
-    #         # Commit Collector
-    #         if not is_quiet:
-    #             print("||| Step 1. Launching Commit Collector...")
-    #         start = dt.datetime.now()
-    #         # Commence
+        try:
+            assert subprocess.run(("cp", "SPI.properties", f"{target_dir}/"))
 
+            # Commit Collector
+            print("||| Step 1. Launching Commit Collector...")
+            start = dt.datetime.now()
+            # Commence
 
-    #         if case['is_defects4j'] == True:
-    #             executing_command = f"python3 {SPI_core_directory}/commit_collector.py -d true -h {case['hash_id']} -i {case['project_name']}"
-    #         else:
-    #             executing_command = f"python3 {SPI_core_directory}/commit_collector.py -h {case['hash_id']} -i {case['project_name']},{case['faulty_file']},{case['faulty_line']},{case['commit_id']},{case['repository']}"
-    #         print(executing_command)
-    #         assert subprocess.run(executing_command, shell = True, stdout = out, stderr = err).returncode == 0, "Failure occurred launching Commit Collector."
+            if settings["mode"] == "github":
+                pass
+                # executing_command = f"{root}/pkg/BuggyChangeCollector/bin/app -h {case['hash_id']} --githubinput {case['project_name']},{case['faulty_file']},{case['faulty_line']},{case['commit_id']},{case['repository']}"
+            else:
+                executing_command = f"{root}/pkg/BuggyChangeCollector/bin/app -h {case['hash_id']} --defects4j {case['project_name']} --config {target_dir}/SPI.properties"
+            print(executing_command)
+            assert subprocess.run(executing_command, shell = True).returncode == 0, "Failure occurred launching Commit Collector."
 
     #         bfic = pd.read_csv(f"{target_dir}/outputs/commit_collector/BFIC.csv", names = ['Project', 'D4J ID', 'Faulty file path', 'Faulty line', 'FIC_sha', 'BFIC_sha']).values[1]
     #         case['buggy_file'] = f"{target_dir}/{case['identifier']}/{bfic[2]}"
@@ -254,22 +224,20 @@ def main(argv):
 
 
     #         step = 2
-    #         # AllChangeCollector
-    #         if not is_quiet:
-    #             print("||| Step 2. Launching AllChangeCollector...")
-    #         start = dt.datetime.now()
-    #         # Commence
+            # AllChangeCollector
+            print("||| Step 2. Launching AllChangeCollector...")
+            start = dt.datetime.now()
+            # Commence
 
+            ACC_output_directory = f"{target_dir}/outputs/AllChangeCollector"
+            JAVA_11_HOME = f"/usr/lib/jvm/java-11-openjdk-amd64"
+            ACC_core_directory = f"{SPI_core_directory}/AllChangeCollector/app/build/distributions/app/bin/"
+            os.makedirs(ACC_output_directory)
 
-    #         ACC_output_directory = f"{target_dir}/outputs/AllChangeCollector"
-    #         JAVA_11_HOME = f"/usr/lib/jvm/java-11-openjdk-amd64"
-    #         ACC_core_directory = f"{SPI_core_directory}/AllChangeCollector/app/build/distributions/app/bin/"
-    #         os.makedirs(ACC_output_directory)
+            with open(f"{target_dir}/collection.txt", "w") as outfile:
+                outfile.write(f"{bfic[2]} {bfic[4]} {case['project_name']} {target_dir}/{case['identifier']}\n")
 
-    #         with open(f"{target_dir}/collection.txt", "w") as outfile:
-    #             outfile.write(f"{bfic[2]} {bfic[4]} {case['project_name']} {target_dir}/{case['identifier']}\n")
-
-    #         assert subprocess.run(f"cd {ACC_output_directory}; JAVA_HOME={JAVA_11_HOME} {ACC_core_directory}/app -l {target_dir}/collection.txt", shell = True, stdout = out, stderr = err).returncode == 0, "Failure occurred launching AllChangeCollector."
+            assert subprocess.run(f"cd {ACC_output_directory}; JAVA_HOME={JAVA_11_HOME} {ACC_core_directory}/app -l {target_dir}/collection.txt", shell = True, stdout = out, stderr = err).returncode == 0, "Failure occurred launching AllChangeCollector."
 
 
     #         end = dt.datetime.now()
@@ -335,9 +303,9 @@ def main(argv):
     #             else:
     #                 print("EOS4 Failure") # End of Step 4
 
-    #     except AssertionError as e:
-    #         each_exit_code = 1
-    #         print(f"!EOS{step}")
+        except AssertionError as e:
+            each_exit_code = 1
+            print(f"!EOS")
 
     #     each_end = dt.datetime.now()
     #     each_elapsed_time = (each_end - each_start)
