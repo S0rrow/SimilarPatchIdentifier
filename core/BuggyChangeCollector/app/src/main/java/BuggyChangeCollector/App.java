@@ -26,6 +26,10 @@ public class App {
     private String faultyPath = new String();
     private int faultyLineFix = 0;
     private int faultyLineBlame = 0;
+
+    private String jdk8Directory = new String();
+    private String SPIDirectory = new String();
+    private String targetDirectory = new String();
     
     protected static final Logger logger = LogManager.getLogger();
     private static final String root = System.getProperty("user.dir");
@@ -48,26 +52,21 @@ public class App {
 
         parseArgs(args);
 
-        String targetDir    = String.format("%s/target/%s", root, hashID);
-        String outputDir    = String.format("%s/outputs", targetDir);
-        String BCCDir       = String.format("%s/BuggyChangeCollector", outputDir);
-        File targetDirPath  = new File(targetDir);
-        File outputDirPath  = new File(outputDir);
-        File BCCDirPath     = new File(BCCDir);
+        String workspaceDir = String.format("%s/%s", this.targetDirectory, hashID);
+        String BCCDir = String.format("%s/outputs/BuggyChangeCollector", workspaceDir);
+        File BCCDirPath = new File(BCCDir);
 
-        boolean isFailing = true;
-        if(!targetDirPath.isDirectory())    isFailing = targetDirPath.mkdirs();
-        if(!outputDirPath.isDirectory())    isFailing = outputDirPath.mkdirs();
-        if(!BCCDirPath.isDirectory())       isFailing = BCCDirPath.mkdirs();
+        boolean isFailing = false;
+        if(!BCCDirPath.exists()) isFailing = !BCCDirPath.mkdirs();
 
-        if(!isFailing)
+        if(isFailing)
         {
             Debug.logFatal(logger, "Command `mkdirs` for target, output, or BCC directories have failed. Aborting the program.");
             System.exit(-1);
         }
 
-        targetProject = (isDefects4j)   ? (new Defects4JProject(this.projectName, targetDir))
-                                        : (new GitHubProject(this.projectName, this.projectLink, targetDir, this.faultyPath, this.faultyLineBlame, this.faultyLineFix));
+        targetProject = (isDefects4j)   ? (new Defects4JProject(this.projectName, workspaceDir, this.jdk8Directory, this.SPIDirectory))
+                                        : (new GitHubProject(this.projectName, this.projectLink, workspaceDir, this.faultyPath, this.faultyLineBlame, this.faultyLineFix));
 
         targetProject.fetch();
 
@@ -92,25 +91,28 @@ public class App {
     public void parseArgs(String[] args)
     {
         Options options = new Options();
-        Option[] option = new Option[7];
+        Option[] option = new Option[8];
 
         option[0] = Option.builder("?").longOpt("help")
             .desc("Prints out this help message.").build();
         option[1] = Option.builder("h").longOpt("hash")
-            .hasArg().argName("hashID")
+            .hasArg().argName("Hash ID")
             .desc("(Required) Tells where to set workspasce.").build();
         option[2] = Option.builder("d").longOpt("defects4j")
-            .hasArg().argName("defects4jBug")
+            .hasArg().argName("defects4j Bug")
             .desc("Tells that Defects4J Bug is passed as an argument.").build();
-        option[3] = Option.builder("g").longOpt("github")
-            .hasArg().argName("GitHubProjectInfo")
+        option[3] = Option.builder("gi").longOpt("githubinput")
+            .hasArg().argName("Project bug info")
             .desc("Tells that bug info about GitHub project is passed in one line, separated in comma.").build();
-        option[4] = Option.builder("f").longOpt("file")
-            .hasArg().argName("")
-            .desc("Like --github option, tells that bug info about GitHub project is passed via .properties file.").build();
-        option[5] = Option.builder("v").longOpt("verbose")
+        option[4] = Option.builder("gf").longOpt("githubfile")
+            .hasArg().argName(".properties file")
+            .desc("Like --github option, tells that bug info about GitHub project is passed via given .properties file.").build();
+        option[5] = Option.builder("c").longOpt("config")
+            .hasArg().argName(".properties file")
+            .desc("Uses custom configuration from given .properties file.").build();
+        option[6] = Option.builder("v").longOpt("verbose")
             .desc("Enables verbose output, especially for debug purpose.").build();
-        option[6] = Option.builder("q").longOpt("quiet")
+        option[7] = Option.builder("q").longOpt("quiet")
             .desc("Disables output except warnings, errors and fatal errors.").build();
 
         for(int i = 0; i < option.length; i++) options.addOption(option[i]);
@@ -143,13 +145,36 @@ public class App {
                 Debug.logInfo(logger, "Silenced unnecessary output.");
             }
 
+            Properties BCCProps = new Properties();
+            String BCCConfigFile = new String();
+            if(line.hasOption("config"))
+            {
+                BCCConfigFile = line.getOptionValue("config");
+                
+                Debug.logInfo(logger, String.format("Loading bug info file %s...", BCCConfigFile));
+                BCCProps.load(new FileInputStream(BCCConfigFile));
+            }
+            else
+            {
+                BCCConfigFile = new String("BCC.properties");
+
+                Debug.logInfo(logger, String.format("Loading default bug info file %s...", BCCConfigFile));
+                BCCProps.load(new FileInputStream(BCCConfigFile));
+            }
+
+            this.jdk8Directory = BCCProps.getProperty("JAVA_HOME.8");
+            this.SPIDirectory = BCCProps.getProperty("SPI.path");
+            this.targetDirectory = BCCProps.getProperty("target.path");
+
+
             // Checks whether 'hash' option is given.
             if(!line.hasOption("hash"))
             {
                 if(line.hasOption("help"))
                 {
                     HelpFormatter formatter = new HelpFormatter();
-                    formatter.printHelp("BuggyChangeCollector", options);
+                    formatter.setWidth(100);
+                    formatter.printHelp("app", options, true);
 
                     System.exit(0);
                 }
@@ -172,16 +197,16 @@ public class App {
             }
             else
             {
-                if(!line.hasOption("file") && !line.hasOption("github"))
+                if(!line.hasOption("githubfile") && !line.hasOption("githubinput"))
                     throw new MissingOptionException("No project information given.");
-                else if(line.hasOption("file"))
+                else if(line.hasOption("githubfile"))
                 {
                     Debug.logDebug(logger, "Using custom GitHub project...");
 
-                    this.bugInfoFile = line.getOptionValue("file");
+                    this.bugInfoFile = line.getOptionValue("githubfile");
                     
                     Properties bugProps = new Properties();
-                    Debug.logInfo(logger, String.format(String.format("Loading configuration file %s...", this.bugInfoFile)));
+                    Debug.logInfo(logger, String.format("Loading bug info file %s...", this.bugInfoFile));
                     bugProps.load(new FileInputStream(bugInfoFile));
 
                     this.projectName        = bugProps.getProperty("projectName");
@@ -199,7 +224,7 @@ public class App {
                 {
                     Debug.logDebug(logger, "Using custom GitHub project...");
 
-                    String[] bugInfo = line.getOptionValue("github").split(",");
+                    String[] bugInfo = line.getOptionValue("githubinput").split(",");
 
                     this.projectName        = bugInfo[0];
                     this.projectLink        = bugInfo[1];
