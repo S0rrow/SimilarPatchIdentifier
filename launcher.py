@@ -1,11 +1,12 @@
 import argparse
+import configparser
 
-import getopt
 import sys
 import os
+
 import datetime as dt
-import pandas as pd
-import configparser
+# import pandas as pd
+
 import subprocess
 
 '''
@@ -14,55 +15,51 @@ import subprocess
         - Config .properties files here. DO NOT additionally make shell scripts.
 '''
 
-# def print_help(cmd):
-#     options_list = ['repository', 'commit_id', 'faulty_file', 'faulty_line', 'source_path', 'target_path', 'test_list', 'test_target_path', 'compile_target_path', 'build_tool']
-
-#     print("Usage :")
-#     print(f"- Defects4J check         : {cmd} [-d / --defects4j] <Identifier>-<Bug-ID>")
-#     print(f"- Custom repository check : {cmd} [-c / --custom] <custom_project_config_file")
-#     print(f"- Defects4J check w/batch : {cmd} [-b / --defects4j_batch] <cases_file>")
-#     print()
-
 def parse_argv():
     parser = argparse.ArgumentParser()
-    # parser.add_argument("-d", "--defects4j",    nargs = "?",   dest = "bug",          default = "Closure-14",             help = "Specifies on which Defects4J bug to run SPI. Runs SPI on Closure-14 if BUG is not given.")
-    # parser.add_argument("-b", "--batch",        nargs = "?",   dest = "file_batch",   default = "batch_of_D4J_bugs.txt",  help = "Specifies on which Defects4J bugs to run SPI. Retrieves bug names from patch_of_D4J_bugs.txt if filename is not given.")
-    # parser.add_argument("-g", "--github",       nargs = "?",   dest = "file_github",  default = "custom_project.txt",     help = "Specifies (in detail) on which GitHub project to run SPI. Retrieves data from custom_project.txt if filename is not given.")
-    # parser.add_argument("-d", "--defects4j",    nargs = "?",   dest = "bug",            default = "Closure-14",             help = "Specifies on which Defects4J bug to run SPI. Runs SPI on Closure-14 if BUG is not given.")
-    # parser.add_argument("-b", "--batch",        nargs = "?",   dest = "file_batch",     default = "batch_of_D4J_bugs.txt",  help = "Specifies on which Defects4J bugs to run SPI. Retrieves bug names from patch_of_D4J_bugs.txt if filename is not given.")
-    # parser.add_argument("-g", "--github",       nargs = "?",   dest = "file_github",    default = "custom_project.txt",     help = "Specifies (in detail) on which GitHub project to run SPI. Retrieves data from custom_project.txt if filename is not given.")
 
-    parser.add_argument("-m", "--mode",     choices = ("github", "batch", "defects4j"))
-    parser.add_argument("-t", "--target",   type = str)
+    parser.add_argument("-m", "--mode",     choices = ("github", "batch", "defects4j"),
+                        help = "Tells in what mode to run SPI.")
+    parser.add_argument("-t", "--target",   type = str,
+                        help = "Tells what project to run, or what file to read data from.")
 
     parser.add_argument("-d", "--debug",    action = "store_true")
 
-    parser.add_argument("-r", "--rebuild",      action = "store_true",          help = "Rebuilds all SPI submodules if enabled.")
+    parser.add_argument("-r", "--rebuild",  action = "store_true",
+                        help = "Rebuilds all SPI submodules if enabled.")
 
-    parser.add_argument("-q", "--quiet",        action = 'store_true',          help = "Quiet output. Suppresses INFO messages, but errors and warnings will still be printed out.")
-    parser.add_argument("-v", "--verbose",      action = 'store_true',          help = "Detailed output. Use it to debug.")
+    parser.add_argument("-q", "--quiet",    action = 'store_true',
+                        help = "Quiet output. Suppresses INFO messages, but errors and warnings will still be printed out.")
+    parser.add_argument("-v", "--verbose",  action = 'store_true',
+                        help = "Detailed output. Use it to debug.")
 
     args = parser.parse_args()
-    # print(args)
 
     case = dict()
     settings = dict()
     if args.debug == True:
         case['mode'] = 'defects4j'
-        case['project'] = 'Closure-14'
+        case['project_name'] = 'Closure-14'
+        case['identifier'], case['bug_id'] = case['project_name'].split('-')
     else:
         case['mode'] = args.mode
 
         if args.mode == 'defects4j':
-            case['project_name'] = argument
-            case['identifier'], case['bug_id'] = argument.split('-')
+            case['project_name'] = args.target
+            case['identifier'], case['bug_id'] = case['project_name'].split('-')
 
         elif args.mode == 'batch':
-            with open(argument, 'r') as infile:
+            case['project_name'] = list()
+            case['identifier'] = list()
+            case['bug_id'] = list()
+
+            with open(args.target, 'r') as infile:
                 for each in infile.read().splitlines():
-                    case = dict()
-                    case['project_name'] = each
-                    case['identifier'], case['bug_id'] = each.split('-')
+                    case['project_name'].append(each)
+                    identifier, bug_id = each.split('-')
+                    case['identifier'].append(identifier)
+                    case['bug_id'].append(bug_id)
+                
 
         elif args.mode == 'github':
             case.update(custom['Project'])
@@ -73,74 +70,111 @@ def parse_argv():
     settings['quiet'] = False if args.verbose else args.quiet # suppresses quiet option if verbose option is given
     settings['rebuild'] = args.rebuild
 
-    
-    # elif args.mode == "github":
-    #     pass
-    # elif args.mode == ""
-
-    # SPI_config = configparser.ConfigParser()
-    # SPI_config.read("SPI_config.ini")
-
-    # custom = configparser.ConfigParser()
-
-    # try:
-    #     opts, args = getopt.getopt(argv[1:], options, options_long)
-    # except getopt.GetoptError as err:
-    #     print(err)
-    #     sys.exit(-1)
-    
-    # is_quiet = False
-    # is_on_TUI = False
-
-    # if len(args) != 0:
-    #     print(f"Arguments {args} ignored.")
-
-    # cases = []
-
-    # for option, argument in opts:
-
-    #     elif option in ['-d', '--defects4j']:
-    #         case = dict()
-    #         case['is_defects4j'] = True
-    #         case['project_name'] = argument
-    #         case['identifier'], case['bug_id'] = argument.split('-')
-
-    #         cases.append(case)
-
-    #     elif option in ['-c', '--custom']:
-    #         custom.read(argument)
-
-    #         case = dict()
-    #         case.update(custom['Project'])
-    #         case['is_defects4j'] = False
-    #         case['project_name'] = case['repository'].rsplit('/', 1)[-1]
-    #         case['identifier'] = case['project_name']
-
-    #         cases.append(case)
-
-    #     elif option in ['-b', '--defects4j_batch']:
-    #         with open(argument, 'r') as infile:
-    #             for each in infile.read().splitlines():
-    #                 case = dict()
-    #                 case['is_defects4j'] = True
-    #                 case['project_name'] = each
-    #                 case['identifier'], case['bug_id'] = each.split('-')
-                    
-    #                 cases.append(case)
-
     return case, settings # return target data
+
+def rebuild(module_name : str) -> bool:
+    try:
+        assert subprocess.run(("gradle", "distZip", "-q"), cwd = f"./core/{module_name}")
+        assert subprocess.run(("mv", "app/build/distributions/app.zip", "../../pkg/"), cwd = f"./core/{module_name}")
+
+        assert subprocess.run(("unzip", "-q", "app.zip"), cwd = "./pkg")
+        assert subprocess.run(("mv", "app", module_name), cwd = "./pkg")
+
+        assert subprocess.run(("rm", "app.zip"), cwd = "./pkg")
+
+    except AssertionError as e:
+        print(f"Error occurred while rebuilding submodule.")
+        return False
+    
+    return True
+
+def rebuild_confix() -> bool:
+    # os.system(f"cd {root}/core/confix/ConFix-code ;"
+    #         + "mvn clean package ;"
+    #         + f"cp target/confix-0.0.1-SNAPSHOT-jar-with-dependencies.jar {root}/core/confix/lib/confix-ami_torun.jar")
+    try:
+        assert subprocess.run(("mvn", "clean", "package", "-q"), cwd = "./core/confix/ConFix-code")
+        assert subprocess.run(("cp", "target/confix-0.0.1-SNAPSHOT-jar-with-dependencies.jar", "../lib/confix-ami_torun.jar"), cwd = "./core/confix/ConFix-code")
+
+    except AssertionError as e:
+        print(">!  Error occurred while rebuilding ConFix.")
+        print()
+        return False
+
+    return True
+
+def rebuild_all():
+    try:
+        assert subprocess.run(("rm", "-rf", "pkg"))
+        assert subprocess.run(("mkdir", "pkg"))
+
+        for submodule in ("BuggyChangeCollector", "AllChangeCollector", "LCE"):
+            assert rebuild(submodule)
+            print(f"> Successfully rebuilt submodule {submodule}.")
+
+        assert rebuild_confix() # ConFix uses maven unlike any other packages; this should be handled differently.
+        print(f"> Successfully rebuilt submodule ConFix.")
+        print()
+
+    except AssertionError as e:
+        print(">!  Error occurred while rebuilding modules.")
+        print()
+        return False
+    except Exception as e:
+        print(">!  Error occurred: directory 'pkg' cannot be removed.")
+        print()
+        return False
+
+    print("All submodules have been successfully rebuilt.")
+    print()
+    return True
+
 
 
 def main(argv):
-    cases = parse_argv()
+    case, settings = parse_argv()
 
+    if settings["rebuild"]:
+        print("Have been requested to rebuild all submodules. Commencing...")
+        rebuild_all()
 
-    # Parse arguments given
+    # print(case)
+    # print(settings)
 
-
-    # if 
+    if case["mode"] is None:
+        print("You have not told me what to fix. Exiting program.")
+        sys.exit(0)
 
     
+    # Run SPI modules one by one
+
+    hash_suffix = str(abs(hash(f"{dt.datetime.now().strftime('%Y%m%d%H%M%S')}")))[-6:]
+    if len(cases) > 1:
+        hash_suffix = f"batch_{hash_suffix}"
+
+    # if not is_test:
+    #     case['hash_id'] = abs(hash(f"{case['project_name']}-{dt.datetime.now().strftime('%Y%m%d%H%M%S')}"))
+    # print(f"Hash ID generated as {case['hash_id']}. Find byproducts in ./target/{case['hash_id']}")
+
+    # Run SimonFix Engine from those orders
+    
+    exit_code = 0
+    executing_command = ""
+
+    success = 0
+    fail = 0
+
+    step = 0
+
+    root = os.getcwd()
+    SPI_core_directory = f"{root}/core"
+    target_dir = SPI_config['Default']['target_directory']
+
+    whole_start = dt.datetime.now()
+
+    # Initialize pre-setups
+
+    # Run SPI modules one by one
 
     # hash_prefix = str(abs(hash(f"{dt.datetime.now().strftime('%Y%m%d%H%M%S')}")))[-6:]
     # if len(cases) > 1:
