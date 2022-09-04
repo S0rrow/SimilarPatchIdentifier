@@ -3,6 +3,7 @@ import configparser
 
 import sys
 import os
+from shutil import rmtree
 
 import datetime as dt
 # import pandas as pd
@@ -106,8 +107,9 @@ def rebuild_confix() -> bool:
 
 def rebuild_all():
     try:
-        assert subprocess.run(("rm", "-rf", "pkg"))
-        assert subprocess.run(("mkdir", "pkg"))
+        if os.path.isdir("pkg"):
+            rmtree("pkg")
+        os.mkdir("pkg")
 
         for submodule in ("BuggyChangeCollector", "AllChangeCollector", "LCE"):
             assert rebuild(submodule)
