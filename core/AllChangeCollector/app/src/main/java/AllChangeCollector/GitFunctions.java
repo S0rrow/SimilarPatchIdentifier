@@ -2,6 +2,7 @@ package AllChangeCollector;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
@@ -18,6 +19,44 @@ import org.eclipse.jgit.util.io.DisabledOutputStream;
 
 public class GitFunctions {
     public String name;
+    public String project;
+    public String projectDirectory;
+    public String identifier;
+
+    public String extract_head_commit_id(String path) {
+        String commit_id = null;
+        try {
+            ProcessBuilder pb = new ProcessBuilder("git", "rev-parse", "HEAD");
+            pb.directory(new File(path));
+            Process p = pb.start();
+            BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
+            commit_id = reader.readLine();
+            p.waitFor();
+        } catch (IOException | InterruptedException e) {
+            e.printStackTrace();
+        }
+        return commit_id;
+    }
+
+    public boolean clone(String url, String path, boolean isD4J) {
+        if (!isD4J)
+            return clone(url, path);
+        else {
+            try {
+                ProcessBuilder fetcher = new ProcessBuilder("defects4j", "checkout",
+                        "-p", this.project, "-v", String.format("%db", this.identifier),
+                        "-w", this.projectDirectory);
+                App.logger.trace(App.ANSI_BLUE + "> Performing defects4j checkout...");
+                Process p = fetcher.start();
+                int ret = p.waitFor();
+                App.logger.trace(App.ANSI_BLUE + String.format("Process defects4j checkout exited with code %d", ret));
+            } catch (Exception e) {
+                App.logger.error(App.ANSI_RED + "[error] > Exception : " + e.getMessage());
+                return false;
+            }
+            return true;
+        }
+    }
 
     public boolean clone(String url, String path) {
         String repo_name = get_repo_name_from_url(url);
