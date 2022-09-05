@@ -1,9 +1,9 @@
 import argparse
 import configparser
-
+import shutil
 import sys
 import os
-
+import zipfile
 import datetime as dt
 # import pandas as pd
 
@@ -73,47 +73,113 @@ def parse_argv():
 
     return cases, settings # return target data
 
-def rebuild(module_name : str) -> bool:
+def rebuild(module_name : str, root) -> bool:
+    #print(f"> Rebuilding {module_name}...")
     try:
-        assert subprocess.run(("gradle", "distZip", "-q"), cwd = f"./core/{module_name}")
-        assert subprocess.run(("mv", "app/build/distributions/app.zip", "../../pkg/"), cwd = f"./core/{module_name}")
+        assert subprocess.run(("gradle", "distZip", "-q"), cwd = f"./core/{module_name}", shell=True)
+        #assert subprocess.run(("mv", "app/build/distributions/app.zip", "../../pkg/"), cwd = f"./core/{module_name}", shell=True)
+        #print(f"> moving app.zip to pkg...")
+        if not move(f"./core/{module_name}/app/build/distributions/app.zip", f"{root}/pkg/", copy_function = shutil.copy):
+            print(f"> Error occurred while moving app.zip to pkg.")
+            return False
+        #print(f"> unzipping {module_name}...")
+        #assert subprocess.run(("unzip", "-q", "app.zip"), cwd = "./pkg", shell=True)
+        if not unzip("./pkg/app.zip", "./pkg/"):
+            print(f"> Error occurred while unzipping {module_name}.")
+            return False
+        #print(f"> creating {module_name} directory...")
+        if not os.path.exists(f"./pkg/{module_name}"):
+            assert subprocess.run(("mkdir", f"{module_name}"), cwd = "./pkg", shell=True)
+        #assert subprocess.run(("mv", "app", module_name), cwd = "./pkg", shell=True)
+        #print(f"> moving app to {module_name}...")
+        if not move("./pkg/app", f"./pkg/{module_name}", shutil.copy2):
+            print(f"> Error occurred while moving app to {module_name}.")
+            return False
 
-        assert subprocess.run(("unzip", "-q", "app.zip"), cwd = "./pkg")
-        assert subprocess.run(("mv", "app", module_name), cwd = "./pkg")
+        #assert subprocess.run(("rm", "app.zip"), cwd = "./pkg", shell=True)
+        #print(f"> removing app.zip...")
+        if not remove("./pkg/app.zip"):
+            print(f"> Error occurred while removing app.zip.")
+            return False
 
-        assert subprocess.run(("rm", "app.zip"), cwd = "./pkg")
-
-    except AssertionError as e:
-        print(f"Error occurred while rebuilding submodule.")
+    except Exception as e:
+        print(f"> Error occurred while rebuilding submodule {module_name}.")
+        print(f"> Error : {e}")
         return False
-    
+    #print(f"> Done.")
     return True
 
-def rebuild_confix() -> bool:
+def rebuild_confix(root) -> bool:
     # os.system(f"cd {root}/core/confix/ConFix-code ;"
     #         + "mvn clean package ;"
     #         + f"cp target/confix-0.0.1-SNAPSHOT-jar-with-dependencies.jar {root}/core/confix/lib/confix-ami_torun.jar")
     try:
-        assert subprocess.run(("mvn", "clean", "package", "-q"), cwd = "./core/confix/ConFix-code")
-        assert subprocess.run(("cp", "target/confix-0.0.1-SNAPSHOT-jar-with-dependencies.jar", "../lib/confix-ami_torun.jar"), cwd = "./core/confix/ConFix-code")
+        assert subprocess.run(("mvn", "clean", "package", "-q"), cwd = "./core/confix/ConFix-code", shell=True)
+        #assert subprocess.run(("cp", "target/confix-0.0.1-SNAPSHOT-jar-with-dependencies.jar", "../lib/confix-ami_torun.jar"), cwd = "./core/confix/ConFix-code", shell=True)
+        if not (copy(f"{root}/core/confix/ConFix-code/target/confix-0.0.1-SNAPSHOT-jar-with-dependencies.jar", f"{root}/core/confix/lib/confix-ami_torun.jar")):
+            print("Error occurred while copying ConFix jar file.")
+            return False
 
     except AssertionError as e:
         print("> ! Error occurred while rebuilding ConFix.")
-        print()
+        print("> ! Error : ", e)
         return False
 
     return True
 
-def rebuild_all():
+def move(location, destination, copy_function) -> bool:
     try:
-        assert subprocess.run(("rm", "-rf", "pkg"))
-        assert subprocess.run(("mkdir", "pkg"))
+        shutil.move(location, destination, copy_function)
+    except Exception as e:
+        print(f"> Error: {location} : {e.strerror}")
+        print(f"> ! Error occurred while moving {location} to {destination}.")
+        return False
+    return True
 
+def unzip(file, destination):
+    try:
+        with zipfile.ZipFile(file, 'r') as zip_ref:
+            zip_ref.extractall(destination)
+    except Exception as e:
+        print(f"> Error: {file} : {e.strerror}")
+        print(f"> ! Error occurred while unzipping {file}.")
+        return False
+    return True
+
+def copy(file, destination):
+    try:
+        shutil.copy(file, destination)
+    except Exception as e:
+        print(f"> Error: {file} : {e.strerror}")
+        print(f"> ! Error occurred while copying {file} to {destination}.")
+        return False
+    return True
+
+def remove(path):
+    try:
+        if(os.path.exists(path)):
+            if(os.path.isdir(path)):
+                shutil.rmtree(path)
+            else:
+                os.remove(path)
+    except Exception as e:
+        print(f"> Error: {path} : {e.strerror}")
+        print(f"> ! Error occurred while removing {path}.")
+        return False
+    return True
+
+def rebuild_all(root):
+    try:
+        #assert subprocess.run(("rm", "-rf", "pkg"))
+        if not (remove(f"{root}/pkg")):
+            print(f"> ! Error occurred while removing {root}/pkg.")
+        assert subprocess.run(("mkdir", "pkg"), shell=True)
+        #os.mkdir(f"{root}/pkg")
         for submodule in ("BuggyChangeCollector", "AllChangeCollector", "LCE"):
-            assert rebuild(submodule)
+            assert rebuild(submodule, root)
             print(f"> Successfully rebuilt submodule {submodule}.")
 
-        assert rebuild_confix() # ConFix uses maven unlike any other packages; this should be handled differently.
+        assert rebuild_confix(root) # ConFix uses maven unlike any other packages; this should be handled differently.
         print(f"> Successfully rebuilt submodule ConFix.")
         print()
 
@@ -122,7 +188,7 @@ def rebuild_all():
         print()
         return False
     except Exception as e:
-        print("> ! Error occurred: directory 'pkg' cannot be removed.")
+        print(f"> ! Error occurred while rebuilding modules: {e}")
         print()
         return False
 
@@ -135,9 +201,13 @@ def rebuild_all():
 def main(argv):
     cases, settings = parse_argv()
 
+    root = os.getcwd()
+    SPI_core_directory = f"{root}/core"
+    target_dir = f"{root}/target"
+
     if settings["rebuild"]:
         print("Have been requested to rebuild all submodules. Commencing...")
-        rebuild_all()
+        rebuild_all(root)
 
     # print(case)
     # print(settings)
@@ -161,10 +231,6 @@ def main(argv):
     fail = 0
 
     step = 0
-
-    root = os.getcwd()
-    SPI_core_directory = f"{root}/core"
-    target_dir = f"{root}/target"
 
     whole_start = dt.datetime.now()
 
