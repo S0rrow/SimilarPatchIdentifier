@@ -243,7 +243,7 @@ def main(argv):
     print(f"[Hash ID generated as {case['hash_id']}]. Find byproducts in ./target/{case['hash_id']}")
 
     # Run SimonFix Engine from those orders
-    
+
     exit_code = 0
     executing_command = ""
 
@@ -278,10 +278,10 @@ def main(argv):
         os.makedirs(target_dir)
 
         step = 0
-        
-        try:
-            assert subprocess.run(("cp", "SPI.properties", f"{target_dir}/"))
 
+        try:
+            #assert subprocess.run(("cp", "SPI.properties", f"{target_dir}/"), shell=True)
+            copy(f"{root}/SPI.properties", f"{target_dir}/")
             # Commit Collector
             print("||| Step 1. Launching Commit Collector...")
             start = dt.datetime.now()
