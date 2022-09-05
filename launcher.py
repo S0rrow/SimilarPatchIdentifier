@@ -191,12 +191,31 @@ def rebuild_all(root):
         print(f"> ! Error occurred while rebuilding modules: {e}")
         print()
         return False
-
-    print("All submodules have been successfully rebuilt.")
-    print()
     return True
 
+def load_properties(filepath, sep='=', comment_char='#')->dict:
+    props = {}
+    with open(filepath, "rt") as f:
+        for line in f:
+            l = line.strip()
+            if l and not l.startswith(comment_char):
+                key_value = l.split(sep)
+                key = key_value[0].strip()
+                value = sep.join(key_value[1:]).strip().strip('"') 
+                props[key] = value 
+    return props
 
+def BuggyChangeCollector():
+    return True
+
+def AllChangeCollector():
+    return True
+
+def LCE():
+    return True
+
+def ConFix():
+    return True
 
 def main(argv):
     cases, settings = parse_argv()
@@ -207,7 +226,8 @@ def main(argv):
 
     if settings["rebuild"]:
         print("Have been requested to rebuild all submodules. Commencing...")
-        rebuild_all(root)
+        if rebuild_all(root):
+            print("All submodules have been successfully rebuilt.")
 
     # print(case)
     # print(settings)
@@ -220,7 +240,7 @@ def main(argv):
     # Run SPI modules one by one
 
     hash_suffix = str(abs(hash(f"{dt.datetime.now().strftime('%Y%m%d%H%M%S')}")))[-6:]
-    # print(f"[Hash ID generated as {case['hash_id']}]. Find byproducts in ./target/{case['hash_id']}")
+    print(f"[Hash ID generated as {case['hash_id']}]. Find byproducts in ./target/{case['hash_id']}")
 
     # Run SimonFix Engine from those orders
     
@@ -240,9 +260,9 @@ def main(argv):
 
     # whole_start = dt.datetime.now()
 
-    # out, err = None, None
-    # elif is_quiet:
-    #     out, err = subprocess.DEVNULL, subprocess.DEVNULL
+    out, err = None, None
+    if settings["quiet"]:
+        out, err = subprocess.DEVNULL, subprocess.DEVNULL
 
     for case in cases:
         # case['hash_id'] = f"{hash_prefix}_{case['project_name']}"
