@@ -1,19 +1,14 @@
 package BuggyChangeCollector;
 
-import java.io.IOException;
-import java.io.File;
 import java.io.FileReader;
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.io.FileInputStream;
+import java.io.IOException;
 import java.util.Map;
-import java.util.Properties;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.opencsv.CSVReader;
-import com.opencsv.CSVIterator;
 import com.opencsv.exceptions.CsvValidationException;
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.LogManager;
 
 public class Defects4JProject extends Project {
     // Defects4J Bug Name into String project
