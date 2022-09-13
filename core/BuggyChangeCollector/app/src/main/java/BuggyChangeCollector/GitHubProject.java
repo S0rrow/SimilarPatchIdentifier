@@ -1,12 +1,9 @@
 package BuggyChangeCollector;
 
 import java.io.IOException;
-import java.io.File;
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
 
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class GitHubProject extends Project {
     private String projectLink; // URL of the GitHub Repository
