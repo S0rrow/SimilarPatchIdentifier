@@ -15,6 +15,8 @@ import subprocess
         - Config .properties files here. DO NOT additionally make shell scripts.
 '''
 
+cases, settings = list(), dict()
+
 def parse_argv():
     parser = argparse.ArgumentParser()
 
@@ -36,8 +38,7 @@ def parse_argv():
     args = parser.parse_args()
 
     cases = list()
-    case = dict()
-    settings = dict()
+    global cases, settings
     if args.debug == True:
         cases.append(dict())
         cases[-1]['mode'] = 'defects4j'
@@ -71,7 +72,9 @@ def parse_argv():
     settings['quiet'] = False if args.verbose else args.quiet # suppresses quiet option if verbose option is given
     settings['rebuild'] = args.rebuild
 
-    return cases, settings # return target data
+#######
+# Misc
+#######
 
 def rebuild(module_name : str, root) -> bool:
     #print(f"> Rebuilding {module_name}...")
@@ -191,34 +194,58 @@ def rebuild_all(root):
         print(f"> ! Error occurred while rebuilding modules: {e}")
         print()
         return False
+
+    print("All submodules have been successfully rebuilt.")
+    print()
     return True
 
-def load_properties(filepath, sep='=', comment_char='#')->dict:
-    props = {}
-    with open(filepath, "rt") as f:
-        for line in f:
-            l = line.strip()
-            if l and not l.startswith(comment_char):
-                key_value = l.split(sep)
-                key = key_value[0].strip()
-                value = sep.join(key_value[1:]).strip().strip('"') 
-                props[key] = value 
-    return props
 
-def BuggyChangeCollector():
+#######
+# Module launcher
+#######
+
+# def run_BCC() -> bool:
+#     return True
+
+def run_ACC(case : dict) -> bool:
+    try:
+        # copy .properties file
+        # run ACC
+        # 
+        copy("acc.properties", f"{case['target_dir']}/")
+        # assert subprocess.run(["app", "-l", f"{case['target_dir']}/collection.txt"], cwd = "./pkg/AllChangeCollector/bin")
+        assert subprocess.run(["app", f"{case['target_dir']}/acc.properties", cwd = "./pkg/AllChangeCollector/bin")
+    except:
+        return False
     return True
 
-def AllChangeCollector():
+def run_LCE(case : dict) -> bool:
+    try:
+        copy("lce.properties", f"{case['target_dir']}/")
+        assert subprocess.run(["app", f"{case['target_dir']}/lce.properties"])
+    except:
+        return False
     return True
 
-def LCE():
+def run_ConFix(case : dict) -> bool:
+    try:
+        copy("ConFix.properties", f"{case['target_dir']}/")
+        if case['is_defects4j'] == True:
+            assert subprocess.run(["python3", "run_confix.py", "-d", "true", "-h", case['hash_id']], cwd = "./core/confix/")
+        else:
+            assert subprocess.run(["python3", "run_confix.py", "-h", case['hash_id'], "-i", f"{case['source_path']},{case['target_path']},{case['test_list']},{case['test_target_path']},{case['compile_target_path']},{case['build_tool']}"], cwd = "./core/confix/")
+
+        
+    except:
+        return False
     return True
 
-def ConFix():
-    return True
+#######
+# Main
+#######
 
 def main(argv):
-    cases, settings = parse_argv()
+    parse_argv()
 
     root = os.getcwd()
     SPI_core_directory = f"{root}/core"
@@ -227,10 +254,7 @@ def main(argv):
     if settings["rebuild"]:
         print("Have been requested to rebuild all submodules. Commencing...")
         if rebuild_all(root):
-            print("All submodules have been successfully rebuilt.")
-
-    # print(case)
-    # print(settings)
+            print("All submodules have been successfully rebuilt."root)
 
     if settings["mode"] is None:
         print("You have not told me what to fix. Exiting program.")
@@ -250,8 +274,6 @@ def main(argv):
     success = 0
     fail = 0
 
-    step = 0
-
     whole_start = dt.datetime.now()
 
     # Initialize pre-setups
@@ -266,7 +288,8 @@ def main(argv):
 
     for case in cases:
         # case['hash_id'] = f"{hash_prefix}_{case['project_name']}"
-        case["hash_id"] = f"batch_{hash_suffix}_{case['project_name']}" if settings["mode"] == "batch" else f"{case['project_name']}_{hash_suffix}"
+        case['hash_id'] = f"batch_{hash_suffix}_{case['project_name']}" if settings["mode"] == "batch" else f"{case['project_name']}_{hash_suffix}"
+        case['target_dir'] = f"{root}/target/{case['hash_id']}"
 
         each_exit_code = None
         each_start = dt.datetime.now()
@@ -274,124 +297,18 @@ def main(argv):
         with open(f"{root}/log_{case['hash_id']}.txt", "a") as outfile:
             outfile.write(f"Launching SPI upon {case['project_name']}... Start time at {each_start.strftime('%Y-%m-%d %H:%M:%S')}\n")
 
-        target_dir = f"{root}/target/{case['hash_id']}"
         os.makedirs(target_dir)
 
         step = 0
 
         try:
-            #assert subprocess.run(("cp", "SPI.properties", f"{target_dir}/"), shell=True)
-            copy(f"{root}/SPI.properties", f"{target_dir}/")
-            # Commit Collector
-            print("||| Step 1. Launching Commit Collector...")
-            start = dt.datetime.now()
-            # Commence
-
-            if settings["mode"] == "github":
-                pass
-                # executing_command = f"{root}/pkg/BuggyChangeCollector/bin/app -h {case['hash_id']} --githubinput {case['project_name']},{case['faulty_file']},{case['faulty_line']},{case['commit_id']},{case['repository']}"
-            else:
-                executing_command = f"{root}/pkg/BuggyChangeCollector/bin/app -h {case['hash_id']} --defects4j {case['project_name']} --config {target_dir}/SPI.properties"
-            print(executing_command)
-            assert subprocess.run(executing_command, shell = True).returncode == 0, "Failure occurred launching Commit Collector."
-
-    #         bfic = pd.read_csv(f"{target_dir}/outputs/commit_collector/BFIC.csv", names = ['Project', 'D4J ID', 'Faulty file path', 'Faulty line', 'FIC_sha', 'BFIC_sha']).values[1]
-    #         case['buggy_file'] = f"{target_dir}/{case['identifier']}/{bfic[2]}"
-    #         buggy_file_pt1 = f"{target_dir}/{case['identifier']}"
-    #         buggy_file_pt2 = f"{bfic[2]}"
-
-
-    #         end = dt.datetime.now()
-    #         if not is_quiet:
-    #             print(f"||| Step 1 Time taken : {(end - start)}\n")
-
-    #         if is_on_TUI:
-    #             print(f"EOS1 {buggy_file_pt1} {buggy_file_pt2} {bfic[3]}")
-
-
-    #         step = 2
-            # AllChangeCollector
-            print("||| Step 2. Launching AllChangeCollector...")
-            start = dt.datetime.now()
-            # Commence
-
-            ACC_output_directory = f"{target_dir}/outputs/AllChangeCollector"
-            JAVA_11_HOME = f"/usr/lib/jvm/java-11-openjdk-amd64"
-            ACC_core_directory = f"{SPI_core_directory}/AllChangeCollector/app/build/distributions/app/bin/"
-            os.makedirs(ACC_output_directory)
-
-            with open(f"{target_dir}/collection.txt", "w") as outfile:
-                outfile.write(f"{bfic[2]} {bfic[4]} {case['project_name']} {target_dir}/{case['identifier']}\n")
-
-            assert subprocess.run(f"cd {ACC_output_directory}; JAVA_HOME={JAVA_11_HOME} {ACC_core_directory}/app -l {target_dir}/collection.txt", shell = True, stdout = out, stderr = err).returncode == 0, "Failure occurred launching AllChangeCollector."
-
-
-    #         end = dt.datetime.now()
-    #         if not is_quiet:
-    #             print(f"||| Step 2 Time taken : {(end - start)}\n")
-    #         if is_on_TUI:
-    #             print(f"EOS2")
-
-
-    #         step = 3
-    #         # Longest Common sub-vector Extractor (LCE)
-    #         if not is_quiet:
-    #             print("||| Step 3. Launching Longest Common sub-vector Extractor(LCE)...")
-    #         start = dt.datetime.now()
-    #         # Commence
-
-    #         candidate_number = 10
-    #         LCE_output_directory = f"{target_dir}/outputs/fv4202"
-
-    #         os.makedirs(LCE_output_directory)
-    #         os.makedirs(f"{LCE_output_directory}/pool")
-    #         os.makedirs(f"{LCE_output_directory}/result")
-    #         os.makedirs(f"{target_dir}/outputs/prepare_pool_source")
-
-    #         gumtree_vector = f"{root}/CSV_Combiner/result/gumtree_vector.csv"
-    #         commit_file = f"{root}/CSV_Combiner/result/commit_file.csv"
-    #         target_vector = f"{ACC_output_directory}/vector/{case['project_name']}_gumtree_vector.csv"
-    #         d4j_project_name, d4j_project_num = case['project_name'].split("-")
-    #         with open(f"{LCE_output_directory}/lce.properties", "w") as outfile:
-    #             outfile.write(f"SPI.dir={root}\npool_file.dir={gumtree_vector}\nmeta_pool_file.dir={commit_file}\ntarget_vector.dir={target_vector}\npool.dir={LCE_output_directory}/pool/\ncandidates.dir={target_dir}/outputs/prepare_pool_source/\ncandidate_number={candidate_number}\nd4j_project_name={d4j_project_name}\nd4j_project_num={d4j_project_num}\n")
-    #         assert subprocess.run(f"cd {SPI_core_directory}/LCE; gradle run -args=\"{LCE_output_directory}/lce.properties\"")
-    #         #assert subprocess.run(f"cd {SPI_core_directory}/LCE; python3 main.py -g {gumtree_vector} -c {commit_file} -t {target_vector} -r {LCE_output_directory} > {LCE_output_directory}/log.txt", shell = True, stdout = out, stderr = err).returncode == 0, "Failure occurred launching LCE part 1."
-    #         #assert subprocess.run(f"cd {SPI_core_directory}/LCE; python3 validator.py -f meta_resultPool.csv -d {LCE_output_directory}/pool -n 10 -r {LCE_output_directory} -c {target_dir}/outputs/prepare_pool_source >> {LCE_output_directory}/log.txt", shell = True, stdout = out, stderr = err).returncode == 0, "Failure occurred launching LCE part 2."
-
-
-    #         end = dt.datetime.now()
-    #         if not is_quiet:
-    #             print(f"||| Step 3 Time taken : {(end - start)}\n")            
-    #         if is_on_TUI:
-    #             print(f"EOS3 {LCE_output_directory}/similar_patch_list.txt")
-
-    #         step = 4
-    #         # ConFix
-    #         if not is_quiet:
-    #             print("||| Step 4. Launching ConFix...")
-    #         start = dt.datetime.now()
-    #         # Commence
-
-
-    #         if case['is_defects4j'] == True:
-    #             executing_command = f"python3 {SPI_core_directory}/confix/run_confix.py -d true -h {case['hash_id']}"
-    #         else:
-    #             executing_command = f"python3 {SPI_core_directory}/confix/run_confix.py -h {case['hash_id']} -i {case['source_path']},{case['target_path']},{case['test_list']},{case['test_target_path']},{case['compile_target_path']},{case['build_tool']}"
-    #         each_exit_code = subprocess.run(executing_command, shell = True, stdout = out, stderr = err).returncode
-
-
-    #         end = dt.datetime.now()
-    #         if not is_quiet:
-    #             print(f"||| Step 4 Time taken : {(end - start)}")
-    #         if is_on_TUI:
-    #             if each_exit_code == 0:
-    #                 print("EOS4 Success") # End of Step 4
-    #             else:
-    #                 print("EOS4 Failure") # End of Step 4
+            assert run_ACC() is True, "ACC launch failed"
+            assert run_LCE() is True, "LCE launch failed"
+            assert run_ConFix() is True, "ConFix launch failed"
 
         except AssertionError as e:
-            each_exit_code = 1
-            print(f"!EOS")
+            print(e)
+            print("Total SPI has failed.")
 
     #     each_end = dt.datetime.now()
     #     each_elapsed_time = (each_end - each_start)
