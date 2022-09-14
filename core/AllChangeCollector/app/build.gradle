@@ -36,6 +36,8 @@ dependencies {
     implementation group: 'commons-io', name: 'commons-io', version: '2.11.0'
 
     implementation 'com.github.gumtreediff:core:3.0.0'
+    
+    implementation group: 'com.opencsv', name: 'opencsv', version: '5.5'
 
     // https://mvnrepository.com/artifact/com.github.gumtreediff/client
     implementation group: 'com.github.gumtreediff', name: 'client', version: '3.0.0'
