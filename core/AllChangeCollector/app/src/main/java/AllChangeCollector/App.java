@@ -3,15 +3,13 @@
  */
 package AllChangeCollector;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileWriter;
-import java.util.ArrayList;
-import java.util.Properties;
+import java.io.*;
+import java.util.*;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.logging.log4j.*;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.core.config.Configurator;
 
 public class App {
@@ -38,15 +36,24 @@ public class App {
         // args designates the path of properties file
         GitFunctions gitFunctions = new GitFunctions();
         Extractor extractor = new Extractor();
-        String file_name = properties.getProperty("file_name");
-        String commit_id = properties.getProperty("commit_id");
-        String git_name = properties.getProperty("git_name");
-        String git_url = properties.getProperty("git_url");
-        String output_dir = properties.getProperty("output_dir");
-        boolean doClean = properties.getProperty("doClean").equals("true");
+        Implemental implemental = new Implemental();
+        // properties
+        String project_root = properties.getProperty("project_root"); // the root directory of the project
+        String file_name = properties.getProperty("file_name"); // file name to extract change vector from
+        String commit_id = properties.getProperty("commit_id"); // commit id to extract change vector from
+        String git_name = properties.getProperty("git_name"); // repository name : unnecessary if url is given
+        String git_url = properties.getProperty("git_url"); // repository url
+        String output_dir = properties.getProperty("output_dir"); // output directory
+        boolean doClean = properties.getProperty("doClean").equals("true"); // a boolean trigger to determine whether to
+                                                                            // clean output directory or not
+        String mode = properties.getProperty("mode"); // mode : "repository" or "file" or "defects4j"
+        String java_home_8 = properties.getProperty("JAVA_HOME.8"); // directory where jdk 8 is installed
+        // Defects4J
+        String defects4j_name = properties.getProperty("defects4j_name"); // defects4j bug name
+        String defects4j_id = properties.getProperty("defects4j_id"); // defects4j bug id
+        String hash_id = properties.getProperty("hash_id"); // hash id of the current execution
 
-        boolean acc = file_name.equals("") || commit_id.equals("");
-
+        // clean output directory
         if (doClean) {
             logger.debug(ANSI_PURPLE + "[debug] > Cleaning output directory" + ANSI_RESET);
             try {
@@ -59,17 +66,22 @@ public class App {
             }
         }
 
-        if (!gitFunctions.clone(git_url, output_dir)) {
+        // clone repository
+        if (!mode.equals("defects4j") && !gitFunctions.clone(git_url, output_dir)) {
             logger.error(ANSI_RED + "[fatal] > Failed to clone " + git_url + ANSI_RESET);
             return;
         }
-        logger.info(ANSI_GREEN + "[info] > Successfully cloned " + git_url + ANSI_RESET);
+        // logger.info(ANSI_GREEN + "[info] > Successfully cloned " + git_url +
+        // ANSI_RESET);
 
         String repo_git = output_dir + "/" + git_name;
 
-        logger.info(ANSI_PURPLE + "[info] > AllChangeCollection : " + acc + ANSI_RESET);
-        if (acc) {
-            logger.trace(ANSI_YELLOW + "[info] > extracting all diffs" + ANSI_RESET);
+        logger.trace(ANSI_YELLOW + "[info] > executing ChangeCollector for mode : " + mode + ANSI_RESET);// mode for
+                                                                                                         // collecting
+                                                                                                         // all change
+                                                                                                         // vectors from
+                                                                                                         // a repository
+        if (mode.equals("repository")) {
             ArrayList<String[]> all_diffs = gitFunctions.extract_diff(repo_git);
             if (all_diffs == null || all_diffs.size() == 0) {
                 logger.error(ANSI_RED + "[fatal] > Failed to extract diffs" + ANSI_RESET);
@@ -129,7 +141,7 @@ public class App {
                 return;
             }
             logger.info(ANSI_GREEN + "[info] > Successfully extracted change vector" + ANSI_RESET);
-        } else {
+        } else if (mode.equals("file")) {
             String[] diff = gitFunctions.extract_diff(repo_git, file_name, commit_id);
             if (diff == null) {
                 logger.error(ANSI_RED + "[fatal] > Failed to extract diff" + ANSI_RESET);
@@ -183,6 +195,37 @@ public class App {
                 return;
             }
             logger.info(ANSI_GREEN + "[info] > Successfully extracted change vector" + ANSI_RESET);
+        } // Mode : Defects4J
+        else if (mode.equals("defects4j")) {
+            if (!implemental.config(project_root, defects4j_name, Integer.parseInt(defects4j_id), output_dir,
+                    java_home_8, hash_id)) {
+                logger.error(ANSI_RED + "[fatal] > Failed to configure defects4j" + ANSI_RESET);
+                return;
+            }
+            logger.info(ANSI_GREEN + "[info] > Successfully configured defects4j" + ANSI_RESET);
+            if (!implemental.preprocess()) {
+                logger.error(ANSI_RED + "[fatal] > Failed to preprocess defects4j" + ANSI_RESET);
+                return;
+            }
+            logger.info(ANSI_GREEN + "[info] > Successfully preprocessed defects4j" + ANSI_RESET);
+            if (!implemental.fetch()) {
+                logger.error(ANSI_RED + "[fatal] > Failed to fetch defects4j" + ANSI_RESET);
+                return;
+            }
+            logger.info(ANSI_GREEN + "[info] > Successfully fetched defects4j" + ANSI_RESET);
+            if (!implemental.parse()) {
+                logger.error(ANSI_RED + "[fatal] > Failed to parse defects4j" + ANSI_RESET);
+                return;
+            }
+            logger.info(ANSI_GREEN + "[info] > Successfully parsed defects4j" + ANSI_RESET);
+            if (!implemental.extract()) {
+                logger.error(ANSI_RED + "[fatal] > Failed to extract defects4j" + ANSI_RESET);
+                return;
+            }
+            logger.info(ANSI_GREEN + "[info] > Successfully extracted defects4j" + ANSI_RESET);
+        } else {
+            logger.error(ANSI_RED + "[fatal] > Invalid mode" + ANSI_RESET);
+            return;
         }
         System.exit(0);
     }
@@ -192,7 +235,6 @@ public class App {
     }
 
     public Properties loadProperties(String path) {
-        // Format : <file_name(java)> <commit> <git_name> <git_url>
         Properties properties = new Properties();
         try {
             properties.load(new FileInputStream(path));
