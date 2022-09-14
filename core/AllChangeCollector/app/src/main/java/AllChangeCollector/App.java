@@ -44,6 +44,7 @@ public class App {
         String git_url = properties.getProperty("git_url");
         String output_dir = properties.getProperty("output_dir");
         boolean doClean = properties.getProperty("doClean").equals("true");
+        boolean is_d4j = properties.getProperty("is_d4j").equals("true");
 
         boolean acc = file_name.equals("") || commit_id.equals("");
 
@@ -59,7 +60,7 @@ public class App {
             }
         }
 
-        if (!gitFunctions.clone(git_url, output_dir)) {
+        if (!is_d4j && !gitFunctions.clone(git_url, output_dir)) {
             logger.error(ANSI_RED + "[fatal] > Failed to clone " + git_url + ANSI_RESET);
             return;
         }
