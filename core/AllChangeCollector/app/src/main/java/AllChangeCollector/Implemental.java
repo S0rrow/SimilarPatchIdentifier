@@ -58,7 +58,6 @@ public class Implemental {
     // according to configured variables, set directories and load defects4j bug
     // information
     public boolean preprocess() {
-        logger.debug(App.ANSI_PURPLE + "[debug] > Generating directories " + App.ANSI_RESET);
         if (ready) {
             try {
                 workspace_dir = String.format("%s/%s", target, hash_id);
@@ -92,26 +91,20 @@ public class Implemental {
     // collect the current source code of the Defects4J bug
     public boolean fetch() {
         int exit_code = -1;
+        String project_dir = String.format("%s/%s", workspace_dir, name);
         if (ready) {
             try {
                 ProcessBuilder pb = new ProcessBuilder("defects4j", "checkout", "-p", name, "-v",
-                        String.valueOf(identifier),
-                        "-w", target);
-                Map<String, String> env_var = pb.environment();
-                env_var.put("PATH", String.format("%s/bin:%s", jdk8_dir, System.getenv("PATH")));
-                env_var.put("JAVA_HOME", jdk8_dir);
-                logger.info(App.ANSI_YELLOW + "[info] > setting environment variables " + App.ANSI_RESET);
+                        String.format("%db", identifier),
+                        "-w", project_dir);
                 Process p = pb.start();
-                logger.trace(App.ANSI_CYAN + "[trace] > " + pb.command() + App.ANSI_RESET);
                 exit_code = p.waitFor();
-                logger.trace(App.ANSI_CYAN + "[trace] > process of defects4j checkout finished with exit code : "
-                        + exit_code + App.ANSI_RESET);
             } catch (Exception e) {
                 logger.error(App.ANSI_RED + "[error] > Exception : " + e.getMessage() + App.ANSI_RESET);
                 return false;
             }
         }
-        return true;
+        return exit_code == 0;
     }
 
     // resolve the information of given Defects4J bug with given name and identifier
@@ -145,11 +138,13 @@ public class Implemental {
         // TODO : this blame method can only be used for internal use. need to refactor
         // this as public method.
         boolean result = false;
+        String project_dir = String.format("%s/%s", workspace_dir, name);
+        File project = new File(project_dir);
         try {
-            ProcessBuilder blame_builder = new ProcessBuilder("git", "-C", target, "blame", "-C", "-C", "-f", "-l",
+            ProcessBuilder blame_builder = new ProcessBuilder("git", "-C", project_dir, "blame", "-C", "-C", "-f", "-l",
                     "-L",
-                    String.format("%s,$s", faultyLineBlame, faultyLineBlame), faultyPath);
-            logger.trace(App.ANSI_CYAN + "[trace] > Git blame on process ..." + App.ANSI_RESET);
+                    String.format("%s,%s", faultyLineBlame, faultyLineBlame), faultyPath);
+            blame_builder.directory(project);
             Process blame_process = blame_builder.start();
             BufferedReader process_output = new BufferedReader(new InputStreamReader(blame_process.getInputStream()));
             StringBuilder str_builder = new StringBuilder();
@@ -158,16 +153,18 @@ public class Implemental {
                 str_builder.append(System.lineSeparator());
             }
             new_cid = str_builder.toString().split(" ")[0].strip();
-
             int exit_code = blame_process.waitFor();
-            logger.trace(App.ANSI_CYAN + "[trace] > Git blame finished with exit code : " + exit_code + App.ANSI_RESET);
+            if (exit_code != 0) {
+                logger.error(
+                        App.ANSI_RED + "[error] > Git blame failed with exit code : " + exit_code + App.ANSI_RESET);
+                return false;
+            }
 
-            ProcessBuilder parse_builder = new ProcessBuilder("git", "-C", target, "rev-parse",
+            ProcessBuilder parse_builder = new ProcessBuilder("git", "-C", project_dir, "rev-parse",
                     String.format("%s~1", new_cid));
-            logger.trace(App.ANSI_CYAN + "[trace] > Git reverse parse on process ... " + App.ANSI_RESET);
+            parse_builder.directory(project);
             Process parse_process = parse_builder.start();
             BufferedReader parse_output = new BufferedReader(new InputStreamReader(parse_process.getInputStream()));
-
             str_builder = new StringBuilder();
             for (String line = parse_output.readLine(); line != null; line = parse_output.readLine()) {
                 str_builder.append(line);
@@ -175,9 +172,12 @@ public class Implemental {
             }
             old_cid = str_builder.toString().split(" ")[0].strip();
             exit_code = parse_process.waitFor();
-            logger.trace(App.ANSI_CYAN + "[trace] > Git reverse parse finished with exit code : " + exit_code
-                    + App.ANSI_RESET);
-            result = true;
+            if (exit_code != 0) {
+                logger.error(
+                        App.ANSI_RED + "[error] > Git rev-parse failed with exit code : " + exit_code + App.ANSI_RESET);
+                return false;
+            }
+            result = exit_code == 0;
         } catch (Exception e) {
             logger.error(App.ANSI_RED + "[error] > Exception : " + e.getMessage() + App.ANSI_RESET);
             return false;
