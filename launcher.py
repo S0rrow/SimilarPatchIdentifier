@@ -204,17 +204,40 @@ def rebuild_all(root):
 # Module launcher
 #######
 
-def run_BCC() -> bool:
+# def run_BCC() -> bool:
+#     return True
 
+def run_ACC(case : dict) -> bool:
+    try:
+        # copy .properties file
+        # run ACC
+        # 
+        copy("acc.properties", f"{case['target_dir']}/")
+        # assert subprocess.run(["app", "-l", f"{case['target_dir']}/collection.txt"], cwd = "./pkg/AllChangeCollector/bin")
+        assert subprocess.run(["app", f"{case['target_dir']}/acc.properties", cwd = "./pkg/AllChangeCollector/bin")
+    except:
+        return False
     return True
 
-def run_ACC() -> bool:
+def run_LCE(case : dict) -> bool:
+    try:
+        copy("lce.properties", f"{case['target_dir']}/")
+        assert subprocess.run(["app", f"{case['target_dir']}/lce.properties"])
+    except:
+        return False
     return True
 
-def run_LCE() -> bool:
-    return True
+def run_ConFix(case : dict) -> bool:
+    try:
+        copy("ConFix.properties", f"{case['target_dir']}/")
+        if case['is_defects4j'] == True:
+            assert subprocess.run(["python3", "run_confix.py", "-d", "true", "-h", case['hash_id']], cwd = "./core/confix/")
+        else:
+            assert subprocess.run(["python3", "run_confix.py", "-h", case['hash_id'], "-i", f"{case['source_path']},{case['target_path']},{case['test_list']},{case['test_target_path']},{case['compile_target_path']},{case['build_tool']}"], cwd = "./core/confix/")
 
-def run_ConFix() -> bool:
+        
+    except:
+        return False
     return True
 
 #######
@@ -264,7 +287,8 @@ def main(argv):
 
     for case in cases:
         # case['hash_id'] = f"{hash_prefix}_{case['project_name']}"
-        case["hash_id"] = f"batch_{hash_suffix}_{case['project_name']}" if settings["mode"] == "batch" else f"{case['project_name']}_{hash_suffix}"
+        case['hash_id'] = f"batch_{hash_suffix}_{case['project_name']}" if settings["mode"] == "batch" else f"{case['project_name']}_{hash_suffix}"
+        case['target_dir'] = f"{root}/target/{case['hash_id']}"
 
         each_exit_code = None
         each_start = dt.datetime.now()
@@ -272,13 +296,11 @@ def main(argv):
         with open(f"{root}/log_{case['hash_id']}.txt", "a") as outfile:
             outfile.write(f"Launching SPI upon {case['project_name']}... Start time at {each_start.strftime('%Y-%m-%d %H:%M:%S')}\n")
 
-        target_dir = f"{root}/target/{case['hash_id']}"
         os.makedirs(target_dir)
 
         step = 0
         
         try:
-            assert run_BCC() is True, "BCC launch failed"
             assert run_ACC() is True, "ACC launch failed"
             assert run_LCE() is True, "LCE launch failed"
             assert run_ConFix() is True, "ConFix launch failed"
