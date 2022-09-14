@@ -46,7 +46,8 @@ public class App {
         String git_name = properties.getProperty("git_name"); // repository name : unnecessary if url is given
         String git_url = properties.getProperty("git_url"); // repository url
         String output_dir = properties.getProperty("output_dir"); // output directory
-        boolean doClean = properties.getProperty("doClean").equals("true"); // a boolean trigger to determine whether to clean output directory or not
+        boolean doClean = properties.getProperty("doClean").equals("true"); // a boolean trigger to determine whether to
+                                                                            // clean output directory or not
         String mode = properties.getProperty("mode"); // mode : "repository" or "file" or "defects4j"
         String java_home_8 = properties.getProperty("JAVA_HOME.8"); // directory where jdk 8 is installed
 
@@ -70,7 +71,11 @@ public class App {
 
         String repo_git = output_dir + "/" + git_name;
 
-        logger.trace(ANSI_YELLOW + "[info] > executing ChangeCollector for mode : " + mode + ANSI_RESET);// mode for collecting all change vectors from a repository
+        logger.trace(ANSI_YELLOW + "[info] > executing ChangeCollector for mode : " + mode + ANSI_RESET);// mode for
+                                                                                                         // collecting
+                                                                                                         // all change
+                                                                                                         // vectors from
+                                                                                                         // a repository
         if (mode.equals("repository")) {
             ArrayList<String[]> all_diffs = gitFunctions.extract_diff(repo_git);
             if (all_diffs == null || all_diffs.size() == 0) {
@@ -131,7 +136,7 @@ public class App {
                 return;
             }
             logger.info(ANSI_GREEN + "[info] > Successfully extracted change vector" + ANSI_RESET);
-        } else if(mode.equals("file")) {
+        } else if (mode.equals("file")) {
             String[] diff = gitFunctions.extract_diff(repo_git, file_name, commit_id);
             if (diff == null) {
                 logger.error(ANSI_RED + "[fatal] > Failed to extract diff" + ANSI_RESET);
@@ -185,8 +190,12 @@ public class App {
                 return;
             }
             logger.info(ANSI_GREEN + "[info] > Successfully extracted change vector" + ANSI_RESET);
-        } else if(mode.equals("defects4j")) {
+        } else if (mode.equals("defects4j")) {
             // TODO: implement defects4j mode
+
+        } else {
+            logger.error(ANSI_RED + "[fatal] > Invalid mode" + ANSI_RESET);
+            return;
         }
         System.exit(0);
     }
