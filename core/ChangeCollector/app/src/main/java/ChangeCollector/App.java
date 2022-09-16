@@ -53,6 +53,10 @@ public class App {
         String defects4j_id = properties.getProperty("defects4j_id"); // defects4j bug id
         String hash_id = properties.getProperty("hash_id"); // hash id of the current execution
 
+        // in case of hash id usage
+        if (hash_id != null) {
+            output_dir = String.format("%s/%s/%s", output_dir, hash_id, "outputs/ChangeCollector");
+        }
         // clean output directory
         if (doClean) {
             logger.debug(ANSI_PURPLE + "[debug] > Cleaning output directory" + ANSI_RESET);
