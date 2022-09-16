@@ -45,6 +45,7 @@ def parse_argv() -> tuple:
     cases, settings = list(), dict()
     if args.debug == True:
         cases.append(dict())
+        settings['mode'] = 'defects4j'
         cases[-1]['mode'] = 'defects4j'
         cases[-1]['project_name'] = 'Closure-14'
         cases[-1]['identifier'], cases[-1]['bug_id'] = cases[-1]['project_name'].split('-')
@@ -107,6 +108,9 @@ def rebuild(module_name : str, root) -> bool:
         if not move("./pkg/app", f"./pkg/{module_name}", shutil.copy2):
             print(f"> Error occurred while moving app to {module_name}.")
             return False
+
+        os.chmod(f"./pkg/{module_name}/app/bin/app", 0o774)
+        os.chmod(f"./pkg/{module_name}/app/bin/app.bat", 0o774)
 
         #assert subprocess.run(("rm", "app.zip"), cwd = "./pkg", shell=True)
         #print(f"> removing app.zip...")
@@ -214,49 +218,42 @@ def rebuild_all(root):
 # Module launcher
 #######
 
-# def run_BCC() -> bool:
-#     try:
-#         copy("bcc.properties", f"{case['target_dir']}/")
-#         assert subprocess.run(["app", f"{case['target_dir']}/bcc.properties"], cwd = "./pkg/BuggyChangeCollector/bin")
-#     except:
-#         return False
-#     return True
-
 def run_CC(case : dict, config : configparser.SectionProxy) -> bool:
     try:
         # copy .properties file
         # run ACC
         # 
-        prop_CC = jroperties.Properties()
+        prop_CC = jproperties.Properties()
         for key in config.keys():
             prop_CC[key] = config[key]
-        with open(f"{case['target_dir']}/CC.properties", "wb") as f:
+        with open(f"{case['target_dir']}/properties/CC.properties", "wb") as f:
             prop_CC.store(f, encoding = "UTF-8")
 
         # assert subprocess.run(["app", "-l", f"{case['target_dir']}/collection.txt"], cwd = "./pkg/AllChangeCollector/bin")
-        assert subprocess.run(["app", f"{case['target_dir']}/properties/CC.properties"], cwd = "./pkg/ChangeCollector/bin")
-    except:
+        assert subprocess.run(["./app", f"{case['target_dir']}/properties/CC.properties"], cwd = "./pkg/ChangeCollector/app/bin")
+    except Exception as e:
+        print(e)
         return False
     return True
 
 def run_LCE(case : dict, config : configparser.SectionProxy) -> bool:
     try:
-        prop_LCE = jroperties.Properties()
+        prop_LCE = jproperties.Properties()
         for key in config.keys():
             prop_LCE[key] = config[key]
         with open(f"{case['target_dir']}/properties/LCE.properties", "wb") as f:
             prop_LCE.store(f, encoding = "UTF-8")
 
-        assert subprocess.run(["app", f"{case['target_dir']}/properties/lce.properties"], cwd = "./pkg/LCE/bin")
+        assert subprocess.run(["./app", f"{case['target_dir']}/properties/LCE.properties"], cwd = "./pkg/LCE/app/bin")
     except:
         return False
     return True
 
 def run_ConFix(case : dict, config : configparser.SectionProxy) -> bool:
     try:
-        prop_ConFix = jroperties.Properties()
+        prop_ConFix = jproperties.Properties()
         for key in config.keys():
-            prop_ix[key] = config[key]
+            prop_ConFix[key] = config[key]
         with open(f"{case['target_dir']}/properties/ConFix.properties", "wb") as f:
             prop_ConFix.store(f, encoding = "UTF-8")
 
@@ -294,7 +291,6 @@ def main(argv):
     # Run SPI modules one by one
 
     hash_suffix = str(abs(hash(f"{dt.datetime.now().strftime('%Y%m%d%H%M%S')}")))[-6:]
-    print(f"[Hash ID generated as {case['hash_id']}]. Find byproducts in ./target/{case['hash_id']}")
 
     # Run SimonFix Engine from those orders
 
@@ -327,14 +323,16 @@ def main(argv):
         with open(f"{root}/log_{case['hash_id']}.txt", "a") as outfile:
             outfile.write(f"Launching SPI upon {case['project_name']}... Start time at {each_start.strftime('%Y-%m-%d %H:%M:%S')}\n")
 
-        os.makedirs(target_dir)
+        os.makedirs(case['target_dir'])
+        print(f"[Hash ID generated as {case['hash_id']}]. Find byproducts in ./target/{case['hash_id']}")
 
         step = 0
 
         try:
-            assert run_CC(case) is True, "'Commit Collector' Module launch failed"
-            assert run_LCE(case) is True, "'Longest Common subvector Extractor' Module launch failed"
-            assert run_ConFix(case) is True, "'ConFix' Module launch failed"
+            assert subprocess.run(("mkdir", f"{case['target_dir']}/properties"))
+            assert run_CC(case, configurations['CC']) is True, "'Commit Collector' Module launch failed"
+            assert run_LCE(case, configurations['LCE']) is True, "'Longest Common subvector Extractor' Module launch failed"
+            assert run_ConFix(case, configurations['ConFix']) is True, "'ConFix' Module launch failed"
 
         except AssertionError as e:
             print(e)
