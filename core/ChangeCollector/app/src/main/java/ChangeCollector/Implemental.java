@@ -30,7 +30,6 @@ public class Implemental {
     public Integer faultyLineBlame;
     public Integer faultyLineFix;
     // Defects4J bug commit ids
-    public boolean cid_ready = false;
     public String new_cid;
     public String old_cid;
 
@@ -65,8 +64,7 @@ public class Implemental {
     public boolean cid_config(String old_cid, String new_cid) {
         this.new_cid = new_cid;
         this.old_cid = old_cid;
-        cid_ready = true;
-        return cid_ready;
+        return true;
     }
 
     // according to configured variables, set directories and load defects4j bug
@@ -146,27 +144,5 @@ public class Implemental {
             return false;
         }
         return d4j_ready;
-    }
-
-    public boolean extract() {
-        boolean result = false;
-        try {
-            if (!cid_ready) {
-                logger.error(App.ANSI_RED + "[error] > commit ids not ready" + App.ANSI_RESET);
-                return false;
-            }
-            CSVWriter writer = new CSVWriter(new FileWriter(String.format("%s/BFIC.csv", result_dir)));
-            String[] headers = "Project,D4J ID,Faulty file path,faulty line,FIC_sha,BFIC_sha".split(",");
-            String[] entries = { name, String.format("%d", identifier), faultyPath,
-                    String.format("%d", faultyLineBlame), old_cid, new_cid };
-            writer.writeNext(headers);
-            writer.writeNext(entries);
-            writer.close();
-            result = true;
-        } catch (Exception e) {
-            logger.error(App.ANSI_RED + "[error] > Exception : " + e.getMessage() + App.ANSI_RESET);
-            return false;
-        }
-        return result;
     }
 }

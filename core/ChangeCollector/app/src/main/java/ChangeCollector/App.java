@@ -241,13 +241,6 @@ public class App {
                 logger.error(ANSI_RED + "[fatal] > Failed to configure commit ids" + ANSI_RESET);
                 return;
             }
-            // if (!implemental.extract()) {
-            // logger.error(ANSI_RED + "[fatal] > Failed to extract defects4j" +
-            // ANSI_RESET);
-            // return;
-            // }
-            // logger.info(ANSI_GREEN + "[info] > Successfully extracted defects4j bug
-            // information" + ANSI_RESET);
 
             // STEP 2 : extract git diff from given Defects4J bug informations
             String[] diff = gitFunctions.extract_diff(implemental.faultyProject, implemental.faultyPath, cid_set[1],
