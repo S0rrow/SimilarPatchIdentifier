@@ -1,13 +1,16 @@
-import argparse
-import configparser
 import shutil
 import sys
 import os
 import zipfile
+import subprocess
+
+import argparse
+import configparser
+import jproperties
 import datetime as dt
 # import pandas as pd
 
-import subprocess
+
 
 '''
     TODO:
@@ -15,15 +18,17 @@ import subprocess
         - Config .properties files here. DO NOT additionally make shell scripts.
 '''
 
-cases, settings = list(), dict()
+# cases, settings = list(), dict()
 
-def parse_argv():
+def parse_argv() -> tuple:
     parser = argparse.ArgumentParser()
 
     parser.add_argument("-m", "--mode",     choices = ("github", "batch", "defects4j"),
                         help = "Tells in what mode to run SPI.")
     parser.add_argument("-t", "--target",   type = str,
                         help = "Tells what project to run, or what file to read data from.")
+    parser.add_argument("-c", "--config",   type = str,
+                        help = "Tells on what environment to run SPI.")
 
     parser.add_argument("-d", "--debug",    action = "store_true")
 
@@ -37,8 +42,7 @@ def parse_argv():
 
     args = parser.parse_args()
 
-    cases = list()
-    global cases, settings
+    cases, settings = list(), dict()
     if args.debug == True:
         cases.append(dict())
         cases[-1]['mode'] = 'defects4j'
@@ -71,6 +75,11 @@ def parse_argv():
     settings['verbose'] = args.verbose
     settings['quiet'] = False if args.verbose else args.quiet # suppresses quiet option if verbose option is given
     settings['rebuild'] = args.rebuild
+
+    configs = configparser.ConfigParser()
+    configs.read("SPI.ini")
+
+    return (cases, settings, configs)
 
 #######
 # Misc
@@ -178,8 +187,9 @@ def rebuild_all(root):
             print(f"> ! Error occurred while removing {root}/pkg.")
         assert subprocess.run(("mkdir", "pkg"), shell=True)
         #os.mkdir(f"{root}/pkg")
-        for submodule in ("BuggyChangeCollector", "AllChangeCollector", "LCE"):
-            assert rebuild(submodule, root)
+        # for submodule in ("BuggyChangeCollector", "AllChangeCollector", "LCE"):
+        for submodule in ("ChangeCollector", "LCE"):
+            assert rebuild(submodule, root)4
             print(f"> Successfully rebuilt submodule {submodule}.")
 
         assert rebuild_confix(root) # ConFix uses maven unlike any other packages; this should be handled differently.
@@ -205,31 +215,51 @@ def rebuild_all(root):
 #######
 
 # def run_BCC() -> bool:
+#     try:
+#         copy("bcc.properties", f"{case['target_dir']}/")
+#         assert subprocess.run(["app", f"{case['target_dir']}/bcc.properties"], cwd = "./pkg/BuggyChangeCollector/bin")
+#     except:
+#         return False
 #     return True
 
-def run_ACC(case : dict) -> bool:
+def run_CC(case : dict, config : configparser.SectionProxy) -> bool:
     try:
         # copy .properties file
         # run ACC
         # 
-        copy("acc.properties", f"{case['target_dir']}/")
+        prop_CC = jroperties.Properties()
+        for key in config.keys():
+            prop_CC[key] = config[key]
+        with open(f"{case['target_dir']}/CC.properties", "wb") as f:
+            prop_CC.store(f, encoding = "UTF-8")
+
         # assert subprocess.run(["app", "-l", f"{case['target_dir']}/collection.txt"], cwd = "./pkg/AllChangeCollector/bin")
-        assert subprocess.run(["app", f"{case['target_dir']}/acc.properties", cwd = "./pkg/AllChangeCollector/bin")
+        assert subprocess.run(["app", f"{case['target_dir']}/properties/CC.properties"], cwd = "./pkg/ChangeCollector/bin")
     except:
         return False
     return True
 
-def run_LCE(case : dict) -> bool:
+def run_LCE(case : dict, config : configparser.SectionProxy) -> bool:
     try:
-        copy("lce.properties", f"{case['target_dir']}/")
-        assert subprocess.run(["app", f"{case['target_dir']}/lce.properties"])
+        prop_LCE = jroperties.Properties()
+        for key in config.keys():
+            prop_LCE[key] = config[key]
+        with open(f"{case['target_dir']}/properties/LCE.properties", "wb") as f:
+            prop_LCE.store(f, encoding = "UTF-8")
+
+        assert subprocess.run(["app", f"{case['target_dir']}/properties/lce.properties"], cwd = "./pkg/LCE/bin")
     except:
         return False
     return True
 
-def run_ConFix(case : dict) -> bool:
+def run_ConFix(case : dict, config : configparser.SectionProxy) -> bool:
     try:
-        copy("ConFix.properties", f"{case['target_dir']}/")
+        prop_ConFix = jroperties.Properties()
+        for key in config.keys():
+            prop_ix[key] = config[key]
+        with open(f"{case['target_dir']}/properties/ConFix.properties", "wb") as f:
+            prop_ConFix.store(f, encoding = "UTF-8")
+
         if case['is_defects4j'] == True:
             assert subprocess.run(["python3", "run_confix.py", "-d", "true", "-h", case['hash_id']], cwd = "./core/confix/")
         else:
@@ -245,7 +275,7 @@ def run_ConFix(case : dict) -> bool:
 #######
 
 def main(argv):
-    parse_argv()
+    cases, settings, configurations = parse_argv()
 
     root = os.getcwd()
     SPI_core_directory = f"{root}/core"
@@ -302,9 +332,9 @@ def main(argv):
         step = 0
 
         try:
-            assert run_ACC() is True, "ACC launch failed"
-            assert run_LCE() is True, "LCE launch failed"
-            assert run_ConFix() is True, "ConFix launch failed"
+            assert run_CC(case) is True, "'Commit Collector' Module launch failed"
+            assert run_LCE(case) is True, "'Longest Common subvector Extractor' Module launch failed"
+            assert run_ConFix(case) is True, "'ConFix' Module launch failed"
 
         except AssertionError as e:
             print(e)
