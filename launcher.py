@@ -88,7 +88,7 @@ def parse_argv() -> tuple:
 def rebuild(module_name : str, root) -> bool:
     #print(f"> Rebuilding {module_name}...")
     try:
-        assert subprocess.run(("gradle", "distZip", "-q"), cwd = f"./core/{module_name}", shell=True)
+        assert subprocess.run(("gradle", "distZip", "-q"), cwd = f"./core/{module_name}")
         #assert subprocess.run(("mv", "app/build/distributions/app.zip", "../../pkg/"), cwd = f"./core/{module_name}", shell=True)
         #print(f"> moving app.zip to pkg...")
         if not move(f"./core/{module_name}/app/build/distributions/app.zip", f"{root}/pkg/", copy_function = shutil.copy):
@@ -101,7 +101,7 @@ def rebuild(module_name : str, root) -> bool:
             return False
         #print(f"> creating {module_name} directory...")
         if not os.path.exists(f"./pkg/{module_name}"):
-            assert subprocess.run(("mkdir", f"{module_name}"), cwd = "./pkg", shell=True)
+            assert subprocess.run(("mkdir", f"{module_name}"), cwd = "./pkg")
         #assert subprocess.run(("mv", "app", module_name), cwd = "./pkg", shell=True)
         #print(f"> moving app to {module_name}...")
         if not move("./pkg/app", f"./pkg/{module_name}", shutil.copy2):
@@ -126,7 +126,7 @@ def rebuild_confix(root) -> bool:
     #         + "mvn clean package ;"
     #         + f"cp target/confix-0.0.1-SNAPSHOT-jar-with-dependencies.jar {root}/core/confix/lib/confix-ami_torun.jar")
     try:
-        assert subprocess.run(("mvn", "clean", "package", "-q"), cwd = "./core/confix/ConFix-code", shell=True)
+        assert subprocess.run(("mvn", "clean", "package", "-q"), cwd = "./core/confix/ConFix-code")
         #assert subprocess.run(("cp", "target/confix-0.0.1-SNAPSHOT-jar-with-dependencies.jar", "../lib/confix-ami_torun.jar"), cwd = "./core/confix/ConFix-code", shell=True)
         if not (copy(f"{root}/core/confix/ConFix-code/target/confix-0.0.1-SNAPSHOT-jar-with-dependencies.jar", f"{root}/core/confix/lib/confix-ami_torun.jar")):
             print("Error occurred while copying ConFix jar file.")
@@ -185,11 +185,11 @@ def rebuild_all(root):
         #assert subprocess.run(("rm", "-rf", "pkg"))
         if not (remove(f"{root}/pkg")):
             print(f"> ! Error occurred while removing {root}/pkg.")
-        assert subprocess.run(("mkdir", "pkg"), shell=True)
+        assert subprocess.run(("mkdir", "pkg"))
         #os.mkdir(f"{root}/pkg")
         # for submodule in ("BuggyChangeCollector", "AllChangeCollector", "LCE"):
         for submodule in ("ChangeCollector", "LCE"):
-            assert rebuild(submodule, root)4
+            assert rebuild(submodule, root)
             print(f"> Successfully rebuilt submodule {submodule}.")
 
         assert rebuild_confix(root) # ConFix uses maven unlike any other packages; this should be handled differently.
@@ -284,7 +284,7 @@ def main(argv):
     if settings["rebuild"]:
         print("Have been requested to rebuild all submodules. Commencing...")
         if rebuild_all(root):
-            print("All submodules have been successfully rebuilt."root)
+            print("All submodules have been successfully rebuilt.")
 
     if settings["mode"] is None:
         print("You have not told me what to fix. Exiting program.")
