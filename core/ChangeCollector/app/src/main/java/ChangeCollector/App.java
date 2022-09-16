@@ -167,7 +167,6 @@ public class App {
             logger.info(ANSI_GREEN + "[info] > Extracted diff successfully" + ANSI_RESET);
 
             // STEP 2 : extract commit ids and file names and write them to a file
-
             try {
                 BufferedWriter writer = new BufferedWriter(new FileWriter(
                         new File(output_dir, GitFunctions.get_repo_name_from_url(git_url) + "_commit_file.csv")));
@@ -207,6 +206,7 @@ public class App {
         // MODE 3 : collect change vector between current commit and before from a
         // Defects4J bug
         else if (mode.equals("defects4j")) {
+            String[] cid_set = new String[2]; // [0] old cid [1] new cid
 
             // STEP 1 : extract Defects4J commit ids and file names from given Defects4J
             // name and identifier
@@ -216,31 +216,89 @@ public class App {
                 logger.error(ANSI_RED + "[fatal] > Failed to configure defects4j" + ANSI_RESET);
                 return;
             }
-            logger.info(ANSI_GREEN + "[info] > Successfully configured defects4j" + ANSI_RESET);
             if (!implemental.preprocess()) {
                 logger.error(ANSI_RED + "[fatal] > Failed to preprocess defects4j" + ANSI_RESET);
                 return;
             }
-            logger.info(ANSI_GREEN + "[info] > Successfully preprocessed defects4j" + ANSI_RESET);
             if (!implemental.fetch()) {
                 logger.error(ANSI_RED + "[fatal] > Failed to fetch defects4j" + ANSI_RESET);
                 return;
             }
-            logger.info(ANSI_GREEN + "[info] > Successfully fetched defects4j" + ANSI_RESET);
             if (!implemental.parse()) {
                 logger.error(ANSI_RED + "[fatal] > Failed to parse defects4j" + ANSI_RESET);
                 return;
             }
-            logger.info(ANSI_GREEN + "[info] > Successfully parsed defects4j" + ANSI_RESET);
-            if (!implemental.extract()) {
-                logger.error(ANSI_RED + "[fatal] > Failed to extract defects4j" + ANSI_RESET);
+            if (implemental.d4j_ready) {
+                cid_set = gitFunctions.blame(implemental.faultyProject, implemental.faultyPath,
+                        implemental.faultyLineBlame,
+                        implemental.faultyLineFix);
+            }
+            if (!implemental.cid_config(cid_set[0], cid_set[1])) {
+                logger.error(ANSI_RED + "[fatal] > Failed to configure commit ids" + ANSI_RESET);
                 return;
             }
-            logger.info(ANSI_GREEN + "[info] > Successfully extracted defects4j bug information" + ANSI_RESET);
+            // if (!implemental.extract()) {
+            // logger.error(ANSI_RED + "[fatal] > Failed to extract defects4j" +
+            // ANSI_RESET);
+            // return;
+            // }
+            // logger.info(ANSI_GREEN + "[info] > Successfully extracted defects4j bug
+            // information" + ANSI_RESET);
 
-            // STEP 2 : extract change vector from given Defects4J bug informations
+            // STEP 2 : extract git diff from given Defects4J bug informations
+            String[] diff = gitFunctions.extract_diff(implemental.faultyProject, implemental.faultyPath, cid_set[1],
+                    cid_set[0]);
+            if (diff == null) {
+                logger.error(ANSI_RED + "[fatal] > Failed to extract diff" + ANSI_RESET);
+                return;
+            }
+            try {
+                BufferedWriter writer = new BufferedWriter(new FileWriter(new File(output_dir, "diff.txt")));
+                for (String line : diff) {
+                    writer.write(line);
+                    writer.write(" ");
+                }
+                writer.newLine();
+                writer.close();
+            } catch (Exception e) {
+                logger.error(ANSI_RED + "[fatal] > Exception : " + e.getMessage() + ANSI_RESET);
+                return;
+            }
+            logger.info(ANSI_GREEN + "[info] > Extracted diff successfully" + ANSI_RESET);
+            try {
+                BufferedWriter writer = new BufferedWriter(new FileWriter(
+                        new File(output_dir, defects4j_name + "_commit_file.csv")));
+                for (String line : diff) {
+                    writer.write(line + ",");
+                }
+                writer.write(implemental.faultyProject);
+                writer.newLine();
+                writer.close();
+            } catch (Exception e) {
+                logger.error(ANSI_RED + "[fatal] > Exception : " + e.getMessage() + ANSI_RESET);
+                return;
+            }
+            logger.info(ANSI_GREEN + "[info] > Successfully created " + defects4j_name
+                    + "_commit_file.csv for single file " + file_name + ANSI_RESET);
 
-            String defects4j_info = String.format("%s/%s.csv", output_dir, "BFIC");
+            // STEP 3 : extract change vector from diff and write it to a file
+            String diff_path = output_dir + "/diff.txt";
+            if (!extractor.extract_log(implemental.faultyProject, diff_path, output_dir)) {
+                logger.error(ANSI_RED + "[fatal] > Failed to extract gumtree log" + ANSI_RESET);
+                return;
+            }
+            logger.info(ANSI_GREEN + "[info] > Successfully extracted gumtree log" + ANSI_RESET);
+
+            String gumtree_log = output_dir + "/gumtree_log.txt";
+            int cv_extraction_result = extractor.extract_vector(defects4j_name, gumtree_log, output_dir);
+            if (cv_extraction_result == -1) {
+                logger.error(ANSI_RED + "[fatal] > Failed to extract change vector due to exception" + ANSI_RESET);
+                return;
+            } else if (cv_extraction_result == 1) {
+                logger.error(ANSI_RED + "[fatal] > Failed to extract change vector due to no change" + ANSI_RESET);
+                return;
+            }
+            logger.info(ANSI_GREEN + "[info] > Successfully extracted change vector" + ANSI_RESET);
 
         } else {
             logger.error(ANSI_RED + "[fatal] > Invalid mode" + ANSI_RESET);

@@ -146,6 +146,63 @@ public class GitFunctions {
         return files;
     }
 
+    // execute git blame on the file and line within project directory and collect
+    // old, new cid
+    // @param project_dir: the directory of the Defects4J bug
+    // @param file : the file to be blamed
+    // @param line : the line to be blamed
+    public String[] blame(String project_dir, String file, int lineBlame, int lineFix) {
+        String[] cid_set = new String[2]; // [0] old cid, [1] new cid
+        String cid1; // new
+        String cid2; // old
+        int exit_code = -1;
+        try {
+            ProcessBuilder blame_builder = new ProcessBuilder("git", "-C", project_dir, "blame", "-C", "-C", "-f", "-l",
+                    "-L",
+                    String.format("%s,%s", lineBlame, lineFix), file);
+            blame_builder.directory(new File(project_dir));
+            Process p = blame_builder.start();
+            BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
+            StringBuilder str_builder = new StringBuilder();
+            for (String l = reader.readLine(); l != null; l = reader.readLine()) {
+                str_builder.append(l);
+                str_builder.append(System.lineSeparator());
+            }
+            cid1 = str_builder.toString().split(" ")[0].strip(); // new cid
+            exit_code = p.waitFor();
+            if (exit_code != 0) {
+                App.logger.error(
+                        App.ANSI_RED + "[error] > Failed to get the commit id of the line " + lineBlame + " in file "
+                                + file + App.ANSI_RESET);
+                return null;
+            }
+            ProcessBuilder parse_builder = new ProcessBuilder("git", "-C", project_dir, "rev-parse",
+                    String.format("%s~1", cid1));
+            parse_builder.directory(new File(project_dir));
+            p = parse_builder.start();
+            reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
+            str_builder = new StringBuilder();
+            for (String l = reader.readLine(); l != null; l = reader.readLine()) {
+                str_builder.append(l);
+                str_builder.append(System.lineSeparator());
+            }
+            cid2 = str_builder.toString().split(" ")[0].strip(); // old cid
+            exit_code = p.waitFor();
+            if (exit_code != 0) {
+                App.logger.error(
+                        App.ANSI_RED + "[error] > Failed to get the commit id of the line " + lineBlame + " in file "
+                                + file + App.ANSI_RESET);
+                return null;
+            }
+        } catch (Exception e) {
+            App.logger.error(App.ANSI_RED + "[error] > Exception : " + e.getMessage() + App.ANSI_RESET);
+            return null;
+        }
+        cid_set[0] = cid2;
+        cid_set[1] = cid1;
+        return cid_set;
+    }
+
     // extract commit ids and file names between commits of all source files within
     // a git repository
     // @param repo_git : path of git repository

@@ -22,13 +22,17 @@ public class Implemental {
     // hash id of the current execution
     public String hash_id;
     // if configured or not
-    public boolean ready = false;
+    public boolean config_ready = false;
     // Defects4J bug information
-    private String faultyPath;
-    private Integer faultyLineBlame;
-    private Integer faultyLineFix;
-    private String new_cid;
-    private String old_cid;
+    public boolean d4j_ready = false;
+    public String faultyProject;
+    public String faultyPath;
+    public Integer faultyLineBlame;
+    public Integer faultyLineFix;
+    // Defects4J bug commit ids
+    public boolean cid_ready = false;
+    public String new_cid;
+    public String old_cid;
 
     // constructor
     public Implemental() {
@@ -51,14 +55,24 @@ public class Implemental {
         this.result_dir = result_dir;
         this.jdk8_dir = jdk8_dir;
         this.hash_id = hash_id;
-        ready = true;
-        return ready;
+        config_ready = true;
+        return config_ready;
+    }
+
+    // extract the commit ids of the Defects4J bug
+    // @param old_cid : the commit id of the buggy version
+    // @param new_cid : the commit id of the fixed version
+    public boolean cid_config(String old_cid, String new_cid) {
+        this.new_cid = new_cid;
+        this.old_cid = old_cid;
+        cid_ready = true;
+        return cid_ready;
     }
 
     // according to configured variables, set directories and load defects4j bug
     // information
     public boolean preprocess() {
-        if (ready) {
+        if (config_ready) {
             try {
                 workspace_dir = String.format("%s/%s", target, hash_id);
                 File workspace = new File(workspace_dir);
@@ -92,7 +106,7 @@ public class Implemental {
     public boolean fetch() {
         int exit_code = -1;
         String project_dir = String.format("%s/%s", workspace_dir, name);
-        if (ready) {
+        if (config_ready) {
             try {
                 ProcessBuilder pb = new ProcessBuilder("defects4j", "checkout", "-p", name, "-v",
                         String.format("%db", identifier),
@@ -109,7 +123,6 @@ public class Implemental {
 
     // resolve the information of given Defects4J bug with given name and identifier
     public boolean parse() {
-        boolean result = false;
         String project_dir = String.format("%s/%s", workspace_dir, name);
         String info = String.format("%s/components/commit_collector/Defects4J_bugs_info/%s.csv", project_root,
                 name);
@@ -120,10 +133,11 @@ public class Implemental {
                 if (nextLine[0].startsWith("Defects4J"))
                     continue;
                 if (Integer.parseInt(nextLine[0]) == identifier) {
+                    faultyProject = project_dir;
                     faultyPath = nextLine[1];
                     faultyLineBlame = Integer.parseInt(nextLine[2]);
                     faultyLineFix = Integer.parseInt(nextLine[3]);
-                    result = true;
+                    d4j_ready = true;
                     break;
                 }
             }
@@ -131,65 +145,14 @@ public class Implemental {
             logger.error(App.ANSI_RED + "[error] > Exception : " + e.getMessage() + App.ANSI_RESET);
             return false;
         }
-        return result;
-    }
-
-    private boolean blame() {
-        // TODO : this blame method can only be used for internal use. need to refactor
-        // this as public method.
-        boolean result = false;
-        String project_dir = String.format("%s/%s", workspace_dir, name);
-        File project = new File(project_dir);
-        try {
-            ProcessBuilder blame_builder = new ProcessBuilder("git", "-C", project_dir, "blame", "-C", "-C", "-f", "-l",
-                    "-L",
-                    String.format("%s,%s", faultyLineBlame, faultyLineBlame), faultyPath);
-            blame_builder.directory(project);
-            Process blame_process = blame_builder.start();
-            BufferedReader process_output = new BufferedReader(new InputStreamReader(blame_process.getInputStream()));
-            StringBuilder str_builder = new StringBuilder();
-            for (String line = process_output.readLine(); line != null; line = process_output.readLine()) {
-                str_builder.append(line);
-                str_builder.append(System.lineSeparator());
-            }
-            new_cid = str_builder.toString().split(" ")[0].strip();
-            int exit_code = blame_process.waitFor();
-            if (exit_code != 0) {
-                logger.error(
-                        App.ANSI_RED + "[error] > Git blame failed with exit code : " + exit_code + App.ANSI_RESET);
-                return false;
-            }
-
-            ProcessBuilder parse_builder = new ProcessBuilder("git", "-C", project_dir, "rev-parse",
-                    String.format("%s~1", new_cid));
-            parse_builder.directory(project);
-            Process parse_process = parse_builder.start();
-            BufferedReader parse_output = new BufferedReader(new InputStreamReader(parse_process.getInputStream()));
-            str_builder = new StringBuilder();
-            for (String line = parse_output.readLine(); line != null; line = parse_output.readLine()) {
-                str_builder.append(line);
-                str_builder.append(System.lineSeparator());
-            }
-            old_cid = str_builder.toString().split(" ")[0].strip();
-            exit_code = parse_process.waitFor();
-            if (exit_code != 0) {
-                logger.error(
-                        App.ANSI_RED + "[error] > Git rev-parse failed with exit code : " + exit_code + App.ANSI_RESET);
-                return false;
-            }
-            result = exit_code == 0;
-        } catch (Exception e) {
-            logger.error(App.ANSI_RED + "[error] > Exception : " + e.getMessage() + App.ANSI_RESET);
-            return false;
-        }
-        return result;
+        return d4j_ready;
     }
 
     public boolean extract() {
         boolean result = false;
         try {
-            if (!blame()) {
-                logger.error(App.ANSI_RED + "[error] > Failed to blame the faulty line" + App.ANSI_RESET);
+            if (!cid_ready) {
+                logger.error(App.ANSI_RED + "[error] > commit ids not ready" + App.ANSI_RESET);
                 return false;
             }
             CSVWriter writer = new CSVWriter(new FileWriter(String.format("%s/BFIC.csv", result_dir)));
