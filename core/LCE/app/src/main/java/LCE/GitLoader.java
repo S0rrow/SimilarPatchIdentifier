@@ -130,7 +130,7 @@ public class GitLoader {
             p.waitFor();
             gitLogger.trace(App.ANSI_GREEN + "[status] > git checkout success" + App.ANSI_RESET);
             if (!!copy(result_dir + "/" + name + "_" + counter + "/" + filepath_before,
-                    candidate_dir + "/" + project + "_rank_" + counter + "_old.java"))
+                    candidate_dir + "/" + project + "_rank-" + counter + "_old.java"))
                 gitLogger.trace(App.ANSI_GREEN + "[status] > copy success" + App.ANSI_RESET);
             else {
                 gitLogger.error(App.ANSI_RED + "[error] > copy failed" + App.ANSI_RESET);
@@ -146,7 +146,7 @@ public class GitLoader {
             p.waitFor();
             gitLogger.trace(App.ANSI_GREEN + "[status] > git checkout success" + App.ANSI_RESET);
             if (!!copy(result_dir + "/" + name + "_" + counter + "/" + filepath_after,
-                    candidate_dir + "/" + project + "_rank_" + counter + "_new.java"))
+                    candidate_dir + "/" + project + "_rank-" + counter + "_new.java"))
                 gitLogger.trace(App.ANSI_GREEN + "[status] > copy success" + App.ANSI_RESET);
             else {
                 gitLogger.error(App.ANSI_RED + "[error] > copy failed" + App.ANSI_RESET);

@@ -3,12 +3,13 @@ import sys
 import os
 import zipfile
 import subprocess
+import traceback
 
 import argparse
 import configparser
 import jproperties
 import datetime as dt
-# import pandas as pd
+import pandas as pd
 
 
 
@@ -78,6 +79,7 @@ def parse_argv() -> tuple:
     settings['rebuild'] = args.rebuild
 
     configs = configparser.ConfigParser()
+    configs.optionxform = str
     configs.read("SPI.ini")
 
     return (cases, settings, configs)
@@ -218,7 +220,7 @@ def rebuild_all(root):
 # Module launcher
 #######
 
-def run_CC(case : dict, config : configparser.SectionProxy) -> bool:
+def run_CC(case : dict, is_defects4j : bool, config : configparser.SectionProxy) -> bool:
     try:
         # copy .properties file
         # run ACC
@@ -226,6 +228,19 @@ def run_CC(case : dict, config : configparser.SectionProxy) -> bool:
         prop_CC = jproperties.Properties()
         for key in config.keys():
             prop_CC[key] = config[key]
+        # Explicitly tell 'target'
+        # prop_CC['target']
+        prop_CC['hash_id'] = case['hash_id']
+        if is_defects4j == True:
+            prop_CC['defects4j_name'] = case['identifier']
+            prop_CC['defects4j_id'] = case['bug_id']
+        else:
+            if prop_CC['mode'] == 'file':
+                pass
+            # prop_CC['git_url'] = ""
+            # prop_CC['git_name'] = ""
+            pass
+
         with open(f"{case['target_dir']}/properties/CC.properties", "wb") as f:
             prop_CC.store(f, encoding = "UTF-8")
 
@@ -236,34 +251,62 @@ def run_CC(case : dict, config : configparser.SectionProxy) -> bool:
         return False
     return True
 
-def run_LCE(case : dict, config : configparser.SectionProxy) -> bool:
+def run_LCE(case : dict, is_defects4j : bool, config : configparser.SectionProxy) -> bool:
     try:
         prop_LCE = jproperties.Properties()
         for key in config.keys():
             prop_LCE[key] = config[key]
+
+        prop_LCE['pool_file.dir'] = f"{prop_LCE['SPI.dir'].data}/components/LCE/gumtree_vector.csv"
+        prop_LCE['meta_pool_file.dir'] = f"{prop_LCE['SPI.dir'].data}/components/LCE/commit_file.csv"
+        prop_LCE['target_vector.dir'] = f"{case['target_dir']}/outputs/ChangeCollector/{case['identifier']}_gumtree_vector.csv"
+        prop_LCE['pool.dir'] = f"{case['target_dir']}/outputs/LCE/result/"
+        prop_LCE['candidates.dir'] = f"{case['target_dir']}/outputs/LCE/candidates/"
+
+        if is_defects4j == True:
+            prop_LCE['d4j_project_name'] = case['identifier']
+            prop_LCE['d4j_project_num'] = case['bug_id']
+        
         with open(f"{case['target_dir']}/properties/LCE.properties", "wb") as f:
             prop_LCE.store(f, encoding = "UTF-8")
 
+        os.makedirs(prop_LCE['pool.dir'].data)
+        os.makedirs(prop_LCE['candidates.dir'].data)
         assert subprocess.run(["./app", f"{case['target_dir']}/properties/LCE.properties"], cwd = "./pkg/LCE/app/bin")
-    except:
+    except Exception as e:
+        print(e)
         return False
     return True
 
-def run_ConFix(case : dict, config : configparser.SectionProxy) -> bool:
+def run_ConFix(case : dict, is_defects4j : bool, config_runner : configparser.SectionProxy, config_ConFix : configparser.SectionProxy) -> bool:
     try:
+        ini_runner = configparser.ConfigParser()
+        ini_runner.optionxform = str
+        ini_runner.add_section('Project')
+        ini_runner['Project'] = config_runner
+        with open(f"{case['target_dir']}/properties/ConFix_runner.ini", "w") as f:
+            ini_runner.write(f)
+
         prop_ConFix = jproperties.Properties()
-        for key in config.keys():
-            prop_ConFix[key] = config[key]
+        for key in config_ConFix.keys():
+            prop_ConFix[key] = config_ConFix[key]
         with open(f"{case['target_dir']}/properties/ConFix.properties", "wb") as f:
             prop_ConFix.store(f, encoding = "UTF-8")
 
-        if case['is_defects4j'] == True:
-            assert subprocess.run(["python3", "run_confix.py", "-d", "true", "-h", case['hash_id']], cwd = "./core/confix/")
+        jdk8_env = os.environ.copy()
+        jdk8_env['JAVA_HOME'] = "/usr/lib/jvm/java-1.8.0-openjdk-amd64"
+
+        if is_defects4j == True:
+            # assert subprocess.run(["python3", "run_confix_web.py", "-d", "true", "-h", case['hash_id']], cwd = "./core/confix/")
+            assert subprocess.run(["python3", "./core/confix/run_confix.py", "-d", "true", "-h", case['hash_id'], "-f", f"{case['target_dir']}/properties/ConFix_runner.ini"], env = jdk8_env)
         else:
-            assert subprocess.run(["python3", "run_confix.py", "-h", case['hash_id'], "-i", f"{case['source_path']},{case['target_path']},{case['test_list']},{case['test_target_path']},{case['compile_target_path']},{case['build_tool']}"], cwd = "./core/confix/")
+            assert subprocess.run(["python3", "./core/confix/run_confix_web.py", "-h", case['hash_id'], "-f", f"{case['target_dir']}/properties/ConFix_runner.ini"], env = jdk8_env)
+            # assert subprocess.run(["python3", "run_confix_web.py", "-h", case['hash_id'], "-i", f"{case['source_path']},{case['target_path']},{case['test_list']},{case['test_target_path']},{case['compile_target_path']},{case['build_tool']}"], cwd = "./core/confix/")
 
         
-    except:
+    except Exception as e:
+        print(e)
+        traceback.print_exc()
         return False
     return True
 
@@ -273,6 +316,7 @@ def run_ConFix(case : dict, config : configparser.SectionProxy) -> bool:
 
 def main(argv):
     cases, settings, configurations = parse_argv()
+    is_defects4j = settings['mode'] in ('defects4j', 'batch')
 
     root = os.getcwd()
     SPI_core_directory = f"{root}/core"
@@ -326,13 +370,26 @@ def main(argv):
         os.makedirs(case['target_dir'])
         print(f"[Hash ID generated as {case['hash_id']}]. Find byproducts in ./target/{case['hash_id']}")
 
+        if is_defects4j == True:
+            d4j_input_df = pd.read_csv(f"{root}/components/commit_collector/Defects4J_bugs_info/{case['identifier']}.csv", names=["DefectsfJ ID","Faulty file path","fix faulty line","blame faulty line","dummy"])
+            d4j_input_csv = d4j_input_df.values
+            for i in range(len(d4j_input_csv)):
+                if i==0:
+                    continue
+
+                if int(d4j_input_csv[i][0]) == int(case['bug_id']):
+                    configurations['Target']['faulty_file'] = d4j_input_csv[i][1]
+                    configurations['Target']['faulty_line_fix'] = d4j_input_csv[i][2]
+                    configurations['Target']['faulty_line_blame'] = d4j_input_csv[i][3]
+                    break
+
         step = 0
 
         try:
             assert subprocess.run(("mkdir", f"{case['target_dir']}/properties"))
-            assert run_CC(case, configurations['CC']) is True, "'Commit Collector' Module launch failed"
-            assert run_LCE(case, configurations['LCE']) is True, "'Longest Common subvector Extractor' Module launch failed"
-            assert run_ConFix(case, configurations['ConFix']) is True, "'ConFix' Module launch failed"
+            assert run_CC(case, is_defects4j, configurations['CC']) is True, "'Commit Collector' Module launch failed"
+            assert run_LCE(case, is_defects4j, configurations['LCE']) is True, "'Longest Common subvector Extractor' Module launch failed"
+            assert run_ConFix(case, is_defects4j, configurations['Target'], configurations['ConFix']) is True, "'ConFix' Module launch failed"
 
         except AssertionError as e:
             print(e)
