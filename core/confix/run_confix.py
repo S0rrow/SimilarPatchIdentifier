@@ -145,9 +145,10 @@ def main(argv):
 
         # os.system("cd "+target_dir+" ; "
         #         + "cp "+root+"/core/confix/properties/confix.properties ./")
-        prop_file = f"{root}/core/confix/properties/confix.properties"
+        # prop_file = f"{root}/core/confix/properties/confix.properties"
+        prop_file = f"{just_target}/properties/ConFix.properties"
         # assert copy(prop_file, f"{target_dir}/")
-        assert subprocess.run(["cp", prop_file, f"{target_dir}/"])
+        assert subprocess.run(["cp", prop_file, f"{target_dir}/confix.properties"])
         
         ### fill up the confix.property
         # os.system("cd "+target_dir+" ; "
