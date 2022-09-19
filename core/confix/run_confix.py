@@ -29,8 +29,8 @@ def main(argv):
     for o, a in opts:
         if o in ("-d", "--defects4J"):
             is_D4J = True
-        elif o in ("-i", "--input"):
-            input_string = a
+        # elif o in ("-i", "--input"):
+        #     input_string = a
         elif o in ("-h", "--hash"):
             hash_input = a
         elif o in ("-f", "--file"): # Required.
@@ -71,7 +71,7 @@ def main(argv):
     perfect_faulty_path = project_information['Project']['faulty_file']
     perfect_faulty_line = project_information['Project']['faulty_line_fix']
 
-    perfect_faulty_class, foo = perfect_faulty_path.split(".")
+    perfect_faulty_class, _ = perfect_faulty_path.split(".")
     perfect_faulty_class = perfect_faulty_class.replace("/", ".")
 
     target_dir = target_dir +"/"+ target_project
@@ -113,7 +113,8 @@ def main(argv):
         print(f"{root}/core/confix/coverages/{target_project.lower()}/{target_project.lower()}{target_id}b/coverage-info.obj", f"{target_dir}/")
 
         coverage_info_path = f"{root}/core/confix/coverages/{target_project.lower()}/{target_project.lower()}{target_id}b/coverage-info.obj"
-        assert copy(coverage_info_path, f"{target_dir}/")
+        # assert copy(coverage_info_path, f"{target_dir}/")
+        assert subprocess.run(["cp", coverage_info_path, f"{target_dir}/"])
         assert subprocess.run([f"{root}/core/confix/scripts/config.sh", target_project, str(target_id), perfect_faulty_class, str(perfect_faulty_line)], cwd = target_dir)
         with open(f"{target_dir}/confix.properties", "a") as f:
             f.write(f"pool.source={just_target}/outputs/LCE/candidates\n")
@@ -144,7 +145,9 @@ def main(argv):
 
         # os.system("cd "+target_dir+" ; "
         #         + "cp "+root+"/core/confix/properties/confix.properties ./")
-        assert copy(f"{root}/core/confix/properties/confix.properties", f"{target_dir}/")
+        prop_file = f"{root}/core/confix/properties/confix.properties"
+        # assert copy(prop_file, f"{target_dir}/")
+        assert subprocess.run(["cp", prop_file, f"{target_dir}/"])
         
         ### fill up the confix.property
         # os.system("cd "+target_dir+" ; "
@@ -165,7 +168,7 @@ def main(argv):
             f.write(f"cp.compile={compileClassPath}\n")
             f.write(f"cp.test={testClassPath}\n")
             f.write(f"projectName={target_project}\n")
-            f.write(f"pFaultyClass={project_faulty_class}\n")
+            f.write(f"pFaultyClass={perfect_faulty_class}\n")
             f.write(f"pFaultyLine={perfect_faulty_line}\n")
             f.write(f"pool.source={just_target}/outputs/LCE/candidates\n")
         with open(f"{target_dir}/tests.all", "w") as f:

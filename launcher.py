@@ -219,7 +219,7 @@ def rebuild_all(root):
 # Module launcher
 #######
 
-def run_CC(case : dict, is_defects4j : bool, config : configparser.SectionProxy) -> bool:
+def run_CC(case : dict, is_defects4j : bool, config_SPI: configparser.SectionProxy, config : configparser.SectionProxy) -> bool:
     try:
         # copy .properties file
         # run ACC
@@ -230,14 +230,21 @@ def run_CC(case : dict, is_defects4j : bool, config : configparser.SectionProxy)
         # Explicitly tell 'target'
         # prop_CC['target']
         prop_CC['hash_id'] = case['hash_id']
+        prop_CC['mode'] = 'defects4j' if is_defects4j else 'repository'
         if is_defects4j == True:
             prop_CC['defects4j_name'] = case['identifier']
             prop_CC['defects4j_id'] = case['bug_id']
         else:
             if prop_CC['mode'] == 'file':
                 pass
+
+            prop_CC['git_url'] = config_SPI['repository_url']
+            prop_CC['git_name'] = config_SPI['project']
+            prop_CC['file_name'] = config_SPI['faulty_file']
+            prop_CC['commit_id'] = config_SPI['commit_id']
             # prop_CC['git_url'] = ""
             # prop_CC['git_name'] = ""
+
             pass
 
         with open(f"{case['target_dir']}/properties/CC.properties", "wb") as f:
@@ -397,7 +404,7 @@ def main(argv):
 
         try:
             assert subprocess.run(("mkdir", f"{case['target_dir']}/properties"))
-            assert run_CC(case, is_defects4j, settings['CC']) is True, "'Commit Collector' Module launch failed"
+            assert run_CC(case, is_defects4j, settings['SPI'], settings['CC']) is True, "'Commit Collector' Module launch failed"
             assert run_LCE(case, is_defects4j, settings['LCE']) is True, "'Longest Common subvector Extractor' Module launch failed"
             assert run_ConFix(case, is_defects4j, settings['SPI'], settings['ConFix']) is True, "'ConFix' Module launch failed"
 

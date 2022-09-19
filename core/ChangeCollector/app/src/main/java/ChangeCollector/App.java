@@ -53,10 +53,12 @@ public class App {
         String defects4j_id = properties.getProperty("defects4j_id"); // defects4j bug id
         String hash_id = properties.getProperty("hash_id"); // hash id of the current execution
 
+        String workspace_dir = String.format("%s/%s", output_dir, hash_id);
         // in case of hash id usage
         if (hash_id != null) {
             output_dir = String.format("%s/%s/%s", output_dir, hash_id, "outputs/ChangeCollector");
         }
+
         // clean output directory
         if (doClean) {
             logger.debug(ANSI_PURPLE + "[debug] > Cleaning output directory" + ANSI_RESET);
@@ -71,14 +73,14 @@ public class App {
         }
 
         // clone repository
-        if (!mode.equals("defects4j") && !gitFunctions.clone(git_url, output_dir)) {
+        if (!mode.equals("defects4j") && !gitFunctions.clone(git_url, workspace_dir)) {
             logger.error(ANSI_RED + "[fatal] > Failed to clone " + git_url + ANSI_RESET);
             return;
         }
         // logger.info(ANSI_GREEN + "[info] > Successfully cloned " + git_url +
         // ANSI_RESET);
 
-        String repo_git = output_dir + "/" + git_name;
+        String repo_git = workspace_dir + "/" + git_name;
 
         logger.trace(ANSI_YELLOW + "[info] > executing ChangeCollector for mode : " + mode + ANSI_RESET);
         // MODE 1 : collect all change vectors from a repository
