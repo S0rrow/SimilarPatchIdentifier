@@ -1,5 +1,5 @@
 [SPI]
-# mode: select among [defects4j, defects4j-batch, defects4j-batch-expr, github]. If debug mode is active, then this mode is ignored.
+# mode: select among [defects4j, defects4j-batch, github]. If debug mode is active, then this mode is ignored.
 mode = github
 # batch_d4j_file: text file that contains multiple Defects4J bugs to run SPI upon. Required for 'defects4j-batch' mode.
 batch_d4j_file = d4j-batch.txt
