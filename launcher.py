@@ -10,6 +10,7 @@ import configparser
 import jproperties
 import datetime as dt
 import pandas as pd
+import csv
 
 
 
@@ -19,16 +20,14 @@ import pandas as pd
         - Config .properties files here. DO NOT additionally make shell scripts.
 '''
 
-# cases, settings = list(), dict()
-
 def parse_argv() -> tuple:
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("-m", "--mode",     choices = ("github", "batch", "defects4j"),
-                        help = "Tells in what mode to run SPI.")
-    parser.add_argument("-t", "--target",   type = str,
-                        help = "Tells what project to run, or what file to read data from.")
-    parser.add_argument("-c", "--config",   type = str,
+    # parser.add_argument("-m", "--mode",     choices = ("github", "batch", "defects4j"),
+    #                     help = "Tells in what mode to run SPI.")
+    # parser.add_argument("-t", "--target",   type = str,
+    #                     help = "Tells what project to run, or what file to read data from.")
+    parser.add_argument("-c", "--config",   type = str,     default = "SPI.ini",
                         help = "Tells on what environment to run SPI.")
 
     parser.add_argument("-d", "--debug",    action = "store_true")
@@ -36,30 +35,33 @@ def parse_argv() -> tuple:
     parser.add_argument("-r", "--rebuild",  action = "store_true",
                         help = "Rebuilds all SPI submodules if enabled.")
 
-    parser.add_argument("-q", "--quiet",    action = 'store_true',
-                        help = "Quiet output. Suppresses INFO messages, but errors and warnings will still be printed out.")
-    parser.add_argument("-v", "--verbose",  action = 'store_true',
-                        help = "Detailed output. Use it to debug.")
+    # parser.add_argument("-q", "--quiet",    action = 'store_true',
+    #                     help = "Quiet output. Suppresses INFO messages, but errors and warnings will still be printed out.")
+    # parser.add_argument("-v", "--verbose",  action = 'store_true',
+    #                     help = "Detailed output. Use it to debug.")
 
     args = parser.parse_args()
 
-    cases, settings = list(), dict()
+    settings = configparser.ConfigParser()
+    settings.optionxform = str
+    settings.read(args.config)
+
+    cases = list()
     if args.debug == True:
         cases.append(dict())
-        settings['mode'] = 'defects4j'
-        cases[-1]['mode'] = 'defects4j'
+        settings['SPI']['mode'] = 'defects4j' # override mode
         cases[-1]['project_name'] = 'Closure-14'
         cases[-1]['identifier'], cases[-1]['bug_id'] = cases[-1]['project_name'].split('-')
     else:
-        settings['mode'] = args.mode
-
-        if args.mode == 'defects4j':
+        if settings['SPI']['mode'] == 'defects4j':
             cases.append(dict())
-            cases[-1]['project_name'] = args.target
-            cases[-1]['identifier'], cases[-1]['bug_id'] = cases[-1]['project_name'].split('-')
+            cases[-1]['identifier'] = settings['SPI']['project']
+            cases[-1]['bug_id'] = settings['SPI']['identifier']
+            cases[-1]['project_name'] = f"{cases[-1]['identifier']}-{cases[-1]['bug_id']}"
+            # cases[-1]['identifier'], cases[-1]['bug_id'] = cases[-1]['project_name'].split('-')
 
-        elif args.mode == 'batch':
-            with open(args.target, 'r') as infile:
+        elif settings['SPI']['mode'] == 'defects4j-batch':
+            with open(settings['SPI']['batch_d4j_file'], 'r') as infile:
                 for bug in infile.read().splitlines():
                     cases.append(dict())
                     cases[-1]['project_name'] = bug
@@ -68,21 +70,18 @@ def parse_argv() -> tuple:
                     cases[-1]['bug_id'] = bug_id
                 
 
-        elif args.mode == 'github':
+        elif settings['SPI']['mode'] == 'github':
             # Enhance reading options here
             cases.append(dict())
+            cases[-1]['repository'] = settings['SPI']['repository_url']
             cases[-1]['project_name'] = cases[-1]['repository'].rsplit('/', 1)[-1]
             cases[-1]['identifier'] = cases[-1]['project_name']
 
-    settings['verbose'] = args.verbose
-    settings['quiet'] = False if args.verbose else args.quiet # suppresses quiet option if verbose option is given
-    settings['rebuild'] = args.rebuild
+    # settings['verbose'] = args.verbose
+    # settings['quiet'] = False if args.verbose else args.quiet # suppresses quiet option if verbose option is given
+    settings['SPI']['rebuild'] = str(args.rebuild)
 
-    configs = configparser.ConfigParser()
-    configs.optionxform = str
-    configs.read("SPI.ini")
-
-    return (cases, settings, configs)
+    return (cases, settings)
 
 #######
 # Misc
@@ -300,7 +299,7 @@ def run_ConFix(case : dict, is_defects4j : bool, config_runner : configparser.Se
             # assert subprocess.run(["python3", "run_confix_web.py", "-d", "true", "-h", case['hash_id']], cwd = "./core/confix/")
             assert subprocess.run(["python3", "./core/confix/run_confix.py", "-d", "true", "-h", case['hash_id'], "-f", f"{case['target_dir']}/properties/ConFix_runner.ini"], env = jdk8_env)
         else:
-            assert subprocess.run(["python3", "./core/confix/run_confix_web.py", "-h", case['hash_id'], "-f", f"{case['target_dir']}/properties/ConFix_runner.ini"], env = jdk8_env)
+            assert subprocess.run(["python3", "./core/confix/run_confix.py", "-h", case['hash_id'], "-f", f"{case['target_dir']}/properties/ConFix_runner.ini"], env = jdk8_env)
             # assert subprocess.run(["python3", "run_confix_web.py", "-h", case['hash_id'], "-i", f"{case['source_path']},{case['target_path']},{case['test_list']},{case['test_target_path']},{case['compile_target_path']},{case['build_tool']}"], cwd = "./core/confix/")
 
         
@@ -315,19 +314,20 @@ def run_ConFix(case : dict, is_defects4j : bool, config_runner : configparser.Se
 #######
 
 def main(argv):
-    cases, settings, configurations = parse_argv()
-    is_defects4j = settings['mode'] in ('defects4j', 'batch')
+    cases, settings = parse_argv()
+
+    is_defects4j = settings['SPI']['mode'] in ('defects4j', 'defects4j-batch')
+    is_rebuild_required = (settings['SPI']['rebuild'] == 'True')
 
     root = os.getcwd()
-    SPI_core_directory = f"{root}/core"
     target_dir = f"{root}/target"
 
-    if settings["rebuild"]:
+    if is_rebuild_required:
         print("Have been requested to rebuild all submodules. Commencing...")
         if rebuild_all(root):
             print("All submodules have been successfully rebuilt.")
 
-    if settings["mode"] is None:
+    if settings['SPI']["mode"] is None:
         print("You have not told me what to fix. Exiting program.")
         sys.exit(0)
 
@@ -352,16 +352,16 @@ def main(argv):
 
     # whole_start = dt.datetime.now()
 
-    out, err = None, None
-    if settings["quiet"]:
-        out, err = subprocess.DEVNULL, subprocess.DEVNULL
+    # out, err = None, None
+    # if settings["quiet"]:
+    #     out, err = subprocess.DEVNULL, subprocess.DEVNULL
 
     for case in cases:
         # case['hash_id'] = f"{hash_prefix}_{case['project_name']}"
-        case['hash_id'] = f"batch_{hash_suffix}_{case['project_name']}" if settings["mode"] == "batch" else f"{case['project_name']}_{hash_suffix}"
+        case['hash_id'] = f"batch_{hash_suffix}_{case['project_name']}" if settings['SPI']['mode'] == "defects4j-batch" else f"{case['project_name']}_{hash_suffix}"
         case['target_dir'] = f"{root}/target/{case['hash_id']}"
 
-        each_exit_code = None
+        # each_exit_code = None
         each_start = dt.datetime.now()
 
         with open(f"{root}/log_{case['hash_id']}.txt", "a") as outfile:
@@ -371,25 +371,35 @@ def main(argv):
         print(f"[Hash ID generated as {case['hash_id']}]. Find byproducts in ./target/{case['hash_id']}")
 
         if is_defects4j == True:
-            d4j_input_df = pd.read_csv(f"{root}/components/commit_collector/Defects4J_bugs_info/{case['identifier']}.csv", names=["DefectsfJ ID","Faulty file path","fix faulty line","blame faulty line","dummy"])
-            d4j_input_csv = d4j_input_df.values
-            for i in range(len(d4j_input_csv)):
-                if i==0:
-                    continue
+            with open(f"{root}/components/commit_collector/Defects4J_bugs_info/{case['identifier']}.csv", 'r', newline = '') as d4j_meta_file:
+                reader = csv.DictReader(d4j_meta_file)
+                print(reader.fieldnames)
+                for row in reader:
+                    if int(row['Defects4J ID']) == int(case['bug_id']):
+                        settings['SPI']['faulty_file'] = row['Faulty file path']
+                        settings['SPI']['faulty_line_fix'] = row['fix faulty line']
+                        settings['SPI']['faulty_line_blame'] = row['blame faulty line']
+                        break
 
-                if int(d4j_input_csv[i][0]) == int(case['bug_id']):
-                    configurations['Target']['faulty_file'] = d4j_input_csv[i][1]
-                    configurations['Target']['faulty_line_fix'] = d4j_input_csv[i][2]
-                    configurations['Target']['faulty_line_blame'] = d4j_input_csv[i][3]
-                    break
+            # d4j_input_df = pd.read_csv(f"{root}/components/commit_collector/Defects4J_bugs_info/{case['identifier']}.csv", names=["DefectsfJ ID","Faulty file path","fix faulty line","blame faulty line","dummy"])
+            # d4j_input_csv = d4j_input_df.values
+            # for i in range(len(d4j_input_csv)):
+            #     if i==0:
+            #         continue
+
+            #     if int(d4j_input_csv[i][0]) == int(case['bug_id']):
+            #         settings['SPI']['faulty_file'] = d4j_input_csv[i][1]
+            #         settings['SPI']['faulty_line_fix'] = d4j_input_csv[i][2]
+            #         settings['SPI']['faulty_line_blame'] = d4j_input_csv[i][3]
+            #         break
 
         step = 0
 
         try:
             assert subprocess.run(("mkdir", f"{case['target_dir']}/properties"))
-            assert run_CC(case, is_defects4j, configurations['CC']) is True, "'Commit Collector' Module launch failed"
-            assert run_LCE(case, is_defects4j, configurations['LCE']) is True, "'Longest Common subvector Extractor' Module launch failed"
-            assert run_ConFix(case, is_defects4j, configurations['Target'], configurations['ConFix']) is True, "'ConFix' Module launch failed"
+            assert run_CC(case, is_defects4j, settings['CC']) is True, "'Commit Collector' Module launch failed"
+            assert run_LCE(case, is_defects4j, settings['LCE']) is True, "'Longest Common subvector Extractor' Module launch failed"
+            assert run_ConFix(case, is_defects4j, settings['SPI'], settings['ConFix']) is True, "'ConFix' Module launch failed"
 
         except AssertionError as e:
             print(e)

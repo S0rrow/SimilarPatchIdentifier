@@ -8,44 +8,12 @@ import subprocess
 import configparser
 import shutil
 
-def move(location, destination, copy_function) -> bool:
-    try:
-        shutil.move(location, destination, copy_function)
-    except Exception as e:
-        print(f"> Error: {location} : {e.strerror}")
-        print(f"> ! Error occurred while moving {location} to {destination}.")
-        return False
-    return True
-
-def unzip(file, destination):
-    try:
-        with zipfile.ZipFile(file, 'r') as zip_ref:
-            zip_ref.extractall(destination)
-    except Exception as e:
-        print(f"> Error: {file} : {e.strerror}")
-        print(f"> ! Error occurred while unzipping {file}.")
-        return False
-    return True
-
 def copy(file, destination):
     try:
         shutil.copy(file, destination)
     except Exception as e:
         print(f"> Error: {file} : {e.strerror}")
         print(f"> ! Error occurred while copying {file} to {destination}.")
-        return False
-    return True
-
-def remove(path):
-    try:
-        if(os.path.exists(path)):
-            if(os.path.isdir(path)):
-                shutil.rmtree(path)
-            else:
-                os.remove(path)
-    except Exception as e:
-        print(f"> Error: {path} : {e.strerror}")
-        print(f"> ! Error occurred while removing {path}.")
         return False
     return True
 
@@ -134,7 +102,7 @@ def main(argv):
         # os.system("cp "+root+"/core/confix/coverages/"+target_project.lower()+"/"+target_project.lower()+target_id+"b/coverage-info.obj "
         #             + target_dir)
 
-        os.system(f"cp {root}/core/confix/coverages/{target_project.lower()}/{target_project.lower()}{target_id}b/coverage-info.obj {target_dir}")
+        # os.system(f"cp {root}/core/confix/coverages/{target_project.lower()}/{target_project.lower()}{target_id}b/coverage-info.obj {target_dir}")
 
         # os.system("cd "+target_dir+" ; "
         #             + root+"/core/confix/scripts/config.sh "+target_project+" "+target_id + " " + perfect_faulty_class + " " + perfect_faulty_line)
@@ -144,7 +112,8 @@ def main(argv):
         
         print(f"{root}/core/confix/coverages/{target_project.lower()}/{target_project.lower()}{target_id}b/coverage-info.obj", f"{target_dir}/")
 
-        # assert copy(f"{root}/coverages/{target_project.lower()}/{target_project.lower()}{target_id}b/coverage-info.obj", f"{target_dir}/coverage-info.obj")
+        coverage_info_path = f"{root}/core/confix/coverages/{target_project.lower()}/{target_project.lower()}{target_id}b/coverage-info.obj"
+        assert copy(coverage_info_path, f"{target_dir}/")
         assert subprocess.run([f"{root}/core/confix/scripts/config.sh", target_project, str(target_id), perfect_faulty_class, str(perfect_faulty_line)], cwd = target_dir)
         with open(f"{target_dir}/confix.properties", "a") as f:
             f.write(f"pool.source={just_target}/outputs/LCE/candidates\n")
