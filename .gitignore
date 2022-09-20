@@ -228,3 +228,4 @@ core/BuggyChangeCollector/.gradle/
 core/AllChangeCollector/.gradle/
 core/LCE/.gradle/
 pkg/
+SPI.ini

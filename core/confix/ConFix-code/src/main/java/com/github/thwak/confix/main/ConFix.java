@@ -725,12 +725,13 @@ public class ConFix {
 
 		if (directoryListing != null) {
 			for (File child : directoryListing) {
+					if(child.getName().equals(".gitignore")) continue;
 					int start = child.getName().lastIndexOf('-') + 1;
                     int end = child.getName().lastIndexOf('_');
                     int number = Integer.parseInt(child.getName().substring(start, end));
 				try {
 					//System.out.println("Child path: " + child.getCanonicalPath()) ;
-					String[] childPath = child.getCanonicalPath().split("source/"); // "source/"" 뒤에는 파일 이름이 붙는다.
+					String[] childPath = child.getCanonicalPath().split("candidates/"); // "source/"" 뒤에는 파일 이름이 붙는다.
 					if (childPath[1].indexOf("new") > 0) {
 						cleanFiles.set(number, child);
 					} else {
