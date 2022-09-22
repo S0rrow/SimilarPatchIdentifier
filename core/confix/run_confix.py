@@ -128,10 +128,14 @@ def main(argv):
             assert subprocess.run(["gradle", "build"], cwd = target_workspace)
         elif buildTool in ("maven", "Maven", "mvn"):
             assert subprocess.run(["mvn", "compile"], cwd = target_workspace)
+    print("Pre-configuration finished.")
 
-    print("Configuration finished.")
+    print("Building ConFix...")
+    assert subprocess.run(["mvn", "clean", "package"], cwd = f"{SPI_root}/core/confix/ConFix-code")
 
     print("Executing ConFix...")
+    assert copy(f"{SPI_root}/core/confix/ConFix-code/target/confix-0.0.1-SNAPSHOT-jar-with-dependencies.jar", f"{SPI_root}/core/confix/lib/confix-ami_torun.jar")
+
     with open(f"{target_workspace}/log.txt", "w") as f:
         assert subprocess.run(["/usr/lib/jvm/java-8-openjdk-amd64/bin/java", "-Xmx4g", "-cp", "../../../core/confix/lib/las.jar:../../../core/confix/lib/confix-ami_torun.jar", "-Duser.language=en", "-Duser.timezone=America/Los_Angeles", "com.github.thwak.confix.main.ConFix"], cwd = target_workspace, stdout = f)
     print("ConFix Execution Finished.")

@@ -203,6 +203,7 @@ venv3/
 
 # text files for logging and overall inputs
 *.txt
+logs/
 
 # original files saved for developing
 *.original
