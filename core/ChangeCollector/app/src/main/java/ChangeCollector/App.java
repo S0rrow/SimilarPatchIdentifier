@@ -24,12 +24,21 @@ public class App {
     public static final String ANSI_CYAN = "\u001B[36m";
     public static final String ANSI_WHITE = "\u001B[37m";
 
-    static Logger logger = LogManager.getLogger(App.class.getName());
+    public static Logger logger = LogManager.getLogger(App.class.getName());
 
     public static void main(String[] args) {
         App app = new App();
         Properties properties = args.length > 0 ? app.loadProperties(args[0]) : app.loadProperties();
         app.run(properties);
+    }
+
+    public void test(Properties properties) {
+        logger.trace(ANSI_BLUE + "[test] > log4j trace message" + ANSI_RESET);
+        logger.debug(ANSI_PURPLE + "[test] > log4j debug message" + ANSI_RESET);
+        logger.info(ANSI_GREEN + "[test] > log4j info message" + ANSI_RESET);
+        logger.warn(ANSI_YELLOW + "[test] > log4j warn message" + ANSI_RESET);
+        logger.error(ANSI_RED + "[test] > log4j error message" + ANSI_RESET);
+        logger.fatal(ANSI_RED + "[test] > log4j fatal message" + ANSI_RESET);
     }
 
     public void run(Properties properties) {
@@ -39,11 +48,6 @@ public class App {
         Implemental implemental = new Implemental();
         // properties
         String project_root = properties.getProperty("project_root"); // the root directory of the project
-
-        File propertiesFile = new File(project_root + "/log4j.properties"); // log4j properties setting
-        LoggerContext context = (LoggerContext) LogManager.getContext(false);
-        context.setConfigLocation(propertiesFile.toURI());
-
         String file_name = properties.getProperty("file_name"); // file name to extract change vector from
         String commit_id = properties.getProperty("commit_id"); // commit id to extract change vector from
         String git_name = properties.getProperty("git_name"); // repository name : unnecessary if url is given

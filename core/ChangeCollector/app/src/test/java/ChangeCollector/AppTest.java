@@ -3,12 +3,15 @@
  */
 package ChangeCollector;
 
+import java.util.*;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 class AppTest {
-    @Test void appHasAGreeting() {
-        App classUnderTest = new App();
-        assertNotNull(classUnderTest.getGreeting(), "app should have a greeting");
+    @Test
+    void testAppLog4j() {
+        App app = new App();
+        Properties properties = app.loadProperties();
+        app.test(properties);
     }
 }
