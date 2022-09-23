@@ -320,7 +320,9 @@ public class App {
         try {
             properties.load(new FileInputStream(path));
         } catch (Exception e) {
-            logger.error(ANSI_RED + "[error] > Exception : " + e.getMessage());
+            logger.fatal(
+                    ANSI_RED + "[fatal] > failed to load properties for launching ChangeCollector due to Exception : "
+                            + e.getMessage());
             return null;
         }
         return properties;
