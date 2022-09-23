@@ -126,7 +126,7 @@ def rebuild(module_name : str, SPI_root) -> bool:
     #print(f"> Done.")
     return True
 
-def rebuild_confix(SPI_root) -> bool:
+def rebuild_confix(SPI_root : str, JDK8_HOME : str) -> bool:
     try:
         assert subprocess.run(("mvn", "clean", "package", "-q"), cwd = "./core/confix/ConFix-code")
         #assert subprocess.run(("cp", "target/confix-0.0.1-SNAPSHOT-jar-with-dependencies.jar", "../lib/confix-ami_torun.jar"), cwd = "./core/confix/ConFix-code", shell=True)
@@ -182,7 +182,7 @@ def remove(path):
         return False
     return True
 
-def rebuild_all(SPI_root):
+def rebuild_all(SPI_root : str, JDK8_HOME : str):
     try:
         #assert subprocess.run(("rm", "-rf", "pkg"))
         if not (remove(f"{SPI_root}/pkg")):
@@ -194,7 +194,7 @@ def rebuild_all(SPI_root):
             assert rebuild(submodule, SPI_root)
             print(f"| SPI  | Successfully rebuilt submodule {submodule}.")
 
-        assert rebuild_confix(SPI_root) # ConFix uses maven unlike any other packages; this should be handled differently.
+        assert rebuild_confix(SPI_root, JDK8_HOME) # ConFix uses maven unlike any other packages; this should be handled differently.
         print(f"| SPI  | Successfully rebuilt submodule ConFix.")
         print()
 
@@ -294,7 +294,7 @@ def run_ConFix(case : dict, is_defects4j : bool, config_runner : configparser.Se
             prop_ConFix.store(f, encoding = "UTF-8")
 
         jdk8_env = os.environ.copy()
-        jdk8_env['JAVA_HOME'] = "/usr/lib/jvm/java-1.8.0-openjdk-amd64"
+        jdk8_env['JAVA_HOME'] = config_runner['JAVA_HOME_8']
 
         if is_defects4j == True:
             assert subprocess.run(["python3", "./core/confix/run_confix.py", "-d", "true", "-h", case['hash_id'], "-f", f"{case['target_dir']}/properties/confix_runner.ini"], env = jdk8_env)
@@ -323,7 +323,7 @@ def main(argv):
 
     if is_rebuild_required:
         print("Have been requested to rebuild all submodules. Commencing...")
-        if rebuild_all(SPI_root):
+        if rebuild_all(SPI_root, settings['SPI']['JAVA_HOME_8']):
             print("All submodules have been successfully rebuilt.")
 
     if settings['SPI']["mode"] is None:
