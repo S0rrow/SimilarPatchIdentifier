@@ -10,6 +10,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.core.LoggerContext;
 import org.apache.logging.log4j.core.config.Configurator;
 
 public class App {
@@ -26,7 +27,6 @@ public class App {
     static Logger logger = LogManager.getLogger(App.class.getName());
 
     public static void main(String[] args) {
-        Configurator.setLevel(App.class, Level.TRACE);
         App app = new App();
         Properties properties = args.length > 0 ? app.loadProperties(args[0]) : app.loadProperties();
         app.run(properties);
@@ -39,6 +39,11 @@ public class App {
         Implemental implemental = new Implemental();
         // properties
         String project_root = properties.getProperty("project_root"); // the root directory of the project
+
+        File propertiesFile = new File(project_root + "/log4j.properties"); // log4j properties setting
+        LoggerContext context = (LoggerContext) LogManager.getContext(false);
+        context.setConfigLocation(propertiesFile.toURI());
+
         String file_name = properties.getProperty("file_name"); // file name to extract change vector from
         String commit_id = properties.getProperty("commit_id"); // commit id to extract change vector from
         String git_name = properties.getProperty("git_name"); // repository name : unnecessary if url is given

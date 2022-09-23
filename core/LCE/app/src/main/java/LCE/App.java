@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 import org.apache.logging.log4j.*;
+import org.apache.logging.log4j.core.LoggerContext;
 import org.apache.logging.log4j.core.config.Configurator;
 
 public class App {
@@ -28,7 +29,6 @@ public class App {
         appLogger.info(ANSI_YELLOW + "==========================================================" + ANSI_RESET);
         appLogger.info(ANSI_YELLOW + "[status] App Initiated" + ANSI_RESET);
         App main = new App();
-        Configurator.setLevel(App.class, Level.TRACE);
         Properties argv = args.length == 0 ? main.loadProperties() : main.loadProperties(args[0]);
         if (argv == null)
             appLogger.error(ANSI_RED + "[error] > Properties file not found" + ANSI_RESET);
@@ -41,6 +41,11 @@ public class App {
 
     public void run(Properties properties) {
         String spi_path = properties.getProperty("SPI.dir"); // argv
+
+        File propertiesFile = new File(spi_path + "/log4j.properties");
+        LoggerContext context = (LoggerContext) LogManager.getContext(false);
+        context.setConfigLocation(propertiesFile.toURI());
+
         Extractor extractor = new Extractor(properties); // argv
         GitLoader gitLoader = new GitLoader();
         appLogger.trace(ANSI_BLUE + "[status] > Extractor running..." + ANSI_RESET);
