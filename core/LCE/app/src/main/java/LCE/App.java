@@ -57,6 +57,7 @@ public class App {
         appLogger.trace(ANSI_GREEN + "[status] > preprocess success" + ANSI_RESET);
         gitLoader.set(properties.getProperty("pool.dir"), properties.getProperty("candidates.dir")); // argv
         boolean doClean = properties.getProperty("doClean").equals("true");
+
         if (doClean) { // DEBUG : to clean the output directory and generate
                        // gitignore files
             appLogger.trace(ANSI_BLUE + "[status] > cleaning result and candidate directory" + ANSI_RESET);
@@ -70,6 +71,7 @@ public class App {
                     properties.getProperty("candidates.dir") + ".gitignore"); // argv
             appLogger.trace(ANSI_GREEN + "[status] > gitignore file copied" + ANSI_RESET);
         }
+
         appLogger.trace(ANSI_BLUE + "[status] > Initiating gitLoader" + ANSI_RESET);
         int counter = 0;
         for (String[] line : preprocessed) {
