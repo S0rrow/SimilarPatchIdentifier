@@ -5,7 +5,7 @@
 	</Properties>
 
 	<Appenders>
-		<RollingFile name="fileLogger" fileName="${projectRoot}/logs/lce.log" filePattern="${projectRoot}/logs/app-%d{yyMMdd}.log">
+		<RollingFile name="fileLogger" fileName="${projectRoot}/logs/lce-%d{yyMMdd}.log" filePattern="${projectRoot}/logs/lce-%d{yyMMdd}.log">
 			<PatternLayout>
 				<pattern>[%-5level] %d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %c{1} - %msg%n
 				</pattern>
@@ -28,11 +28,24 @@
                 </pattern>
             </PatternLayout>
         </Console>
+		<RollingFile name="errorLogger" fileName="${projectRoot}/logs/error_lce.log" filePattern="${projectRoot}/logs/error_lce-%d{yyMMdd}.log">
+			<PatternLayout>
+				<pattern>[%-5level] %d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %c{1} - %msg%n
+				</pattern>
+			</PatternLayout>
+			<Policies>
+				<TimeBasedTriggeringPolicy interval="1" modulate="true" />
+				<SizeBasedTriggeringPolicy size="10MB" />
+			</Policies>
+		</RollingFile>
 	</Appenders>
 	<Loggers>
 		<Root level="trace" additivity="false">
 			<appender-ref ref="fileLogger" />
             <appender-ref ref="console" />
 		</Root>
+		<Logger name="org.apache" level="warn" additivity="false">
+			<appender-ref ref="errorLogger" />
+		</Logger>
 	</Loggers>
 </Configuration>

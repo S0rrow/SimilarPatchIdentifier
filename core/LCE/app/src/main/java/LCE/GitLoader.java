@@ -3,11 +3,15 @@ package LCE;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.InputStreamReader;
+import java.io.BufferedReader;
 import java.io.IOException;
 import org.apache.logging.log4j.*;
 import org.apache.logging.log4j.core.config.Configurator;
 
 import org.apache.commons.io.FileUtils;
+import java.util.ArrayList;
+import java.util.List;
 
 public class GitLoader {
     private int counter = -1;
@@ -165,6 +169,8 @@ public class GitLoader {
                 gitLogger.trace(App.ANSI_BLUE + "[status] > loading" + App.ANSI_RESET);
                 if (!clone(result_dir + "/" + name + "_" + counter))
                     return false;
+                // if (!traverse())
+                // return false;
                 if (!checkout(result_dir + "/" + name + "_" + counter))
                     return false;
                 gitLogger.trace(App.ANSI_GREEN + "[status] > loading done" + App.ANSI_RESET);
@@ -176,6 +182,65 @@ public class GitLoader {
             gitLogger.error(App.ANSI_RED + "[error] > " + e.getMessage() + App.ANSI_RESET);
             return false;
         }
+    }
+
+    // get list of commit hashes from a git repository which certain file has been
+    // changed
+    // @param path : path of git repository
+    // @param file : file to check
+    private ArrayList<String> extract_cid() {
+        String repo_path = result_dir + name + "_" + counter;
+        gitLogger.trace(App.ANSI_BLUE + "[status] > getting log of " + App.ANSI_YELLOW + repo_path + App.ANSI_RESET
+                + " with " + App.ANSI_YELLOW + filename + App.ANSI_RESET);
+        ArrayList<String> hashes = new ArrayList<>();
+        try {
+            ProcessBuilder pb = new ProcessBuilder();
+            pb.directory(new File(repo_path));
+            pb.command("git", "log", "--pretty=format:%H", filename);
+            Process process = pb.start();
+            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+            String line = "";
+            while ((line = reader.readLine()) != null) {
+                hashes.add(line);
+            }
+            process.waitFor();
+            process.destroy();
+        } catch (Exception e) {
+            gitLogger.error(App.ANSI_RED + "[error] > Exception : " + e.getMessage() + App.ANSI_RESET);
+            return null;
+        }
+        return hashes;
+    }
+
+    // find the commit hash just before given cid
+    // cid_before is the commit hash just before bug was induced
+    // cid_after is the commit hash just after bug was induced
+    // cid_fixed should be the commit hash which fixed the bug
+    public boolean traverse() {
+        String cid_buggy = cid_after;
+        try {
+            ArrayList<String> hash_list = extract_cid();
+            if (hash_list == null) {
+                gitLogger.error(App.ANSI_RED + "[error] > git log failed" + App.ANSI_RESET);
+                return false;
+            }
+            int index = hash_list.indexOf(cid_buggy);
+            if (index == -1) {
+                gitLogger.error(App.ANSI_RED + "[error] > given hash commit id not found" + App.ANSI_RESET);
+                return false;
+            }
+            if (index == 0) {
+                gitLogger.error(App.ANSI_RED + "[error] > buggy commit hash id is the latest" + App.ANSI_RESET);
+                return false;
+            }
+            String cid_fixed = hash_list.get(index - 1);
+            cid_before = cid_after;
+            cid_after = cid_fixed;
+        } catch (Exception e) {
+            gitLogger.error(App.ANSI_RED + "[error] > Exception : " + e.getMessage() + App.ANSI_RESET);
+            return false;
+        }
+        return true;
     }
 
     public boolean copy(String path1, String path2) {

@@ -32,6 +32,8 @@ public class Implemental {
     // Defects4J bug commit ids
     public String new_cid;
     public String old_cid;
+    // last exit code of the executed command
+    public int last_exit_code = -1;
 
     // constructor
     public Implemental() {
@@ -102,7 +104,6 @@ public class Implemental {
 
     // collect the current source code of the Defects4J bug
     public boolean fetch() {
-        int exit_code = -1;
         String project_dir = String.format("%s/%s", workspace_dir, name);
         if (config_ready) {
             try {
@@ -110,13 +111,13 @@ public class Implemental {
                         String.format("%db", identifier),
                         "-w", project_dir);
                 Process p = pb.start();
-                exit_code = p.waitFor();
+                last_exit_code = p.waitFor();
             } catch (Exception e) {
                 logger.error(App.ANSI_RED + "[error] > Exception : " + e.getMessage() + App.ANSI_RESET);
                 return false;
             }
         }
-        return exit_code == 0;
+        return last_exit_code == 0;
     }
 
     // resolve the information of given Defects4J bug with given name and identifier

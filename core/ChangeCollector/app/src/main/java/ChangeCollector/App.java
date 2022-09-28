@@ -83,8 +83,8 @@ public class App {
 
         // clone repository
         if (!mode.equals("defects4j") && !gitFunctions.clone(git_url, workspace_dir)) {
-            logger.error(ANSI_RED + "[fatal] > Failed to clone " + git_url + ANSI_RESET);
-            return;
+            logger.fatal(ANSI_RED + "[fatal] > Failed to clone " + git_url + ANSI_RESET);
+            System.exit(1);
         }
         // logger.info(ANSI_GREEN + "[info] > Successfully cloned " + git_url +
         // ANSI_RESET);
@@ -98,8 +98,8 @@ public class App {
             // repository
             ArrayList<String[]> all_diffs = gitFunctions.extract_diff(repo_git);
             if (all_diffs == null || all_diffs.size() == 0) {
-                logger.error(ANSI_RED + "[fatal] > Failed to extract diffs" + ANSI_RESET);
-                return;
+                logger.fatal(ANSI_RED + "[fatal] > Failed to extract diffs" + ANSI_RESET);
+                System.exit(1);
             }
             try {
                 BufferedWriter writer = new BufferedWriter(new FileWriter(new File(output_dir, "diff.txt")));
@@ -112,8 +112,8 @@ public class App {
                 }
                 writer.close();
             } catch (Exception e) {
-                logger.error(ANSI_RED + "[fatal] > Exception : " + e.getMessage() + ANSI_RESET);
-                return;
+                logger.fatal(ANSI_RED + "[fatal] > Exception : " + e.getMessage() + ANSI_RESET);
+                System.exit(1);
             }
             logger.info(ANSI_GREEN + "[info] > Successfully extracted diffs" + ANSI_RESET);
             // STEP 2 : extract commit ids and file names from all diffs and write them to a
@@ -130,8 +130,8 @@ public class App {
                 }
                 writer.close();
             } catch (Exception e) {
-                logger.error(ANSI_RED + "[fatal] > Exception : " + e.getMessage() + ANSI_RESET);
-                return;
+                logger.fatal(ANSI_RED + "[fatal] > Exception : " + e.getMessage() + ANSI_RESET);
+                System.exit(1);
             }
             logger.info(ANSI_GREEN + "[info] > Successfully created " + GitFunctions.get_repo_name_from_url(git_url)
                     + "_commit_file.csv" + ANSI_RESET);
@@ -139,8 +139,8 @@ public class App {
             String diff_path = output_dir + "/diff.txt";
 
             if (!extractor.extract_log(repo_git, diff_path, output_dir)) {
-                logger.error(ANSI_RED + "[fatal] > Failed to extract log" + ANSI_RESET);
-                return;
+                logger.fatal(ANSI_RED + "[fatal] > Failed to extract log" + ANSI_RESET);
+                System.exit(1);
             }
             logger.info(ANSI_GREEN + "[info] > Successfully extracted log" + ANSI_RESET);
 
@@ -148,11 +148,11 @@ public class App {
             // STEP 3 : extract change vectors from all diffs and write them to a file
             int cv_extraction_result = extractor.extract_vector(git_name, gumtree_log, output_dir, true);
             if (cv_extraction_result == -1) {
-                logger.error(ANSI_RED + "[fatal] > Failed to extract change vector" + ANSI_RESET);
-                return;
+                logger.fatal(ANSI_RED + "[fatal] > Failed to extract change vector" + ANSI_RESET);
+                System.exit(1);
             } else if (cv_extraction_result == 1) {
-                logger.error(ANSI_RED + "[fatal] > Failed to extract change vector due to no change" + ANSI_RESET);
-                return;
+                logger.fatal(ANSI_RED + "[fatal] > Failed to extract change vector due to no change" + ANSI_RESET);
+                System.exit(1);
             }
             logger.info(ANSI_GREEN + "[info] > Successfully extracted change vector" + ANSI_RESET);
         }
@@ -164,8 +164,8 @@ public class App {
 
             String[] diff = gitFunctions.extract_diff(repo_git, file_name, commit_id);
             if (diff == null) {
-                logger.error(ANSI_RED + "[fatal] > Failed to extract diff" + ANSI_RESET);
-                return;
+                logger.fatal(ANSI_RED + "[fatal] > Failed to extract diff" + ANSI_RESET);
+                System.exit(1);
             }
             try {
                 BufferedWriter writer = new BufferedWriter(new FileWriter(new File(output_dir, "diff.txt")));
@@ -176,8 +176,8 @@ public class App {
                 writer.newLine();
                 writer.close();
             } catch (Exception e) {
-                logger.error(ANSI_RED + "[fatal] > Exception : " + e.getMessage() + ANSI_RESET);
-                return;
+                logger.fatal(ANSI_RED + "[fatal] > Exception : " + e.getMessage() + ANSI_RESET);
+                System.exit(1);
             }
             logger.info(ANSI_GREEN + "[info] > Extracted diff successfully" + ANSI_RESET);
 
@@ -192,8 +192,8 @@ public class App {
                 writer.newLine();
                 writer.close();
             } catch (Exception e) {
-                logger.error(ANSI_RED + "[fatal] > Exception : " + e.getMessage() + ANSI_RESET);
-                return;
+                logger.fatal(ANSI_RED + "[fatal] > Exception : " + e.getMessage() + ANSI_RESET);
+                System.exit(1);
             }
             logger.info(ANSI_GREEN + "[info] > Successfully created " + GitFunctions.get_repo_name_from_url(git_url)
                     + "_commit_file.csv for single file " + file_name + ANSI_RESET);
@@ -202,19 +202,19 @@ public class App {
 
             String diff_path = output_dir + "/diff.txt";
             if (!extractor.extract_log(repo_git, diff_path, output_dir)) {
-                logger.error(ANSI_RED + "[fatal] > Failed to extract gumtree log" + ANSI_RESET);
-                return;
+                logger.fatal(ANSI_RED + "[fatal] > Failed to extract gumtree log" + ANSI_RESET);
+                System.exit(1);
             }
             logger.info(ANSI_GREEN + "[info] > Successfully extracted gumtree log" + ANSI_RESET);
 
             String gumtree_log = output_dir + "/gumtree_log.txt";
             int cv_extraction_result = extractor.extract_vector(git_name, gumtree_log, output_dir);
             if (cv_extraction_result == -1) {
-                logger.error(ANSI_RED + "[fatal] > Failed to extract change vector due to exception" + ANSI_RESET);
-                return;
+                logger.fatal(ANSI_RED + "[fatal] > Failed to extract change vector due to exception" + ANSI_RESET);
+                System.exit(1);
             } else if (cv_extraction_result == 1) {
-                logger.error(ANSI_RED + "[fatal] > Failed to extract change vector due to no change" + ANSI_RESET);
-                return;
+                logger.fatal(ANSI_RED + "[fatal] > Failed to extract change vector due to no change" + ANSI_RESET);
+                System.exit(1);
             }
             logger.info(ANSI_GREEN + "[info] > Successfully extracted change vector" + ANSI_RESET);
         }
@@ -228,20 +228,23 @@ public class App {
 
             if (!implemental.config(project_root, defects4j_name, Integer.parseInt(defects4j_id), output_dir,
                     java_home_8, hash_id)) {
-                logger.error(ANSI_RED + "[fatal] > Failed to configure defects4j" + ANSI_RESET);
-                return;
+                logger.fatal(ANSI_RED + "[fatal] > Failed to configure defects4j" + ANSI_RESET);
+                System.exit(1);
             }
             if (!implemental.preprocess()) {
-                logger.error(ANSI_RED + "[fatal] > Failed to preprocess defects4j" + ANSI_RESET);
-                return;
+                logger.fatal(ANSI_RED + "[fatal] > Failed to preprocess defects4j" + ANSI_RESET);
+                System.exit(1);
             }
             if (!implemental.fetch()) {
-                logger.error(ANSI_RED + "[fatal] > Failed to fetch defects4j" + ANSI_RESET);
-                return;
+                logger.fatal(ANSI_RED + "[fatal] > Failed to fetch defects4j" + ANSI_RESET);
+                logger.fatal(ANSI_RED + "==============================================" + ANSI_RESET);
+                logger.fatal(
+                        ANSI_RED + "[fatal] > Defects4J - last exit code : " + implemental.last_exit_code + ANSI_RESET);
+                System.exit(1);
             }
             if (!implemental.parse()) {
-                logger.error(ANSI_RED + "[fatal] > Failed to parse defects4j" + ANSI_RESET);
-                return;
+                logger.fatal(ANSI_RED + "[fatal] > Failed to parse defects4j" + ANSI_RESET);
+                System.exit(1);
             }
             if (implemental.d4j_ready) {
                 cid_set = gitFunctions.blame(implemental.faultyProject, implemental.faultyPath,
@@ -249,16 +252,16 @@ public class App {
                         implemental.faultyLineFix);
             }
             if (!implemental.cid_config(cid_set[0], cid_set[1])) {
-                logger.error(ANSI_RED + "[fatal] > Failed to configure commit ids" + ANSI_RESET);
-                return;
+                logger.fatal(ANSI_RED + "[fatal] > Failed to configure commit ids" + ANSI_RESET);
+                System.exit(1);
             }
 
             // STEP 2 : extract git diff from given Defects4J bug informations
             String[] diff = gitFunctions.extract_diff(implemental.faultyProject, implemental.faultyPath, cid_set[1],
                     cid_set[0]);
             if (diff == null) {
-                logger.error(ANSI_RED + "[fatal] > Failed to extract diff" + ANSI_RESET);
-                return;
+                logger.fatal(ANSI_RED + "[fatal] > Failed to extract diff" + ANSI_RESET);
+                System.exit(1);
             }
             try {
                 BufferedWriter writer = new BufferedWriter(new FileWriter(new File(output_dir, "diff.txt")));
@@ -269,8 +272,8 @@ public class App {
                 writer.newLine();
                 writer.close();
             } catch (Exception e) {
-                logger.error(ANSI_RED + "[fatal] > Exception : " + e.getMessage() + ANSI_RESET);
-                return;
+                logger.fatal(ANSI_RED + "[fatal] > Exception : " + e.getMessage() + ANSI_RESET);
+                System.exit(1);
             }
             logger.info(ANSI_GREEN + "[info] > Extracted diff successfully" + ANSI_RESET);
             try {
@@ -283,8 +286,8 @@ public class App {
                 writer.newLine();
                 writer.close();
             } catch (Exception e) {
-                logger.error(ANSI_RED + "[fatal] > Exception : " + e.getMessage() + ANSI_RESET);
-                return;
+                logger.fatal(ANSI_RED + "[fatal] > Exception : " + e.getMessage() + ANSI_RESET);
+                System.exit(1);
             }
             logger.info(ANSI_GREEN + "[info] > Successfully created " + defects4j_name
                     + "_commit_file.csv for single file " + file_name + ANSI_RESET);
@@ -292,25 +295,25 @@ public class App {
             // STEP 3 : extract change vector from diff and write it to a file
             String diff_path = output_dir + "/diff.txt";
             if (!extractor.extract_log(implemental.faultyProject, diff_path, output_dir)) {
-                logger.error(ANSI_RED + "[fatal] > Failed to extract gumtree log" + ANSI_RESET);
-                return;
+                logger.fatal(ANSI_RED + "[fatal] > Failed to extract gumtree log" + ANSI_RESET);
+                System.exit(1);
             }
             logger.info(ANSI_GREEN + "[info] > Successfully extracted gumtree log" + ANSI_RESET);
 
             String gumtree_log = output_dir + "/gumtree_log.txt";
             int cv_extraction_result = extractor.extract_vector(defects4j_name, gumtree_log, output_dir);
             if (cv_extraction_result == -1) {
-                logger.error(ANSI_RED + "[fatal] > Failed to extract change vector due to exception" + ANSI_RESET);
-                return;
+                logger.fatal(ANSI_RED + "[fatal] > Failed to extract change vector due to exception" + ANSI_RESET);
+                System.exit(1);
             } else if (cv_extraction_result == 1) {
-                logger.error(ANSI_RED + "[fatal] > Failed to extract change vector due to no change" + ANSI_RESET);
-                return;
+                logger.fatal(ANSI_RED + "[fatal] > Failed to extract change vector due to no change" + ANSI_RESET);
+                System.exit(1);
             }
             logger.info(ANSI_GREEN + "[info] > Successfully extracted change vector" + ANSI_RESET);
 
         } else {
-            logger.error(ANSI_RED + "[fatal] > Invalid mode" + ANSI_RESET);
-            return;
+            logger.fatal(ANSI_RED + "[fatal] > Invalid mode" + ANSI_RESET);
+            System.exit(1);
         }
         System.exit(0);
     }

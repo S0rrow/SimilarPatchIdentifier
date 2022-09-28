@@ -13,8 +13,9 @@ Inspired by _**Automated Patch Generation with Context-based Change Application*
 - [Longest Common sub-vector Extractor (LCE)](https://github.com/s0rrow/fv4202)
 
 ## How to run
-1. run ``python3 SPI.py -d [name of defects4j project to fix]`` for identifying patches for defects4j projects.
-2.  
+1. run ``python3 launcher.py`` for identifying patches for defects4j projects.
+2. give argument option ``-r`` to rebuild all submodules.
+3. edit `SPI.ini` to specify the launch options.
 
 ## FicCollect [bash script]
 

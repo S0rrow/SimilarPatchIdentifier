@@ -26,13 +26,15 @@ public class App {
     static Logger appLogger = LogManager.getLogger(App.class.getName());
 
     public static void main(String[] args) {
+        Configurator.setLevel(App.class, Level.TRACE);
         appLogger.info(ANSI_YELLOW + "==========================================================" + ANSI_RESET);
         appLogger.info(ANSI_YELLOW + "[status] App Initiated" + ANSI_RESET);
         App main = new App();
         Properties argv = args.length == 0 ? main.loadProperties() : main.loadProperties(args[0]);
-        if (argv == null)
-            appLogger.error(ANSI_RED + "[error] > Properties file not found" + ANSI_RESET);
-        else {
+        if (argv == null) {
+            appLogger.fatal(ANSI_RED + "[fatal] > Properties file not found" + ANSI_RESET);
+            System.exit(1);
+        } else {
             appLogger.info(ANSI_YELLOW + "[status] Properties file loaded" + ANSI_RESET);
             appLogger.info(ANSI_YELLOW + "[status] running LCE" + ANSI_RESET);
             main.run(argv);
@@ -40,15 +42,12 @@ public class App {
     }
 
     public void run(Properties properties) {
-        String spi_path = properties.getProperty("SPI.dir"); // argv
+        String spi_path = properties.getProperty("SPI.dir"); // path for SimilarPatchIdentifier project
 
-        File propertiesFile = new File(spi_path + "/log4j.properties");
-        LoggerContext context = (LoggerContext) LogManager.getContext(false);
-        context.setConfigLocation(propertiesFile.toURI());
+        Extractor extractor = new Extractor(properties); // Extractor for extracting candidate source codes
+        GitLoader gitLoader = new GitLoader(); // GitLoader for loading source code from git
 
-        Extractor extractor = new Extractor(properties); // argv
-        GitLoader gitLoader = new GitLoader();
-        appLogger.trace(ANSI_BLUE + "[status] > Extractor running..." + ANSI_RESET);
+        appLogger.trace(ANSI_BLUE + "[status] > running executor..." + ANSI_RESET);
         extractor.run();
         appLogger.trace(ANSI_GREEN + "[status] > extractor ready" + ANSI_RESET);
         List<String> result = extractor.extract();
@@ -76,23 +75,32 @@ public class App {
         int counter = 0;
         for (String[] line : preprocessed) {
             gitLoader.getCounter(counter);
-            gitLoader.config(line[4], line[0], line[1], line[2], line[3], properties.getProperty("d4j_project_name"),
-                    Integer.parseInt(properties.getProperty("d4j_project_num"))); // argv
+
+            String git_url = line[4];
+            String cid_before = line[0];
+            String cid_after = line[1];
+            String filepath_before = line[2];
+            String filepath_after = line[3];
+            String d4j_name = properties.getProperty("d4j_project_name");
+            int d4j_num = Integer.parseInt(properties.getProperty("d4j_project_num"));
+
+            gitLoader.config(git_url, cid_before, cid_after, filepath_before, filepath_after, d4j_name, d4j_num);
             gitLoader.run();
             try {
                 if (gitLoader.load()) {
                     appLogger.trace(ANSI_GREEN + "[status] > gitLoader load success" + ANSI_RESET);
                 } else {
-                    appLogger.error(ANSI_RED + "[status] > gitLoader load failed" + ANSI_RESET);
+                    appLogger.fatal(ANSI_RED + "[fatal] > gitLoader load failed" + ANSI_RESET);
                 }
             } catch (Exception e) {
-                appLogger.error(ANSI_RED + "[error] > Exception :" + e.getMessage() + ANSI_RESET);
+                appLogger.fatal(ANSI_RED + "[fatal] > Exception :" + e.getMessage() + ANSI_RESET);
             }
             counter++;
         }
         appLogger.trace(ANSI_GREEN + "[status] > gitLoader done" + ANSI_RESET);
         appLogger.info(ANSI_YELLOW + "==========================================================" + ANSI_RESET);
         appLogger.info(ANSI_YELLOW + "[status] > App done" + ANSI_RESET);
+        System.exit(0);
     }
 
     private List<String[]> preprocess(List<String> result) {
@@ -124,7 +132,7 @@ public class App {
             appLogger.trace(ANSI_GREEN + "[status] > properties loaded" + ANSI_RESET);
             return properties;
         } catch (Exception e) {
-            appLogger.error(ANSI_RED + "[error] > Exception : " + e.getMessage() + ANSI_RESET);
+            appLogger.fatal(ANSI_RED + "[fatal] > Exception : " + e.getMessage() + ANSI_RESET);
             return null;
         }
     }
