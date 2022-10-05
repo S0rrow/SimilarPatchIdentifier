@@ -6,7 +6,7 @@
 	<Appenders>
 		<RollingFile name="fileLogger" fileName="${projectRoot}/logs/changecollector.log" filePattern="${projectRoot}/logs/changecollector-%d{yyMMdd}.log">
 			<PatternLayout>
-				<pattern>[%-5level] %d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %c{1} - %msg%n
+				<pattern>[%-5level] %d{yyyy-MM-dd HH:mm:ss.SSS} [%l-%M] %c{1} - %msg%n
 				</pattern>
 			</PatternLayout>
 			<Policies>
@@ -23,13 +23,13 @@
 		</RollingFile>
         <Console name="console" target="SYSTEM_OUT">
             <PatternLayout>
-                <pattern>[%-5level] %d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %c{1} - %msg%n
+                <pattern>[%-5level] %d{yyyy-MM-dd HH:mm:ss.SSS} [%l-%M] %c{1} - %msg%n
                 </pattern>
             </PatternLayout>
         </Console>
 		<RollingFile name="errorLogger" fileName="${projectRoot}/logs/error_changecollector-%d{yyMMdd}.log" filePattern="${projectRoot}/logs/error_changecollector-%d{yyMMdd}.log">
 			<PatternLayout>
-				<pattern>[%-5level] %d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %c{1} - %msg%n
+				<pattern>[%-5level] %d{yyyy-MM-dd HH:mm:ss.SSS} [%l-%M] %c{1} - %msg%n
 				</pattern>
 			</PatternLayout>
 			<Policies>

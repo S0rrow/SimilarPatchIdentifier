@@ -123,13 +123,20 @@ public class GitLoader {
     }
 
     private boolean checkout(String directory) {
+        String t_cid_after = traverse(cid_after);
+        if (t_cid_after == null || t_cid_after.length() == 0) {
+            gitLogger.fatal(App.ANSI_RED + "[error] > commit id after is not exist" + App.ANSI_RESET);
+            return false;
+        }
+        String cid1 = cid_after; // possible bug inducing commit
+        String cid2 = t_cid_after; // possible fix inducing commit
         try {
             String project = d4j_project_name + "-" + d4j_project_num;
-            gitLogger.trace(App.ANSI_BLUE + "[status] > git checkout cid before : " + App.ANSI_YELLOW + cid_before
+            gitLogger.trace(App.ANSI_BLUE + "[status] > git checkout cid before : " + App.ANSI_YELLOW + cid1
                     + App.ANSI_RESET);
             ProcessBuilder pb = new ProcessBuilder();
             pb.directory(new File(directory));
-            pb.command("git", "checkout", "-f", cid_before);
+            pb.command("git", "checkout", "-f", cid1);
             Process p = pb.start();
             p.waitFor();
             gitLogger.trace(App.ANSI_GREEN + "[status] > git checkout success" + App.ANSI_RESET);
@@ -141,11 +148,11 @@ public class GitLoader {
                 return false;
             }
 
-            gitLogger.trace(App.ANSI_BLUE + "[status] > git checkout cid after : " + App.ANSI_YELLOW + cid_after
+            gitLogger.trace(App.ANSI_BLUE + "[status] > git checkout cid after : " + App.ANSI_YELLOW + cid2
                     + App.ANSI_RESET);
             pb = new ProcessBuilder();
             pb.directory(new File(directory));
-            pb.command("git", "checkout", "-f", cid_after);
+            pb.command("git", "checkout", "-f", cid2);
             p = pb.start();
             p.waitFor();
             gitLogger.trace(App.ANSI_GREEN + "[status] > git checkout success" + App.ANSI_RESET);
@@ -164,14 +171,15 @@ public class GitLoader {
     }
 
     public boolean load() {
+        String path = result_dir + "/" + name + "_" + counter;
+        String t_cid_after = null;
         try {
             if (set) {
-                gitLogger.trace(App.ANSI_BLUE + "[status] > loading" + App.ANSI_RESET);
-                if (!clone(result_dir + "/" + name + "_" + counter))
+                gitLogger.trace(App.ANSI_BLUE + "[status] > cloning to " + App.ANSI_YELLOW + path + App.ANSI_RESET);
+                if (!clone(path))
                     return false;
-                // if (!traverse())
-                // return false;
-                if (!checkout(result_dir + "/" + name + "_" + counter))
+                gitLogger.trace(App.ANSI_BLUE + "[status] > checkout to " + App.ANSI_YELLOW + path + App.ANSI_RESET);
+                if (!checkout(path))
                     return false;
                 gitLogger.trace(App.ANSI_GREEN + "[status] > loading done" + App.ANSI_RESET);
                 return true;
@@ -216,31 +224,44 @@ public class GitLoader {
     // cid_before is the commit hash just before bug was induced
     // cid_after is the commit hash just after bug was induced
     // cid_fixed should be the commit hash which fixed the bug
-    public boolean traverse() {
-        String cid_buggy = cid_after;
+    public String traverse(String cid_buggy) {
+        String cid_fixed = "";
         try {
             ArrayList<String> hash_list = extract_cid();
             if (hash_list == null) {
                 gitLogger.error(App.ANSI_RED + "[error] > git log failed" + App.ANSI_RESET);
-                return false;
             }
             int index = hash_list.indexOf(cid_buggy);
             if (index == -1) {
                 gitLogger.error(App.ANSI_RED + "[error] > given hash commit id not found" + App.ANSI_RESET);
-                return false;
-            }
-            if (index == 0) {
+            } else if (index == 0) {
                 gitLogger.error(App.ANSI_RED + "[error] > buggy commit hash id is the latest" + App.ANSI_RESET);
-                return false;
-            }
-            String cid_fixed = hash_list.get(index - 1);
-            cid_before = cid_after;
-            cid_after = cid_fixed;
+            } else
+                cid_fixed = hash_list.get(index - 1);
         } catch (Exception e) {
             gitLogger.error(App.ANSI_RED + "[error] > Exception : " + e.getMessage() + App.ANSI_RESET);
-            return false;
         }
-        return true;
+        return cid_fixed;
+    }
+
+    public String rev_traverse(String cid_fixed) {
+        String cid_buggy = "";
+        try {
+            ArrayList<String> hash_list = extract_cid();
+            if (hash_list == null) {
+                gitLogger.error(App.ANSI_RED + "[error] > git log failed" + App.ANSI_RESET);
+            }
+            int index = hash_list.indexOf(cid_fixed);
+            if (index == -1) {
+                gitLogger.error(App.ANSI_RED + "[error] > given hash commit id not found" + App.ANSI_RESET);
+            } else if (index == hash_list.size() - 1) {
+                gitLogger.error(App.ANSI_RED + "[error] > fixed commit hash id is the oldest" + App.ANSI_RESET);
+            } else
+                cid_buggy = hash_list.get(index + 1);
+        } catch (Exception e) {
+            gitLogger.error(App.ANSI_RED + "[error] > Exception : " + e.getMessage() + App.ANSI_RESET);
+        }
+        return cid_buggy;
     }
 
     public boolean copy(String path1, String path2) {

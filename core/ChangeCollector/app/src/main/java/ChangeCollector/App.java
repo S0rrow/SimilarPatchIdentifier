@@ -250,6 +250,7 @@ public class App {
                 cid_set = gitFunctions.blame(implemental.faultyProject, implemental.faultyPath,
                         implemental.faultyLineBlame,
                         implemental.faultyLineFix);
+
             }
             if (!implemental.cid_config(cid_set[0], cid_set[1])) {
                 logger.fatal(ANSI_RED + "[fatal] > Failed to configure commit ids" + ANSI_RESET);
@@ -257,8 +258,9 @@ public class App {
             }
 
             // STEP 2 : extract git diff from given Defects4J bug informations
-            String[] diff = gitFunctions.extract_diff(implemental.faultyProject, implemental.faultyPath, cid_set[1],
-                    cid_set[0]);
+            String[] diff = gitFunctions.extract_diff(implemental.faultyProject, implemental.faultyPath,
+                    implemental.cid_fixed,
+                    implemental.cid_buggy);
             if (diff == null) {
                 logger.fatal(ANSI_RED + "[fatal] > Failed to extract diff" + ANSI_RESET);
                 System.exit(1);
@@ -310,7 +312,6 @@ public class App {
                 System.exit(1);
             }
             logger.info(ANSI_GREEN + "[info] > Successfully extracted change vector" + ANSI_RESET);
-
         } else {
             logger.fatal(ANSI_RED + "[fatal] > Invalid mode" + ANSI_RESET);
             System.exit(1);

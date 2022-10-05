@@ -30,8 +30,8 @@ public class Implemental {
     public Integer faultyLineBlame;
     public Integer faultyLineFix;
     // Defects4J bug commit ids
-    public String new_cid;
-    public String old_cid;
+    public String cid_fixed;
+    public String cid_buggy;
     // last exit code of the executed command
     public int last_exit_code = -1;
 
@@ -63,9 +63,9 @@ public class Implemental {
     // extract the commit ids of the Defects4J bug
     // @param old_cid : the commit id of the buggy version
     // @param new_cid : the commit id of the fixed version
-    public boolean cid_config(String old_cid, String new_cid) {
-        this.new_cid = new_cid;
-        this.old_cid = old_cid;
+    public boolean cid_config(String cid_fixed, String cid_buggy) {
+        this.cid_fixed = cid_fixed;
+        this.cid_buggy = cid_buggy;
         return true;
     }
 
@@ -102,7 +102,7 @@ public class Implemental {
         return false;
     }
 
-    // collect the current source code of the Defects4J bug
+    // collect the current source code of the Defects4J bug in a buggy version.
     public boolean fetch() {
         String project_dir = String.format("%s/%s", workspace_dir, name);
         if (config_ready) {

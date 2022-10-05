@@ -172,7 +172,7 @@ public class GitFunctions {
             exit_code = p.waitFor();
             if (exit_code != 0) {
                 App.logger.error(
-                        App.ANSI_RED + "[error] > Failed to get the commit id of the line " + lineBlame + " in file "
+                        App.ANSI_RED + "[ERROR] > Failed to get the commit id of the line " + lineBlame + " in file "
                                 + file + App.ANSI_RESET);
                 return null;
             }
@@ -190,12 +190,12 @@ public class GitFunctions {
             exit_code = p.waitFor();
             if (exit_code != 0) {
                 App.logger.error(
-                        App.ANSI_RED + "[error] > Failed to get the commit id of the line " + lineBlame + " in file "
+                        App.ANSI_RED + "[ERROR] > Failed to get the commit id of the line " + lineBlame + " in file "
                                 + file + App.ANSI_RESET);
                 return null;
             }
         } catch (Exception e) {
-            App.logger.error(App.ANSI_RED + "[error] > Exception : " + e.getMessage() + App.ANSI_RESET);
+            App.logger.error(App.ANSI_RED + "[ERROR] > Exception : " + e.getMessage() + App.ANSI_RESET);
             return null;
         }
         cid_set[0] = cid2;

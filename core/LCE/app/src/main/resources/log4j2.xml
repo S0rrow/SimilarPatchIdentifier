@@ -5,14 +5,15 @@
 	</Properties>
 
 	<Appenders>
-		<RollingFile name="fileLogger" fileName="${projectRoot}/logs/lce-%d{yyMMdd}.log" filePattern="${projectRoot}/logs/lce-%d{yyMMdd}.log">
+		<RollingFile name="fileLogger" append="true" fileName="${projectRoot}/logs/lce.log" filePattern="${projectRoot}/logs/lce-%d{yyMMdd}.log">
 			<PatternLayout>
-				<pattern>[%-5level] %d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %c{1} - %msg%n
+				<pattern>[%-5level] %d{yyyy-MM-dd HH:mm:ss.SSS} [%l-%M] %c{1} - %msg%n
 				</pattern>
 			</PatternLayout>
 			<Policies>
 				<TimeBasedTriggeringPolicy interval="1" modulate="true" />
 				<SizeBasedTriggeringPolicy size="10MB" />
+				
 			</Policies>
 			<!-- Max 10 files will be created everyday -->
 			<DefaultRolloverStrategy max="10">
@@ -24,13 +25,13 @@
 		</RollingFile>
         <Console name="console" target="SYSTEM_OUT">
             <PatternLayout>
-                <pattern>[%-5level] %d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %c{1} - %msg%n
+                <pattern>[%-5level] %d{yyyy-MM-dd HH:mm:ss.SSS} [%l-%M] %c{1} - %msg%n
                 </pattern>
             </PatternLayout>
         </Console>
 		<RollingFile name="errorLogger" fileName="${projectRoot}/logs/error_lce.log" filePattern="${projectRoot}/logs/error_lce-%d{yyMMdd}.log">
 			<PatternLayout>
-				<pattern>[%-5level] %d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %c{1} - %msg%n
+				<pattern>[%-5level] %d{yyyy-MM-dd HH:mm:ss.SSS} [%l-%M] %c{1} - %msg%n
 				</pattern>
 			</PatternLayout>
 			<Policies>
