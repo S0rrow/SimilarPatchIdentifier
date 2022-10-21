@@ -36,26 +36,25 @@ public class Extractor {
     HashMap<String, Integer> map = new HashMap<>();
     ArrayList<Integer> AST_types = new ArrayList<>();
 
-    public boolean extract_log(String repo_path, String bic, String bbic, String bic_path, String bbic_path, String output_dir) {
-        App.logger.trace(App.ANSI_BLUE + "[status] > extracting gumtree log from " + diff_path
-                    + App.ANSI_RESET + " to " + App.ANSI_BLUE + output_dir + App.ANSI_RESET);
+    public boolean extract_gumtree_log(String repo_path, String bic, String bbic, String bic_path, String bbic_path,
+            String output_dir) {
+        App.logger.trace(App.ANSI_BLUE + "[status] > extracting gumtree log from " + App.ANSI_RESET + " to "
+                + App.ANSI_BLUE + output_dir + App.ANSI_RESET);
         App.logger.trace(App.ANSI_YELLOW + "[status] > repo path: " + repo_path + App.ANSI_RESET);
-        Git git = Git.open(new File(repo_path));
-        Repository repository = git.getRepository();
-        RevWalk walk = new RevWalk(repository);
-        File output = new File(output_dir);
-        if (!output.exists()) {
-            output.mkdir();
-        }
-
-        String line = "";
-        String repo_name = GitFunctions.get_repo_name_from_url(repo_path);
-
-
-        File log_file = new File(output_dir, "gumtree_log.txt");
-        BufferedWriter writer = new BufferedWriter(new FileWriter(log_file, false));
 
         try {
+            Git git = Git.open(new File(repo_path));
+            Repository repository = git.getRepository();
+            RevWalk walk = new RevWalk(repository);
+            File output = new File(output_dir);
+            if (!output.exists()) {
+                output.mkdir();
+            }
+            String line = "";
+            String repo_name = GitFunctions.get_repo_name_from_url(repo_path);
+
+            File log_file = new File(output_dir, "gumtree_log.txt");
+            BufferedWriter writer = new BufferedWriter(new FileWriter(log_file, false));
             RevCommit commitBIC = walk.parseCommit(repository.resolve(bic));
             RevCommit commitBBIC = walk.parseCommit(repository.resolve(bbic));
             String pathBIC = bic_path;
@@ -87,7 +86,6 @@ public class Extractor {
 
             writer.close();
             walk.close();
-            reader.close();
         } catch (Exception e) {
             App.logger.error(App.ANSI_RED + "[error] > " + e.getMessage() + App.ANSI_RESET);
             return false;
@@ -96,7 +94,7 @@ public class Extractor {
     }
 
     // extract gumtree log from diff line
-    public boolean extract_log(String repo_path, String diff_path, String output_dir) {
+    public boolean extract_gumtree_log(String repo_path, String diff_path, String output_dir) {
         try {
             App.logger.trace(App.ANSI_BLUE + "[status] > extracting gumtree log from " + diff_path
                     + App.ANSI_RESET + " to " + App.ANSI_BLUE + output_dir + App.ANSI_RESET);

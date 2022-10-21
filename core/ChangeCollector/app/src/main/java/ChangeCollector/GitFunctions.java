@@ -203,6 +203,38 @@ public class GitFunctions {
         return cid_set;
     }
 
+    public String blame(String project_dir, String file, int lineBlame, int lineFix, String bic) {
+        String bbic = ""; // old
+        int exit_code = -1;
+        try {
+            ProcessBuilder parse_builder = new ProcessBuilder("git", "-C", project_dir, "rev-parse",
+                    String.format("%s~1", bic));
+            parse_builder.directory(new File(project_dir));
+            Process p = parse_builder.start();
+            BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
+            StringBuilder str_builder = new StringBuilder();
+            reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
+            str_builder = new StringBuilder();
+            for (String l = reader.readLine(); l != null; l = reader.readLine()) {
+                str_builder.append(l);
+                str_builder.append(System.lineSeparator());
+            }
+            bbic = str_builder.toString().split(" ")[0].strip(); // old cid
+            exit_code = p.waitFor();
+            if (exit_code != 0) {
+                App.logger.error(App.ANSI_RED + "[ERROR] > process exit code : " + exit_code + App.ANSI_RESET);
+                App.logger.error(
+                        App.ANSI_RED + "[ERROR] > Failed to get the commit id of the line " + lineBlame + " in file "
+                                + file + App.ANSI_RESET);
+                return null;
+            }
+        } catch (Exception e) {
+            App.logger.error(App.ANSI_RED + "[ERROR] > Exception : " + e.getMessage() + App.ANSI_RESET);
+            return null;
+        }
+        return bbic;
+    }
+
     // extract commit ids and file names between commits of all source files within
     // a git repository
     // @param repo_git : path of git repository

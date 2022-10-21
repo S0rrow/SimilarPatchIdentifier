@@ -129,7 +129,7 @@ public class App {
 
             String diff_path = output_dir + "/diff.txt";
 
-            if (!extractor.extract_log(repo_git, diff_path, output_dir)) {
+            if (!extractor.extract_gumtree_log(repo_git, diff_path, output_dir)) {
                 logger.fatal(ANSI_RED + "[fatal] > Failed to extract log" + ANSI_RESET);
                 System.exit(1);
             }
@@ -192,7 +192,7 @@ public class App {
             // STEP 3 : extract change vector from diff and write it to a file
 
             String diff_path = output_dir + "/diff.txt";
-            if (!extractor.extract_log(repo_git, diff_path, output_dir)) {
+            if (!extractor.extract_gumtree_log(repo_git, diff_path, output_dir)) {
                 logger.fatal(ANSI_RED + "[fatal] > Failed to extract gumtree log" + ANSI_RESET);
                 System.exit(1);
             }
@@ -287,7 +287,7 @@ public class App {
 
             // STEP 3 : extract change vector from diff and write it to a file
             String diff_path = output_dir + "/diff.txt";
-            if (!extractor.extract_log(implemental.faultyProject, diff_path, output_dir)) {
+            if (!extractor.extract_gumtree_log(implemental.faultyProject, diff_path, output_dir)) {
                 logger.fatal(ANSI_RED + "[fatal] > Failed to extract gumtree log" + ANSI_RESET);
                 System.exit(1);
             }
@@ -303,15 +303,15 @@ public class App {
                 System.exit(1);
             }
             logger.info(ANSI_GREEN + "[info] > Successfully extracted change vector" + ANSI_RESET);
-        } 
+        }
         // MODE 4 : collect change vectors from given inputs of bic and bfc file
         // and write gumtree_vector.csv on output
-        else if(mode.equals("poolminer")) {
+        else if (mode.equals("poolminer")) {
             String target = properties.getProperty("output_dir");
-            String commit_file_path = target+ "/commit_file.csv";
+            String commit_file_path = target + "/BIC_BFC_SET.csv";
             String result_file_path = target + "/gumtree_vector.csv";
             PoolMiner poolMiner = new PoolMiner(commit_file_path, hash_id, target, result_file_path);
-            if(!poolMiner.run()) {
+            if (!poolMiner.run()) {
                 logger.error(ANSI_RED + "[error] > Failed to run PoolMiner" + ANSI_RESET);
                 System.exit(1);
             }
