@@ -13,7 +13,7 @@
 .mtj.tmp/
 
 # Package Files #
-lib/*.jar
+# lib/*.jar
 results/*
 *.war
 *.nar
@@ -164,6 +164,11 @@ fabric.properties
 
 # Package Files #
 *.jar
+!core/confix/lib/las.jar
+!core/confix/ConFix-code/lib/las.jar
+!core/confix/ConFix-code/lib/org.jacoco.core-0.7.7.201606060606.jar
+!core/confix/ConFix-code/lib/jacocoagent.jar
+!core/confix/ConFix-code/lib/jcodelib.jar
 *.war
 *.nar
 *.ear
@@ -198,6 +203,7 @@ venv3/
 
 # text files for logging and overall inputs
 *.txt
+logs/
 
 # original files saved for developing
 *.original
@@ -217,3 +223,10 @@ misc/
 
 ## SimFin( (will be replaced by other models, currently on .gitignore due to its size)
 #pool/simfin/
+core/AllChangeCollector/.gradle/file-system.probe
+
+core/BuggyChangeCollector/.gradle/
+core/AllChangeCollector/.gradle/
+core/LCE/.gradle/
+pkg/
+SPI.ini

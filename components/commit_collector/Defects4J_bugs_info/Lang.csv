@@ -1,4 +1,4 @@
-Defects4J ID, Faulty file path, fix faulty line, blame faulty line
+Defects4J ID,Faulty file path,fix faulty line,blame faulty line
 2,src/main/java/org/apache/commons/lang3/math/LocaleUtils.java,92,92
 6,src/main/java/org/apache/commons/lang3/text/translate/CharSequenceTranslator.java,95,95
 9,src/main/java/org/apache/commons/lang3/time/FastDateParser.java,143,143

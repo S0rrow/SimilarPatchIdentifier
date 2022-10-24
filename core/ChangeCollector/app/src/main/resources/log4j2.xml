@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="info">
+	<Properties>
+		<Property name="projectRoot">/home/codemodel/leshen/SimilarPatchIdentifier</Property>
+	</Properties>
+	<Appenders>
+		<RollingFile name="fileLogger" fileName="${projectRoot}/logs/changecollector.log" filePattern="${projectRoot}/logs/changecollector-%d{yyMMdd}.log">
+			<PatternLayout>
+				<pattern>[%-5level] %d{yyyy-MM-dd HH:mm:ss.SSS} [%l-%M] %c{1} - %msg%n
+				</pattern>
+			</PatternLayout>
+			<Policies>
+				<TimeBasedTriggeringPolicy interval="1" modulate="true" />
+				<SizeBasedTriggeringPolicy size="10MB" />
+			</Policies>
+			<!-- Max 10 files will be created everyday -->
+			<DefaultRolloverStrategy max="10">
+				<Delete basePath="${projectRoot}" maxDepth="10">
+					<!-- Delete all files older than 30 days -->
+					<IfLastModified age="30d" />
+				</Delete>
+			</DefaultRolloverStrategy>
+		</RollingFile>
+        <Console name="console" target="SYSTEM_OUT">
+            <PatternLayout>
+                <pattern>[%-5level] %d{yyyy-MM-dd HH:mm:ss.SSS} [%l-%M] %c{1} - %msg%n
+                </pattern>
+            </PatternLayout>
+        </Console>
+		<RollingFile name="errorLogger" fileName="${projectRoot}/logs/error_changecollector-%d{yyMMdd}.log" filePattern="${projectRoot}/logs/error_changecollector-%d{yyMMdd}.log">
+			<PatternLayout>
+				<pattern>[%-5level] %d{yyyy-MM-dd HH:mm:ss.SSS} [%l-%M] %c{1} - %msg%n
+				</pattern>
+			</PatternLayout>
+			<Policies>
+				<TimeBasedTriggeringPolicy interval="1" modulate="true" />
+				<SizeBasedTriggeringPolicy size="10MB" />
+			</Policies>
+		</RollingFile>
+	</Appenders>
+	<Loggers>
+		<Root level="trace" additivity="false">
+			<appender-ref ref="fileLogger" />
+            <appender-ref ref="console" />
+		</Root>
+		<Logger name="org.apache" level="warn" additivity="false">
+			<appender-ref ref="errorLogger" />
+		</Logger>
+	</Loggers>
+</Configuration>
