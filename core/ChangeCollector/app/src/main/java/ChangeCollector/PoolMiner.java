@@ -15,6 +15,7 @@ public class PoolMiner {
     public String target; // directory path to clone git url repository
     public String hash_id; // hash id of the current execution
     public String result_file_path; // path to the file containing the result
+    public String extracted_commit_file_path;
 
     public static Logger pmLogger = LogManager.getLogger(PoolMiner.class.getName()); // log4j2 logger
 
@@ -24,6 +25,7 @@ public class PoolMiner {
         this.hash_id = hash_id;
         this.target = target;
         this.result_file_path = result_file_path;
+        extracted_commit_file_path = target + "/commit_file.csv";
     }
 
     public boolean run() {
@@ -31,8 +33,9 @@ public class PoolMiner {
         Extractor extractor = new Extractor();
         GitFunctions gitFunctions = new GitFunctions();
         try {
-            BufferedReader reader = new BufferedReader(new FileReader(this.commit_file_path));
-
+            BufferedReader reader = new BufferedReader(new FileReader(commit_file_path));
+            BufferedWriter gumtree_writer = new BufferedWriter(new FileWriter(result_file_path, true));
+            BufferedWriter commit_writer = new BufferedWriter(new FileWriter(extracted_commit_file_path, true));
             String line;
             while ((line = reader.readLine()) != null) {
                 String[] elements = line.split(",");
@@ -58,31 +61,67 @@ public class PoolMiner {
 
                 String bbic = gitFunctions.blame(repo_dir, bic_path, lineBlame, lineBlame, bic);
 
+                if (bbic == null) {
+                    ArrayList<String> hash_list = gitFunctions.log(repo_dir, bic_path);
+                    // check if the bic is the first commit
+                    if (hash_list.size() == 1) {
+                        pmLogger.error(App.ANSI_RED + "[error] > The bic is the first commit" + App.ANSI_RESET);
+                        continue;
+                    } else if (hash_list.size() == 0) {
+                        pmLogger.error(App.ANSI_RED + "[error] > The bic is not in the repository" + App.ANSI_RESET);
+                        continue;
+                    }
+                }
+
                 String[] diff = gitFunctions.extract_diff(repo_dir, bic_path, bic, bbic);
 
-                if (diff == null) {
-                    pmLogger.error(App.ANSI_RED + "[error] > diff is null" + App.ANSI_RESET);
+                if (diff == null || diff.length == 0) {
+                    pmLogger.error(App.ANSI_RED + "[error] > diff is null or empty" + App.ANSI_RESET);
                     continue;
                 }
 
-                String diff_file_path = repo_dir + "/diff.txt";
+                pmLogger.info(App.ANSI_BLUE + "[info] > diff extracted successfully" + App.ANSI_RESET);
 
-                String gumtree_log = repo_dir + "/gumtree_log.txt";
+                String diff_file_path = repo_dir + "/diff.txt";
 
                 BufferedWriter diff_writer = new BufferedWriter(new FileWriter(diff_file_path));
 
                 for (String diff_line : diff) {
                     diff_writer.write(diff_line);
+                    commit_writer.write(diff_line);
                     diff_writer.write(" ");
+                    commit_writer.write(",");
                 }
                 diff_writer.newLine();
                 diff_writer.close();
+
+                pmLogger.info(App.ANSI_BLUE + "[info] > diff file generated successfully");// diff file written
+                                                                                           // successfully
+
                 if (!extractor.extract_gumtree_log(repo_dir, bic, bbic, bic_path, bic_path, workspace_dir)) {
-                    pmLogger.error(App.ANSI_RED + "[error] > extractor.extract_log() failed" + App.ANSI_RESET);
+                    pmLogger.error(App.ANSI_RED + "[error] > extractor failed to extract gumtree log" + App.ANSI_RESET);
                     return false;
                 }
+
+                pmLogger.info(App.ANSI_BLUE + "[info] > gumtree log generated successfully" + App.ANSI_RESET);
+
+                String gumtree_log = workspace_dir + "/gumtree_log.txt";
+
+                int cv_extraction_result = extractor.extract_vector_pool(gumtree_log, result_file_path);
+                if (cv_extraction_result == -1) {
+                    pmLogger.error(App.ANSI_RED + "[error] > extractor failed to extract cv" + App.ANSI_RESET);
+                    continue;
+                } else if (cv_extraction_result == 1) {
+                    pmLogger.error(App.ANSI_RED + "[error] > cv is empty" + App.ANSI_RESET);
+                    continue;
+                }
+                pmLogger.info(App.ANSI_GREEN + "[info] > cv generated successfully" + App.ANSI_RESET);
+
             }
             reader.close();
+            gumtree_writer.close();
+            commit_writer.close();
+
             pmLogger.debug(App.ANSI_PURPLE + "[debug] > PoolMiner.run() finished" + App.ANSI_RESET);
         } catch (Exception e) {
             pmLogger.error(App.ANSI_RED + "[error] > Exception : " + e + App.ANSI_RESET);

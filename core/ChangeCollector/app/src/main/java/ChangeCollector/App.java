@@ -308,7 +308,7 @@ public class App {
         // and write gumtree_vector.csv on output
         else if (mode.equals("poolminer")) {
             String target = properties.getProperty("output_dir");
-            String commit_file_path = target + "/BIC_BFC_SET.csv";
+            String commit_file_path = target + properties.getProperty("set_file_path");
             String result_file_path = target + "/gumtree_vector.csv";
             PoolMiner poolMiner = new PoolMiner(commit_file_path, hash_id, target, result_file_path);
             if (!poolMiner.run()) {

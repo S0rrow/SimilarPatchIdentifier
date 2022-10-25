@@ -157,7 +157,7 @@ public class Extractor {
         return true;
     }
 
-    public int extract_vector_pool(String repo_name, String gumtree_log, String result_file) {
+    public int extract_vector_pool(String gumtree_log, String result_file) {
         App.logger.trace(App.ANSI_BLUE + "[status] > extracting change vectors from " + gumtree_log
                 + App.ANSI_RESET + " to " + App.ANSI_BLUE + result_file + App.ANSI_RESET);
         File gumtree = new File(gumtree_log);
@@ -226,7 +226,7 @@ public class Extractor {
             return -1;
         }
         int result = no_change ? 1 : 0;
-        return 0;
+        return result;
     }
 
     public int extract_vector(String repo_name, String gumtree_log, String result_path) {

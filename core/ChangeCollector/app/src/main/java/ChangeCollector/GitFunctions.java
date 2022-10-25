@@ -95,7 +95,7 @@ public class GitFunctions {
     // changed
     // @param path : path of git repository
     // @param file : file to check
-    private ArrayList<String> log(String repo_path, String file_name) {
+    public ArrayList<String> log(String repo_path, String file_name) {
         App.logger.trace(App.ANSI_BLUE + "[status] > getting log of " + App.ANSI_YELLOW + repo_path + App.ANSI_RESET
                 + " with " + App.ANSI_YELLOW + file_name + App.ANSI_RESET);
         ArrayList<String> hashes = new ArrayList<>();
@@ -207,8 +207,18 @@ public class GitFunctions {
         String bbic = ""; // old
         int exit_code = -1;
         try {
-            ProcessBuilder parse_builder = new ProcessBuilder("git", "-C", project_dir, "rev-parse",
-                    String.format("%s~1", bic));
+            App.logger.info(App.ANSI_BLUE + "[status] > checking out " + App.ANSI_YELLOW + project_dir + App.ANSI_BLUE
+                    + " to " + App.ANSI_YELLOW + bic + App.ANSI_RESET);
+            ProcessBuilder checkout_builder = new ProcessBuilder("git", "checkout", "-f", bic);
+            checkout_builder.directory(new File(project_dir));
+            Process checkout = checkout_builder.start();
+            exit_code = checkout.waitFor();
+            if (exit_code != 0) {
+                App.logger.error(App.ANSI_RED + "[ERROR] > Failed to checkout " + bic + "with exit code : "
+                        + App.ANSI_YELLOW + exit_code + App.ANSI_RESET);
+                return null;
+            }
+            ProcessBuilder parse_builder = new ProcessBuilder("git", "rev-parse", String.format("%s~1", bic));
             parse_builder.directory(new File(project_dir));
             Process p = parse_builder.start();
             BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
@@ -305,9 +315,12 @@ public class GitFunctions {
     // @param old_cid : Commit ID before Fix Inducing Commit ID
     public String[] extract_diff(String repo_git, String file_name, String new_cid, String old_cid) {
         String repo_name = get_repo_name_from_url(repo_git);
-        App.logger.trace(App.ANSI_BLUE + "[status] > extracting diff from " + App.ANSI_BLUE + repo_name + App.ANSI_RESET
+        App.logger.trace(App.ANSI_BLUE + "[status] > extracting diff from " + App.ANSI_YELLOW + repo_name
+                + App.ANSI_BLUE
                 + " between "
-                + App.ANSI_BLUE + old_cid + App.ANSI_RESET + " and " + App.ANSI_BLUE + new_cid + App.ANSI_RESET);
+                + App.ANSI_YELLOW + old_cid + App.ANSI_BLUE + " and " + App.ANSI_YELLOW + new_cid + App.ANSI_RESET);
+        App.logger.trace(
+                App.ANSI_BLUE + "[status] > extracting file name : " + App.ANSI_YELLOW + file_name + App.ANSI_RESET);
         String[] result = new String[4];
         try {
             Git git = Git.open(new File(repo_git));
@@ -337,6 +350,10 @@ public class GitFunctions {
             DiffFormatter diffFormatter = new DiffFormatter(DisabledOutputStream.INSTANCE);
             diffFormatter.setRepository(repository);
             List<DiffEntry> entries = diffFormatter.scan(oldTreeIter, newTreeIter);
+            if (entries.size() == 0 || entries.equals(null)) {
+                App.logger.error(App.ANSI_RED + "[error] > no diff found" + App.ANSI_RESET);
+                return null;
+            }
             for (DiffEntry entry : entries) {
                 String str_new = entry.getNewPath();
                 String str_old = entry.getOldPath();
