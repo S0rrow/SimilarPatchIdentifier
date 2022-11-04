@@ -218,7 +218,9 @@ public class GitFunctions {
                         + App.ANSI_YELLOW + exit_code + App.ANSI_RESET);
                 return null;
             }
-            ProcessBuilder parse_builder = new ProcessBuilder("git", "rev-parse", String.format("%s~1", bic));
+            ProcessBuilder parse_builder = new ProcessBuilder("git", "-C", project_dir, "blame", "-C", "-C", "-f", "-l",
+                    "-L",
+                    String.format("%s,%s", lineBlame, lineFix), file);
             parse_builder.directory(new File(project_dir));
             Process p = parse_builder.start();
             BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
@@ -373,6 +375,12 @@ public class GitFunctions {
                     }
                 }
             }
+            for (String entry : result) {
+                if (entry == null || entry.equals("")) {
+                    App.logger.error(App.ANSI_RED + "[error] > no file found within given commits!" + App.ANSI_RESET);
+                    return null;
+                }
+            }
             diffFormatter.close();
             repository.close();
             git.close();
@@ -392,5 +400,25 @@ public class GitFunctions {
             }
         }
         return url_split[url_split.length - 1];
+    }
+
+    // check if given commit id is the initial commit or not
+    public static boolean isInit(String repo_path, String cid) {
+        try {
+            Git git = Git.open(new File(repo_path));
+            Repository repository = git.getRepository();
+            ObjectId head = repository.resolve(cid + "^{tree}");
+            CanonicalTreeParser oldTreeIter = new CanonicalTreeParser();
+            oldTreeIter.reset(repository.newObjectReader(), head);
+            if (oldTreeIter == null) {
+                return true;
+            }
+            git.close();
+            repository.close();
+        } catch (Exception e) {
+            App.logger.error(App.ANSI_RED + "[error] > Exception : " + e.getMessage() + App.ANSI_RESET);
+            return false;
+        }
+        return false;
     }
 }

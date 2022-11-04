@@ -161,7 +161,6 @@ public class Extractor {
         App.logger.trace(App.ANSI_BLUE + "[status] > extracting change vectors from " + gumtree_log
                 + App.ANSI_RESET + " to " + App.ANSI_BLUE + result_file + App.ANSI_RESET);
         File gumtree = new File(gumtree_log);
-        File vector_file = new File(result_file);
 
         String line = null;
         boolean no_change = false;
@@ -169,7 +168,7 @@ public class Extractor {
         int oper = 0;
 
         try {
-            BufferedWriter vector_writer = new BufferedWriter(new FileWriter(vector_file, true));
+            BufferedWriter vector_writer = new BufferedWriter(new FileWriter(result_file, true));
             String write_line = "";
 
             BufferedReader log_reader = new BufferedReader(new FileReader(gumtree));
@@ -215,10 +214,8 @@ public class Extractor {
                     }
                 }
                 vector_writer.write(write_line);
-                if (!write_line.equals("")) {
-                    vector_writer.newLine();
-                }
             }
+            vector_writer.newLine();
             vector_writer.close();
             log_reader.close();
         } catch (Exception e) {
