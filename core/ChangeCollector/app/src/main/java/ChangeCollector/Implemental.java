@@ -74,7 +74,7 @@ public class Implemental {
     public boolean preprocess() {
         if (config_ready) {
             try {
-                workspace_dir = String.format("%s/%s", target, hash_id);
+                workspace_dir = String.format("%s/%s", result_dir, hash_id);
                 File workspace = new File(workspace_dir);
                 if (!workspace.exists()) {
                     if (!workspace.mkdirs()) {
