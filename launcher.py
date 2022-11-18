@@ -371,12 +371,13 @@ def main(argv):
             for case_num, case in enumerate(cases, 1):
                 # case['hash_id'] = f"{hash_prefix}_{case['project_name']}"
                 case['hash_id'] = f"{hash_part}_{case['project_name']}"
-                print(f"| SPI  | Hash ID generated. Find byproducts in ./target/{case['hash_id']}:")
+                print(f"| SPI  | Hash ID generated as {case['hash_id']}:")
                 if 'batch' in settings['SPI']['mode']:
                     log_file = f"log_{hash_part}.txt"
                 else:
                     log_file = f"log_{hash_part}_{case['project_name']}.txt"
-                case['target_dir'] = f"{SPI_root}/target/{case['hash_id']}"
+                #case['target_dir'] = f"{SPI_root}/target/{case['hash_id']}"
+                case['target_dir'] = f"/data/codemodel/turbstructor/SPI_batch_byproducts_221111/{case['hash_id']}"
                 os.makedirs(case['target_dir'])
 
                 each_start = dt.datetime.now()

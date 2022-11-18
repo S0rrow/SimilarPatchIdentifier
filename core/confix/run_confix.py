@@ -57,7 +57,8 @@ def main(argv):
     perfect_faulty_class, _ = perfect_faulty_path.split(".")
     perfect_faulty_class = perfect_faulty_class.replace("/", ".")
 
-    target_root = f"{SPI_root}/target/{hash_id}" # target_dir > target_root
+    # target_root = f"{SPI_root}/target/{hash_id}" # target_dir > target_root
+    target_root = f"/data/codemodel/turbstructor/SPI_batch_byproducts_221111/{hash_id}" # target_dir > target_root // Urgent fix! Should be fixed correctly later.
     target_workspace = f"{target_root}/{target_project_name}" # (new) target_dir > target_workspace
     target_outputs = f"{target_root}/outputs" # output_dir > target_outputs
 
@@ -68,6 +69,11 @@ def main(argv):
 
     ### for D4J projects
     if is_defects4j == True:
+        identifier = project_information['Project']['project']
+        version = project_information['Project']['identifier']
+
+        subprocess.run(["defects4j", "checkout", "-p", identifier, "-v", f"{version}b", "-w", target_workspace], cwd = target_root)
+
         assert copy(f"{SPI_root}/core/confix/coverages/{target_project_name.lower()}/{target_project_name.lower()}{target_id}b/coverage-info.obj", f"{target_workspace}/")
 
         copy(f"{target_root}/properties/confix.properties", f"{target_workspace}/")
@@ -137,7 +143,8 @@ def main(argv):
     assert copy(f"{SPI_root}/core/confix/ConFix-code/target/confix-0.0.1-SNAPSHOT-jar-with-dependencies.jar", f"{SPI_root}/core/confix/lib/confix-ami_torun.jar")
 
     with open(f"{target_workspace}/log.txt", "w") as f:
-        assert subprocess.run(["/usr/lib/jvm/java-8-openjdk-amd64/bin/java", "-Xmx4g", "-cp", "../../../core/confix/lib/las.jar:../../../core/confix/lib/confix-ami_torun.jar", "-Duser.language=en", "-Duser.timezone=America/Los_Angeles", "com.github.thwak.confix.main.ConFix"], cwd = target_workspace, stdout = f)
+        # assert subprocess.run(["/usr/lib/jvm/java-8-openjdk-amd64/bin/java", "-Xmx4g", "-cp", "../../../core/confix/lib/las.jar:../../../core/confix/lib/confix-ami_torun.jar", "-Duser.language=en", "-Duser.timezone=America/Los_Angeles", "com.github.thwak.confix.main.ConFix"], cwd = target_workspace, stdout = f)
+        assert subprocess.run(["/usr/lib/jvm/java-8-openjdk-amd64/bin/java", "-Xmx4g", "-cp", "/home/codemodel/turbstructor/SimilarPatchIdentifier/core/confix/lib/las.jar:/home/codemodel/turbstructor/SimilarPatchIdentifier/core/confix/lib/confix-ami_torun.jar", "-Duser.language=en", "-Duser.timezone=America/Los_Angeles", "com.github.thwak.confix.main.ConFix"], cwd = target_workspace, stdout = f)
     print("ConFix Execution Finished.")
 
 
