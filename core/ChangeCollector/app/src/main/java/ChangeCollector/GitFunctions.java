@@ -95,7 +95,7 @@ public class GitFunctions {
     // changed
     // @param path : path of git repository
     // @param file : file to check
-    private ArrayList<String> log(String repo_path, String file_name) {
+    public ArrayList<String> log(String repo_path, String file_name) {
         App.logger.trace(App.ANSI_BLUE + "[status] > getting log of " + App.ANSI_YELLOW + repo_path + App.ANSI_RESET
                 + " with " + App.ANSI_YELLOW + file_name + App.ANSI_RESET);
         ArrayList<String> hashes = new ArrayList<>();
@@ -203,6 +203,50 @@ public class GitFunctions {
         return cid_set;
     }
 
+    public String blame(String project_dir, String file, int lineBlame, int lineFix, String bic) {
+        String bbic = ""; // old
+        int exit_code = -1;
+        try {
+            App.logger.info(App.ANSI_BLUE + "[status] > checking out " + App.ANSI_YELLOW + project_dir + App.ANSI_BLUE
+                    + " to " + App.ANSI_YELLOW + bic + App.ANSI_RESET);
+            ProcessBuilder checkout_builder = new ProcessBuilder("git", "checkout", "-f", bic);
+            checkout_builder.directory(new File(project_dir));
+            Process checkout = checkout_builder.start();
+            exit_code = checkout.waitFor();
+            if (exit_code != 0) {
+                App.logger.error(App.ANSI_RED + "[ERROR] > Failed to checkout " + bic + "with exit code : "
+                        + App.ANSI_YELLOW + exit_code + App.ANSI_RESET);
+                return null;
+            }
+            ProcessBuilder parse_builder = new ProcessBuilder("git", "-C", project_dir, "blame", "-C", "-C", "-f", "-l",
+                    "-L",
+                    String.format("%s,%s", lineBlame, lineFix), file);
+            parse_builder.directory(new File(project_dir));
+            Process p = parse_builder.start();
+            BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
+            StringBuilder str_builder = new StringBuilder();
+            reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
+            str_builder = new StringBuilder();
+            for (String l = reader.readLine(); l != null; l = reader.readLine()) {
+                str_builder.append(l);
+                str_builder.append(System.lineSeparator());
+            }
+            bbic = str_builder.toString().split(" ")[0].strip(); // old cid
+            exit_code = p.waitFor();
+            if (exit_code != 0) {
+                App.logger.error(App.ANSI_RED + "[ERROR] > process exit code : " + exit_code + App.ANSI_RESET);
+                App.logger.error(
+                        App.ANSI_RED + "[ERROR] > Failed to get the commit id of the line " + lineBlame + " in file "
+                                + file + App.ANSI_RESET);
+                return null;
+            }
+        } catch (Exception e) {
+            App.logger.error(App.ANSI_RED + "[ERROR] > Exception : " + e.getMessage() + App.ANSI_RESET);
+            return null;
+        }
+        return bbic;
+    }
+
     // extract commit ids and file names between commits of all source files within
     // a git repository
     // @param repo_git : path of git repository
@@ -273,9 +317,12 @@ public class GitFunctions {
     // @param old_cid : Commit ID before Fix Inducing Commit ID
     public String[] extract_diff(String repo_git, String file_name, String new_cid, String old_cid) {
         String repo_name = get_repo_name_from_url(repo_git);
-        App.logger.trace(App.ANSI_BLUE + "[status] > extracting diff from " + App.ANSI_BLUE + repo_name + App.ANSI_RESET
+        App.logger.trace(App.ANSI_BLUE + "[status] > extracting diff from " + App.ANSI_YELLOW + repo_name
+                + App.ANSI_BLUE
                 + " between "
-                + App.ANSI_BLUE + old_cid + App.ANSI_RESET + " and " + App.ANSI_BLUE + new_cid + App.ANSI_RESET);
+                + App.ANSI_YELLOW + old_cid + App.ANSI_BLUE + " and " + App.ANSI_YELLOW + new_cid + App.ANSI_RESET);
+        App.logger.trace(
+                App.ANSI_BLUE + "[status] > extracting file name : " + App.ANSI_YELLOW + file_name + App.ANSI_RESET);
         String[] result = new String[4];
         try {
             Git git = Git.open(new File(repo_git));
@@ -305,6 +352,10 @@ public class GitFunctions {
             DiffFormatter diffFormatter = new DiffFormatter(DisabledOutputStream.INSTANCE);
             diffFormatter.setRepository(repository);
             List<DiffEntry> entries = diffFormatter.scan(oldTreeIter, newTreeIter);
+            if (entries.size() == 0 || entries.equals(null)) {
+                App.logger.error(App.ANSI_RED + "[error] > no diff found" + App.ANSI_RESET);
+                return null;
+            }
             for (DiffEntry entry : entries) {
                 String str_new = entry.getNewPath();
                 String str_old = entry.getOldPath();
@@ -322,6 +373,12 @@ public class GitFunctions {
                             result[3] = str_old;
                         }
                     }
+                }
+            }
+            for (String entry : result) {
+                if (entry == null || entry.equals("")) {
+                    App.logger.error(App.ANSI_RED + "[error] > no file found within given commits!" + App.ANSI_RESET);
+                    return null;
                 }
             }
             diffFormatter.close();
@@ -343,5 +400,25 @@ public class GitFunctions {
             }
         }
         return url_split[url_split.length - 1];
+    }
+
+    // check if given commit id is the initial commit or not
+    public static boolean isInit(String repo_path, String cid) {
+        try {
+            Git git = Git.open(new File(repo_path));
+            Repository repository = git.getRepository();
+            ObjectId head = repository.resolve(cid + "^{tree}");
+            CanonicalTreeParser oldTreeIter = new CanonicalTreeParser();
+            oldTreeIter.reset(repository.newObjectReader(), head);
+            if (oldTreeIter == null) {
+                return true;
+            }
+            git.close();
+            repository.close();
+        } catch (Exception e) {
+            App.logger.error(App.ANSI_RED + "[error] > Exception : " + e.getMessage() + App.ANSI_RESET);
+            return false;
+        }
+        return false;
     }
 }

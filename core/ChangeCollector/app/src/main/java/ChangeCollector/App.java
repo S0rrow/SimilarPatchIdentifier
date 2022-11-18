@@ -32,15 +32,6 @@ public class App {
         app.run(properties);
     }
 
-    public void test(Properties properties) {
-        logger.trace(ANSI_BLUE + "[test] > log4j trace message" + ANSI_RESET);
-        logger.debug(ANSI_PURPLE + "[test] > log4j debug message" + ANSI_RESET);
-        logger.info(ANSI_GREEN + "[test] > log4j info message" + ANSI_RESET);
-        logger.warn(ANSI_YELLOW + "[test] > log4j warn message" + ANSI_RESET);
-        logger.error(ANSI_RED + "[test] > log4j error message" + ANSI_RESET);
-        logger.fatal(ANSI_RED + "[test] > log4j fatal message" + ANSI_RESET);
-    }
-
     public void run(Properties properties) {
         // args designates the path of properties file
         GitFunctions gitFunctions = new GitFunctions();
@@ -72,7 +63,7 @@ public class App {
         if (doClean) {
             logger.debug(ANSI_PURPLE + "[debug] > Cleaning output directory" + ANSI_RESET);
             try {
-                FileUtils.deleteDirectory(new File(output_dir));
+                FileUtils.deleteDirectory(new File(workspace_dir));
                 if (!new File(output_dir).exists()) {
                     new File(output_dir).mkdirs();
                 }
@@ -82,7 +73,7 @@ public class App {
         }
 
         // clone repository
-        if (!mode.equals("defects4j") && !gitFunctions.clone(git_url, workspace_dir)) {
+        if (!mode.equals("defects4j") && !mode.equals("poolminer") && !gitFunctions.clone(git_url, workspace_dir)) {
             logger.fatal(ANSI_RED + "[fatal] > Failed to clone " + git_url + ANSI_RESET);
             System.exit(1);
         }
@@ -138,7 +129,7 @@ public class App {
 
             String diff_path = output_dir + "/diff.txt";
 
-            if (!extractor.extract_log(repo_git, diff_path, output_dir)) {
+            if (!extractor.extract_gumtree_log(repo_git, diff_path, output_dir)) {
                 logger.fatal(ANSI_RED + "[fatal] > Failed to extract log" + ANSI_RESET);
                 System.exit(1);
             }
@@ -201,7 +192,7 @@ public class App {
             // STEP 3 : extract change vector from diff and write it to a file
 
             String diff_path = output_dir + "/diff.txt";
-            if (!extractor.extract_log(repo_git, diff_path, output_dir)) {
+            if (!extractor.extract_gumtree_log(repo_git, diff_path, output_dir)) {
                 logger.fatal(ANSI_RED + "[fatal] > Failed to extract gumtree log" + ANSI_RESET);
                 System.exit(1);
             }
@@ -296,7 +287,7 @@ public class App {
 
             // STEP 3 : extract change vector from diff and write it to a file
             String diff_path = output_dir + "/diff.txt";
-            if (!extractor.extract_log(implemental.faultyProject, diff_path, output_dir)) {
+            if (!extractor.extract_gumtree_log(implemental.faultyProject, diff_path, output_dir)) {
                 logger.fatal(ANSI_RED + "[fatal] > Failed to extract gumtree log" + ANSI_RESET);
                 System.exit(1);
             }
@@ -312,6 +303,18 @@ public class App {
                 System.exit(1);
             }
             logger.info(ANSI_GREEN + "[info] > Successfully extracted change vector" + ANSI_RESET);
+        }
+        // MODE 4 : collect change vectors from given inputs of bic and bfc file
+        // and write gumtree_vector.csv on output
+        else if (mode.equals("poolminer")) {
+            String target = properties.getProperty("output_dir");
+            String commit_file_path = target + properties.getProperty("set_file_path");
+            String result_file_path = target + "/gumtree_vector.csv";
+            PoolMiner poolMiner = new PoolMiner(commit_file_path, hash_id, target, result_file_path);
+            if (!poolMiner.run()) {
+                logger.error(ANSI_RED + "[error] > Failed to run PoolMiner" + ANSI_RESET);
+                System.exit(1);
+            }
         } else {
             logger.fatal(ANSI_RED + "[fatal] > Invalid mode" + ANSI_RESET);
             System.exit(1);
