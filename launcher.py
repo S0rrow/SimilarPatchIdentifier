@@ -54,6 +54,7 @@ def parse_argv() -> tuple:
         cases[-1]['identifier'], cases[-1]['bug_id'] = cases[-1]['project_name'].split('-')
     else:
         if settings['SPI']['mode'] == 'defects4j':
+            print(f"debug : mode defects4j")
             cases.append(dict())
             cases[-1]['identifier'] = settings['SPI']['project']
             cases[-1]['bug_id'] = settings['SPI']['identifier']
@@ -61,10 +62,12 @@ def parse_argv() -> tuple:
             # cases[-1]['identifier'], cases[-1]['bug_id'] = cases[-1]['project_name'].split('-')
 
         elif settings['SPI']['mode'] in ('defects4j-batch', 'defects4j-batch-expr'):
+            print(f"debug : mode defects4j-batch")
             with open(settings['SPI']['batch_d4j_file'], 'r') as infile:
                 for bug in infile.read().splitlines():
                     cases.append(dict())
                     cases[-1]['project_name'] = bug
+                    cases[-1]['project'] = bug
                     identifier, bug_id = bug.split('-')
                     cases[-1]['identifier'] = identifier
                     cases[-1]['bug_id'] = bug_id
@@ -371,12 +374,13 @@ def main(argv):
             for case_num, case in enumerate(cases, 1):
                 # case['hash_id'] = f"{hash_prefix}_{case['project_name']}"
                 case['hash_id'] = f"{hash_part}_{case['project_name']}"
-                print(f"| SPI  | Hash ID generated. Find byproducts in ./target/{case['hash_id']}:")
+                print(f"| SPI  | Hash ID generated as {case['hash_id']}:")
                 if 'batch' in settings['SPI']['mode']:
                     log_file = f"log_{hash_part}.txt"
                 else:
                     log_file = f"log_{hash_part}_{case['project_name']}.txt"
-                case['target_dir'] = f"{SPI_root}/target/{case['hash_id']}"
+                #case['target_dir'] = f"{SPI_root}/target/{case['hash_id']}"
+                case['target_dir'] = f"/data/codemodel/turbstructor/SPI_batch_byproducts_221111/{case['hash_id']}"
                 os.makedirs(case['target_dir'])
 
                 each_start = dt.datetime.now()
@@ -386,6 +390,8 @@ def main(argv):
 
 
                 if is_defects4j == True:
+                    settings['SPI']['project'] = case['identifier']
+                    settings['SPI']['identifier'] = case['bug_id']
                     with open(f"{SPI_root}/components/commit_collector/Defects4J_bugs_info/{case['identifier']}.csv", 'r', newline = '') as d4j_meta_file:
                         reader = csv.DictReader(d4j_meta_file)
                         for row in reader:

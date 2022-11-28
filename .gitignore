@@ -230,3 +230,6 @@ core/AllChangeCollector/.gradle/
 core/LCE/.gradle/
 pkg/
 SPI.ini
+
+# screen log
+d4j-batch_log
