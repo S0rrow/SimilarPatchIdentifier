@@ -75,7 +75,7 @@ public class GitFunctions {
         try {
             ProcessBuilder pb = new ProcessBuilder();
             pb.directory(new File(repo_path));
-            pb.command("git", "log", "--pretty=format:%H");
+            pb.command("git", "log", "origin", "--pretty=format:%H");
             Process p = pb.start();
             BufferedReader br = new BufferedReader(new InputStreamReader(p.getInputStream()));
             String line;
@@ -102,7 +102,7 @@ public class GitFunctions {
         try {
             ProcessBuilder pb = new ProcessBuilder();
             pb.directory(new File(repo_path));
-            pb.command("git", "log", "--pretty=format:%H", file_name);
+            pb.command("git", "log", "origin", "--pretty=format:%H", file_name);
             Process process = pb.start();
             BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
             String line = "";
