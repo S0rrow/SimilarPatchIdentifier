@@ -145,6 +145,7 @@ def main(argv):
     with open(f"{target_workspace}/log.txt", "w") as f:
         # assert subprocess.run(["/usr/lib/jvm/java-8-openjdk-amd64/bin/java", "-Xmx4g", "-cp", "../../../core/confix/lib/las.jar:../../../core/confix/lib/confix-ami_torun.jar", "-Duser.language=en", "-Duser.timezone=America/Los_Angeles", "com.github.thwak.confix.main.ConFix"], cwd = target_workspace, stdout = f)
         assert subprocess.run(["/usr/lib/jvm/java-8-openjdk-amd64/bin/java", "-Xmx16g", "-cp", "/home/codemodel/turbstructor/SimilarPatchIdentifier/core/confix/lib/las.jar:/home/codemodel/turbstructor/SimilarPatchIdentifier/core/confix/lib/confix-ami_torun.jar", "-Duser.language=en", "-Duser.timezone=America/Los_Angeles", "com.github.thwak.confix.main.ConFix"], cwd = target_workspace, stdout = f)
+
     print("ConFix Execution Finished.")
 
 
