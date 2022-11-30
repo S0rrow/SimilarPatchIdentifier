@@ -22,6 +22,7 @@ public class Extractor {
     private List<List<String>> meta_pool_list = new ArrayList<>();
     private List<List<String>> cleaned_meta_pool_list = new ArrayList<>();
     private int nummax;
+    private int threshold;
 
     static Logger extractionLogger = LogManager.getLogger(Extractor.class.getName());
 
@@ -34,6 +35,8 @@ public class Extractor {
         target_vector_path = argv.getProperty("target_vector.dir"); // target dir
         nummax = argv.getProperty("candidate_number").equals("") ? 10
                 : Integer.parseInt(argv.getProperty("candidate_number")); // nummax
+        threshold = argv.getProperty("threshold").equals("") ? 100000
+                : Integer.parseInt(argv.getProperty("threshold")); // threshold
     }
 
     public void config(String pool_dir, String vector_dir, String meta_pool_dir, String result_dir) {
@@ -56,10 +59,15 @@ public class Extractor {
             extractionLogger
                     .trace(App.ANSI_BLUE + "[status] meta pool list size = " + meta_pool_list.size() + App.ANSI_RESET);
 
+            // remove empty lines
             int[][] cleaned_pool_array = remove_empty_lines(pool_array, index_list_to_remove);
+            // remove lines with extra long vectors over threshold
+            int[][] regressed_pool_array = remove_extra_long_lines(cleaned_pool_array, index_list_to_remove, nummax);
+
             cleaned_meta_pool_list = sync_removal(meta_pool_list, index_list_to_remove);
             extractionLogger.trace(
-                    App.ANSI_BLUE + "[status] cleaned pool array size = " + cleaned_pool_array.length + App.ANSI_RESET);
+                    App.ANSI_BLUE + "[status] cleaned pool array size = " + regressed_pool_array.length
+                            + App.ANSI_RESET);
             extractionLogger
                     .trace(App.ANSI_BLUE + "[status] index_list_to_remove size : " + index_list_to_remove.size()
                             + App.ANSI_RESET);
@@ -69,11 +77,11 @@ public class Extractor {
 
             vector_array = list_to_int_array2d(CSV_to_ArrayList(target_vector_path));
 
-            sim_score_array = new float[cleaned_pool_array.length];
+            sim_score_array = new float[regressed_pool_array.length];
 
             // score similarity on each line of pool and vector
-            for (int i = 0; i < cleaned_pool_array.length; i++) {
-                sim_score_array[i] = lcs.ScoreSimilarity(cleaned_pool_array[i], vector_array[0]);
+            for (int i = 0; i < regressed_pool_array.length; i++) {
+                sim_score_array[i] = lcs.ScoreSimilarity(regressed_pool_array[i], vector_array[0]);
             }
 
             max_N_index_list = indexesOfTopElements(sim_score_array, nummax);
@@ -147,6 +155,23 @@ public class Extractor {
         // remove last comma of combined
         combined = combined.substring(0, combined.length() - 1);
         return combined;
+    }
+
+    // locate and remove lines with vector size over given threshold
+    private int[][] remove_extra_long_lines(int[][] pool, Vector<Integer> index_list, int threshold) {
+        List<int[]> new_pool = new ArrayList<int[]>();
+        for (int i = 0; i < pool.length; i++) {
+            if (pool[i].length <= threshold) {
+                new_pool.add(pool[i]);
+            } else {
+                index_list.add(i);
+            }
+        }
+        int[][] new_pool_array = new int[new_pool.size()][];
+        for (int i = 0; i < new_pool.size(); i++) {
+            new_pool_array[i] = new_pool.get(i);
+        }
+        return new_pool_array;
     }
 
     // locate and remove empty lines in pool

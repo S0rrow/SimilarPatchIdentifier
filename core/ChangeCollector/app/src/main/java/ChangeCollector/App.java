@@ -67,6 +67,13 @@ public class App {
                 if (!new File(output_dir).exists()) {
                     new File(output_dir).mkdirs();
                 }
+                // remove commit_file.csv, gumtree_vector.csv
+                if (new File(String.format("%s/commit_file.csv", output_dir)).exists()) {
+                    new File(String.format("%s/commit_file.csv", output_dir)).delete();
+                }
+                if (new File(String.format("%s/gumtree_vector.csv", output_dir)).exists()) {
+                    new File(String.format("%s/gumtree_vector.csv", output_dir)).delete();
+                }
             } catch (Exception e) {
                 logger.error(ANSI_RED + "[error] > Exception : " + e.getMessage() + ANSI_RESET);
             }
@@ -308,7 +315,7 @@ public class App {
         // and write gumtree_vector.csv on output
         else if (mode.equals("poolminer")) {
             String target = properties.getProperty("output_dir");
-            String commit_file_path = target + properties.getProperty("set_file_path");
+            String commit_file_path = properties.getProperty("set_file_path");
             String result_file_path = target + "/gumtree_vector.csv";
             PoolMiner poolMiner = new PoolMiner(commit_file_path, hash_id, target, result_file_path);
             if (!poolMiner.run()) {
