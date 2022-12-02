@@ -1,6 +1,7 @@
 import logging
 import os  # nope
 import sys
+import shutil
 import pandas as pd
 import getopt
 import argparse
@@ -10,13 +11,10 @@ import platform
 
 def copy(source, destination):
     try:
-        try:
-            subprocess.run(["cp", source, destination])
-        except Exception as e:
-            subprocess.run(["copy", source, destination])
+        shutil.copy(source, destination)
     except Exception as e:
-        print(f"> Error: {file} : {e.strerror}")
-        print(f"> ! Error occurred while copying {file} to {destination}.")
+        print(f"> Error: {source} : {e.strerror}")
+        print(f"> ! Error occurred while copying {source} to {destination}.")
         return False
     return True
 
@@ -154,6 +152,7 @@ def main(argv):
         with open(os.path.join(target_root, "diff_file.txt"), "w") as f:
             f.write(f"differences made in {perfect_faulty_path}:\n")
 
+        # ! `git diff` might not be printed approopriatedly if `cwd` is not correctly set. Need more research about this later.`
         with open(os.path.join(target_root, "diff_file.txt"), "a") as f:
             subprocess.run(["git", "diff", os.path.join(target_workspace, perfect_faulty_path), os.path.join(target_workspace, "patches", "0", perfect_faulty_path)], cwd = os.path.expanduser('~'), stdout = f)
 
