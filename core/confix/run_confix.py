@@ -62,9 +62,6 @@ def main(argv):
     target_workspace = os.path.join(target_root, target_project_name) # (new) target_dir > target_workspace
     target_outputs = os.path.join(target_root, "outputs") # output_dir > target_outputs
 
-    # currently, we are running confix in APR directory
-
-
     ## prepare setup before running confix
 
     ### for D4J projects
@@ -95,7 +92,7 @@ def main(argv):
             subprocess.run(["defects4j", "export", "-p", test_list, "-o", outfile], cwd = target_workspace)
 
         with open(os.path.join(target_workspace, "confix.properties"), "a") as f:
-            f.write(f"pool.source={os.path.join(target_outputs, "LCE", "candidates")}\n")
+            f.write(f"pool.source={os.path.join(target_outputs, 'LCE', 'candidates')}\n")
         
 
     ### for non-D4J projects
@@ -122,7 +119,7 @@ def main(argv):
             f.write(f"projectName={target_project_name}\n")
             f.write(f"pFaultyClass={perfect_faulty_class}\n")
             f.write(f"pFaultyLine={perfect_faulty_line}\n")
-            f.write(f"pool.source={target_outputs}/LCE/candidates\n")
+            f.write(f"pool.source={os.path.join(target_outputs, 'LCE', 'candidates')}\n")
         with open(os.path.join(target_workspace, "tests.all"), "w") as f:
             f.write(project_information['Project']['test_list'])
         with open(os.path.join(target_workspace, "tests.relevant"), "w") as f:
@@ -143,22 +140,22 @@ def main(argv):
     assert copy(os.path.join(SPI_root, "core", "confix", "ConFix-code", "target", "confix-0.0.1-SNAPSHOT-jar-with-dependencies.jar"), os.path.join(SPI_root, "core", "confix", "lib", "confix-ami_torun.jar"))
 
     with open(os.path.join(target_workspace, "log.txt"), "w") as f:
-        # assert subprocess.run(["/usr/lib/jvm/java-8-openjdk-amd64/bin/java", "-Xmx4g", "-cp", "../../../core/confix/lib/las.jar:../../../core/confix/lib/confix-ami_torun.jar", "-Duser.language=en", "-Duser.timezone=America/Los_Angeles", "com.github.thwak.confix.main.ConFix"], cwd = target_workspace, stdout = f)
-        assert subprocess.run(["/usr/lib/jvm/java-8-openjdk-amd64/bin/java", "-Xmx16g", "-cp", "/home/codemodel/turbstructor/SimilarPatchIdentifier/core/confix/lib/las.jar:/home/codemodel/turbstructor/SimilarPatchIdentifier/core/confix/lib/confix-ami_torun.jar", "-Duser.language=en", "-Duser.timezone=America/Los_Angeles", "com.github.thwak.confix.main.ConFix"], cwd = target_workspace, stdout = f)
+        JDK8_HOME = project_information['Project']['JAVA_HOME_8']
+        assert subprocess.run([os.path.join(JDK8_HOME, "bin", "java"), "-Xmx4g", "-cp", f"{os.path.join(SPI_root, 'core', 'confix', 'lib', 'las.jar')}:{os.path.join(SPI_root, 'core', 'confix', 'lib', 'confix-ami_torun.jar')}", "-Duser.language=en", "-Duser.timezone=America/Los_Angeles", "com.github.thwak.confix.main.ConFix"], cwd = target_workspace, stdout = f)
 
     print("ConFix Execution Finished.")
 
 
-    if not os.path.isfile(f"{target_workspace}/patches/0/{perfect_faulty_path}"):
+    if not os.path.isfile(os.path.join(target_workspace, "patches", "0", perfect_faulty_path)):
         print("ConFix failed to generate plausible patch.")
         sys.exit(-63)
 
     else:
-        with open(f"{target_root}/diff_file.txt", "w") as f:
+        with open(os.path.join(target_root, "diff_file.txt"), "w") as f:
             f.write(f"differences made in {perfect_faulty_path}:\n")
 
-        with open(f"{target_root}/diff_file.txt", "a") as f:
-            subprocess.run(["git", "diff", f"{target_workspace}/{perfect_faulty_path}", f"{target_workspace}/patches/0/{perfect_faulty_path}"], cwd = os.path.expanduser('~'), stdout = f)
+        with open(os.path.join(target_root, "diff_file.txt"), "a") as f:
+            subprocess.run(["git", "diff", os.path.join(target_workspace, perfect_faulty_path), os.path.join(target_workspace, "patches", "0", perfect_faulty_path)], cwd = os.path.expanduser('~'), stdout = f)
 
     # # 패치의 path
     # /home/aprweb/APR_Projects/APR/target/Math/patches/0/org/apache/commons/math/stat/Frequency.java
