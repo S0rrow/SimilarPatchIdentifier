@@ -47,7 +47,7 @@ def main(argv):
     project_information.read(project_info_file)
 
     # root should be that of SPI
-    SPI_root = os.getcwd()
+    SPI_root = project_information['Project']['root']
 
     target_project_name = project_information['Project']['project']
     target_id = project_information['Project']['identifier']
@@ -58,9 +58,9 @@ def main(argv):
     perfect_faulty_class = perfect_faulty_class.replace("/", ".")
 
     # target_root = f"{SPI_root}/target/{hash_id}" # target_dir > target_root
-    target_root = f"/data/codemodel/turbstructor/SPI_batch_byproducts_221111/{hash_id}" # target_dir > target_root // Urgent fix! Should be fixed correctly later.
-    target_workspace = f"{target_root}/{target_project_name}" # (new) target_dir > target_workspace
-    target_outputs = f"{target_root}/outputs" # output_dir > target_outputs
+    target_root = os.path.join(project_information['Project']['byproduct_path'], hash_id)  # target_dir > target_root // Urgent fix! Should be fixed correctly later.
+    target_workspace = os.path.join(target_root, target_project_name) # (new) target_dir > target_workspace
+    target_outputs = os.path.join(target_root, "outputs") # output_dir > target_outputs
 
     # currently, we are running confix in APR directory
 
@@ -74,14 +74,14 @@ def main(argv):
 
         subprocess.run(["defects4j", "checkout", "-p", identifier, "-v", f"{version}b", "-w", target_workspace], cwd = target_root)
 
-        assert copy(f"{SPI_root}/core/confix/coverages/{target_project_name.lower()}/{target_project_name.lower()}{target_id}b/coverage-info.obj", f"{target_workspace}/")
+        assert copy(os.path.join(SPI_root, "core", "confix", "coverages", target_project_name.lower(), f"{target_project_name.lower()}{target_id}b", "coverage-info.obj"), target_workspace)
 
-        copy(f"{target_root}/properties/confix.properties", f"{target_workspace}/")
-        with open(f"{target_workspace}/confix.properties", "a") as confix_prop_file:
+        assert copy(os.path.join(target_root, "properties", "confix.properties"), target_workspace)
+        with open(os.path.join(target_workspace, "confix.properties"), "a") as confix_prop_file:
             for d4j_prop, confix_prop in (("dir.src.classes", "src.dir"), ("dir.bin.classes", "target.dir"), ("dir.src.tests", "test.dir"), ("cp.compile", "cp.compile"), ("cp.test", "cp.test")):
                 filename = f"prop_{d4j_prop}.txt"
                 subprocess.run(["defects4j", "export", "-p", d4j_prop, "-o", filename], cwd = target_workspace)
-                with open(f"{target_workspace}/{filename}", "r") as f:
+                with open(os.path.join(target_workspace, filename), "r") as f:
                     file_content = f.read()
                     confix_prop_file.write(f"{confix_prop}={file_content}\n")
 
@@ -91,11 +91,11 @@ def main(argv):
             confix_prop_file.write(f"pFaultyLine={perfect_faulty_line}\n")
 
         for test_list in ("tests.all", "tests.relevant", "tests.trigger"):
-            outfile = f"{target_workspace}/{test_list}"
+            outfile = os.path.join(target_workspace, test_list)
             subprocess.run(["defects4j", "export", "-p", test_list, "-o", outfile], cwd = target_workspace)
 
-        with open(f"{target_workspace}/confix.properties", "a") as f:
-            f.write(f"pool.source={target_outputs}/LCE/candidates\n")
+        with open(os.path.join(target_workspace, "confix.properties"), "a") as f:
+            f.write(f"pool.source={os.path.join(target_outputs, "LCE", "candidates")}\n")
         
 
     ### for non-D4J projects
@@ -107,14 +107,14 @@ def main(argv):
         compileClassPath = project_information['Project']['compile_class_path']
         buildTool = project_information['Project']['build_tool']
 
-        assert copy(f"{SPI_root}/core/confix/coverages/math/math1b/coverage-info.obj", target_workspace)
+        assert copy(os.path.join(SPI_root, "core", "confix", "coverages", "math", "math1b", "coverage-info.obj"), target_workspace)
 
 
-        prop_file = f"{target_root}/properties/confix.properties"
-        assert copy(prop_file, f"{target_workspace}/")
+        prop_file = os.path.join(target_root, "properties", "confix.properties")
+        assert copy(prop_file, target_workspace)
         
         ### fill up the confix.property
-        with open(f"{target_workspace}/confix.properties", "a") as f:
+        with open(os.path.join(target_workspace, "confix.properties"), "a") as f:
             f.write(f"src.dir={project_information['Project']['source_path']}\n")
             f.write(f"target.dir={project_information['Project']['target_path']}\n")
             f.write(f"cp.compile={project_information['Project']['compile_class_path']}\n")
@@ -123,11 +123,11 @@ def main(argv):
             f.write(f"pFaultyClass={perfect_faulty_class}\n")
             f.write(f"pFaultyLine={perfect_faulty_line}\n")
             f.write(f"pool.source={target_outputs}/LCE/candidates\n")
-        with open(f"{target_workspace}/tests.all", "w") as f:
+        with open(os.path.join(target_workspace, "tests.all"), "w") as f:
             f.write(project_information['Project']['test_list'])
-        with open(f"{target_workspace}/tests.relevant", "w") as f:
+        with open(os.path.join(target_workspace, "tests.relevant"), "w") as f:
             f.write(project_information['Project']['test_list'])
-        with open(f"{target_workspace}/tests.trigger", "w") as f:
+        with open(os.path.join(target_workspace, "tests.trigger"), "w") as f:
             f.write(project_information['Project']['test_list'])
 
         if buildTool in ("gradle", "Gradle"):
@@ -137,12 +137,12 @@ def main(argv):
     print("Pre-configuration finished.")
 
     print("Building ConFix...")
-    assert subprocess.run(["mvn", "clean", "package"], cwd = f"{SPI_root}/core/confix/ConFix-code")
+    assert subprocess.run(["mvn", "clean", "package"], cwd = os.path.join(SPI_root, "core", "confix", "ConFix-code"))
 
     print("Executing ConFix...")
-    assert copy(f"{SPI_root}/core/confix/ConFix-code/target/confix-0.0.1-SNAPSHOT-jar-with-dependencies.jar", f"{SPI_root}/core/confix/lib/confix-ami_torun.jar")
+    assert copy(os.path.join(SPI_root, "core", "confix", "ConFix-code", "target", "confix-0.0.1-SNAPSHOT-jar-with-dependencies.jar"), os.path.join(SPI_root, "core", "confix", "lib", "confix-ami_torun.jar"))
 
-    with open(f"{target_workspace}/log.txt", "w") as f:
+    with open(os.path.join(target_workspace, "log.txt"), "w") as f:
         # assert subprocess.run(["/usr/lib/jvm/java-8-openjdk-amd64/bin/java", "-Xmx4g", "-cp", "../../../core/confix/lib/las.jar:../../../core/confix/lib/confix-ami_torun.jar", "-Duser.language=en", "-Duser.timezone=America/Los_Angeles", "com.github.thwak.confix.main.ConFix"], cwd = target_workspace, stdout = f)
         assert subprocess.run(["/usr/lib/jvm/java-8-openjdk-amd64/bin/java", "-Xmx16g", "-cp", "/home/codemodel/turbstructor/SimilarPatchIdentifier/core/confix/lib/las.jar:/home/codemodel/turbstructor/SimilarPatchIdentifier/core/confix/lib/confix-ami_torun.jar", "-Duser.language=en", "-Duser.timezone=America/Los_Angeles", "com.github.thwak.confix.main.ConFix"], cwd = target_workspace, stdout = f)
 
