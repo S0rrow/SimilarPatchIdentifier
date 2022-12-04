@@ -422,15 +422,14 @@ def main(argv):
                     # Check for patch existence
                     if os.path.isfile(os.path.join(case['target_dir'], "diff_file.txt")):
                         print(f"\n| SPI  |    > #{case_num} / Finished, and found a patch!")
-
-                        succeeded.append(case['project_name'])
-                        SPI_launch_result_str = "succeeded"
-
-                        print("\n=== diff_file.txt start ===")
+                        print(f"| SPI  |    > #{case_num} / === diff_file.txt starts ===")
                         with open(os.path.join(case['target_dir'], "diff_file.txt"), "r") as f:
                             content = f.read()
                             print(content)
-                        print("=== diff_file.txt ended ===")
+                        print(f"| SPI  |    > #{case_num} / === diff_file.txt ends ===")
+
+                        succeeded.append(case['project_name'])
+                        SPI_launch_result_str = "succeeded"
                     else:
                         print(f"\n| SPI  |    > #{case_num} / Finished, but failed to find a patch.")
 

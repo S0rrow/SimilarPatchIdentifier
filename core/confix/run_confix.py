@@ -40,22 +40,22 @@ def main(argv):
     
 
     
-    project_information = configparser.ConfigParser()
-    project_information.optionxform = str
-    project_information.read(project_info_file)
+    project_info = configparser.ConfigParser()
+    project_info.optionxform = str
+    project_info.read(project_info_file)
 
     # root should be that of SPI
-    SPI_root = project_information['Project']['root']
+    SPI_root = project_info['Project']['root']
 
-    target_project_name = project_information['Project']['identifier']
-    target_id = project_information['Project']['version']
-    perfect_faulty_path = project_information['Project']['faulty_file']
-    perfect_faulty_line = project_information['Project']['faulty_line_fix']
+    target_project_name = project_info['Project']['identifier']
+    target_id = project_info['Project']['version']
+    perfect_faulty_path = project_info['Project']['faulty_file']
+    perfect_faulty_line = project_info['Project']['faulty_line_fix']
 
     perfect_faulty_class, _ = perfect_faulty_path.split(".")
     perfect_faulty_class = perfect_faulty_class.replace("/", ".")
 
-    target_root = os.path.join(project_information['Project']['byproduct_path'], hash_id)  # target_dir > target_root // Urgent fix! Should be fixed correctly later.
+    target_root = os.path.join(project_info['Project']['byproduct_path'], hash_id)  # target_dir > target_root // Urgent fix! Should be fixed correctly later.
     target_workspace = os.path.join(target_root, target_project_name) # (new) target_dir > target_workspace
     target_outputs = os.path.join(target_root, "outputs") # output_dir > target_outputs
 
@@ -63,8 +63,8 @@ def main(argv):
 
     ### for D4J projects
     if is_defects4j == True:
-        identifier = project_information['Project']['identifier']
-        version = project_information['Project']['version']
+        identifier = project_info['Project']['identifier']
+        version = project_info['Project']['version']
 
         try:
             subprocess.run(["defects4j", "checkout", "-p", identifier, "-v", f"{version}b", "-w", target_workspace], cwd = target_root, check = True)
@@ -99,17 +99,17 @@ def main(argv):
             traceback.print_exc()
             sys.exit(-1)
         else:
-            print("| ConFix-runner    | Pre-configuration finished.")
+            print("| ConFix-runner    | Pre-launch configuration finished.")
         
 
     ### for non-D4J projects
     else:
-        # sourcePath = project_information['Project']['source_path']
-        # targetPath = project_information['Project']['target_path']
-        # testList = project_information['Project']['test_list']
-        # testClassPath = project_information['Project']['test_class_path']
-        # compileClassPath = project_information['Project']['compile_class_path']
-        # buildTool = project_information['Project']['build_tool']
+        # sourcePath = project_info['Project']['source_path']
+        # targetPath = project_info['Project']['target_path']
+        # testList = project_info['Project']['test_list']
+        # testClassPath = project_info['Project']['test_class_path']
+        # compileClassPath = project_info['Project']['compile_class_path']
+        # buildTool = project_info['Project']['build_tool']
 
         try:
             if not copy(os.path.join(SPI_root, "core", "confix", "coverages", "math", "math1b", "coverage-info.obj"), target_workspace):
@@ -121,20 +121,20 @@ def main(argv):
             
             ### fill up the confix.property
             with open(os.path.join(target_workspace, "confix.properties"), "a") as f:
-                f.write(f"src.dir={project_information['Project']['source_path']}\n")
-                f.write(f"target.dir={project_information['Project']['target_path']}\n")
-                f.write(f"cp.compile={project_information['Project']['compile_class_path']}\n")
-                f.write(f"cp.test={project_information['Project']['test_class_path']}\n")
+                f.write(f"src.dir={project_info['Project']['source_path']}\n")
+                f.write(f"target.dir={project_info['Project']['target_path']}\n")
+                f.write(f"cp.compile={project_info['Project']['compile_class_path']}\n")
+                f.write(f"cp.test={project_info['Project']['test_class_path']}\n")
                 f.write(f"projectName={target_project_name}\n")
                 f.write(f"pFaultyClass={perfect_faulty_class}\n")
                 f.write(f"pFaultyLine={perfect_faulty_line}\n")
                 f.write(f"pool.source={os.path.join(target_outputs, 'LCE', 'candidates')}\n")
             with open(os.path.join(target_workspace, "tests.all"), "w") as f:
-                f.write(project_information['Project']['test_list'])
+                f.write(project_info['Project']['test_list'])
             with open(os.path.join(target_workspace, "tests.relevant"), "w") as f:
-                f.write(project_information['Project']['test_list'])
+                f.write(project_info['Project']['test_list'])
             with open(os.path.join(target_workspace, "tests.trigger"), "w") as f:
-                f.write(project_information['Project']['test_list'])
+                f.write(project_info['Project']['test_list'])
 
             if buildTool in ("gradle", "Gradle"):
                 subprocess.run(["gradle", "build"], cwd = target_workspace, check = True)
@@ -145,7 +145,7 @@ def main(argv):
             traceback.print_exc()
             sys.exit(-1)
         else:
-            print("| ConFix-runner    | Pre-configuration finished.")
+            print("| ConFix-runner    | Pre-launch configuration finished.")
 
 
     # Rebuilding ConFix
@@ -167,7 +167,7 @@ def main(argv):
             raise RuntimeError("Failed to copy ConFix.jar.")
 
         with open(os.path.join(target_workspace, "log.txt"), "w") as f:
-            JDK8_HOME = project_information['Project']['JAVA_HOME_8']
+            JDK8_HOME = project_info['Project']['JAVA_HOME_8']
             subprocess.run([os.path.join(JDK8_HOME, "bin", "java"), "-Xmx4g", "-cp", f"{os.path.join(SPI_root, 'core', 'confix', 'lib', 'las.jar')}:{os.path.join(SPI_root, 'core', 'confix', 'lib', 'confix-ami_torun.jar')}", "-Duser.language=en", "-Duser.timezone=America/Los_Angeles", "com.github.thwak.confix.main.ConFix"], cwd = target_workspace, stdout = f, check = True)
     except Exception as e:
         print("| ConFix-runner    | ! ConFix Launch failed.")
