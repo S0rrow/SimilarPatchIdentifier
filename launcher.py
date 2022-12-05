@@ -44,12 +44,14 @@ def parse_argv() -> tuple:
         settings['SPI']['project'] = "Closure"
         cases[-1]['project_name'] = "Closure-14"
         cases[-1]['identifier'], cases[-1]['version'] = cases[-1]['project_name'].split("-")
+        cases[-1]['expr_count'] = 0
     else:
         if settings['SPI']['mode'] == "defects4j":
             cases.append(dict())
             cases[-1]['identifier'] = settings['SPI']['identifier']
             cases[-1]['version'] = settings['SPI']['version']
             cases[-1]['project_name'] = f"{cases[-1]['identifier']}-{cases[-1]['version']}"
+            cases[-1]['expr_count'] = 0
 
         elif settings['SPI']['mode'] in ("defects4j-batch", "defects4j-batch-expr"):
             print(f"debug : mode defects4j-batch")
@@ -58,6 +60,7 @@ def parse_argv() -> tuple:
                     cases.append(dict())
                     cases[-1]['project_name'] = bug
                     cases[-1]['identifier'], cases[-1]['version'] = bug.split("-")
+                    cases[-1]['expr_count'] = 0
                 
 
         elif settings['SPI']['mode'] == "github":
@@ -67,6 +70,7 @@ def parse_argv() -> tuple:
             cases[-1]['repository'] = settings['SPI']['repository_url']
             cases[-1]['project_name'] = cases[-1]['repository'].rsplit("/", 1)[-1]
             cases[-1]['identifier'] = cases[-1]['project_name']
+            cases[-1]['expr_count'] = 0
 
     # settings['verbose'] = args.verbose
     # settings['quiet'] = False if args.verbose else args.quiet # suppresses quiet option if verbose option is given
@@ -344,7 +348,7 @@ def main(argv):
     SPI_launch_result_str = str()
     log_file = str()
 
-    patch_abb = {"flfreq" : "ff", "tested-first" : "tf", "noctx" : "nc", "patch" : "pc"}
+    patch_abb = {"flfreq" : "ff", "tested-first" : "tf", "noctx" : "nc", "patch" : "pt"}
     concretization_abb = {"tcvfl" : "tv", "hash-match" : "hm", "neighbor" : "nb", "tc" : "tc"}
 
     for patch_strategy in patch_strategies:
@@ -358,7 +362,8 @@ def main(argv):
             succeeded = list()
 
 
-            hash_prefix = f"batch_{time_hash}_{patch_abb[patch_strategy]}{concretization_abb[concretization_strategy]}" if "batch" in settings['SPI']['mode'] else f"{time_hash}"
+            # hash_prefix = f"batch_{time_hash}_{patch_abb[patch_strategy]}+{concretization_abb[concretization_strategy]}" if "batch" in settings['SPI']['mode'] else f"{time_hash}"
+            hash_prefix = f"batch_{time_hash}" if "batch" in settings['SPI']['mode'] else f"{time_hash}"
             log_file = f"log_{hash_prefix}.txt"
             
             ###
@@ -376,24 +381,24 @@ def main(argv):
                 outfile.write(f"Batch execution with strategy combination '{patch_strategy} + {concretization_strategy}' launched in {whole_start}\n")
 
             for case_num, case in enumerate(cases, 1):
+                ##########
+                # Pre-launch configuration
+                ##########
+
                 case['hash_id'] = f"{hash_prefix}_{case['project_name']}"
                 case['target_dir'] = os.path.join(settings['SPI']['byproduct_path'], case['hash_id'])
+                case['expr_count'] += 1
 
                 print(f"| SPI  | Case #{case_num}: begins to look for patch for {case['project_name']}...")
                 print(f"| SPI  |    > #{case_num}: Hash ID generated as {case['hash_id']}")
                 print(f"| SPI  |    > #{case_num}: byproducts made in directory {case['target_dir']}.")
 
                 # path preparation
-                os.makedirs(case['target_dir'])
-                os.makedirs(os.path.join(case['target_dir'], "logs"))
-                os.makedirs(os.path.join(case['target_dir'], "outputs"))
-                os.makedirs(os.path.join(case['target_dir'], "properties"))
-
-
-                each_start = dt.datetime.now()
-                with open(os.path.join(settings['SPI']['root'], "logs", log_file), "a") as outfile:
-                    outfile.write(f"    - Launching SPI upon Case #{case_num} {case['project_name']}...\n")
-                    outfile.write(f"       > Started at {each_start.strftime('%Y-%m-%d %H:%M:%S')}.\n")
+                if case['expr_count'] == 1:
+                    os.makedirs(case['target_dir'])
+                    os.makedirs(os.path.join(case['target_dir'], "logs"))
+                    os.makedirs(os.path.join(case['target_dir'], "outputs"))
+                    os.makedirs(os.path.join(case['target_dir'], "properties"))
 
                 if is_defects4j == True:
                     settings['SPI']['identifier'] = case['identifier']
@@ -410,18 +415,32 @@ def main(argv):
                     print("| SPI  | ! SPI currently works on defects4j bugs only. Cannot launch those on other projects. Aborting program.")
                     sys.exit(0)
 
-                try:
-                    print(f"| SPI  |    > #{case_num} / Step 1. Running Commit Collector...")
-                    if not run_CC(case, is_defects4j, settings['SPI'], settings['CC']):
-                        raise RuntimeError("Module 'Commit Collector' launch failed.")
 
-                    print(f"| SPI  |    > #{case_num} / Step 2. Running Longest Common subvector Extractor...")
-                    if not run_LCE(case, is_defects4j, settings['SPI'], settings['LCE']):
-                        raise RuntimeError("Module 'Longest Common subvector Extractor' launch failed.")
+                ##########
+                # Modules launch
+                ##########
+
+                each_start = dt.datetime.now()
+                with open(os.path.join(settings['SPI']['root'], "logs", log_file), "a") as outfile:
+                    outfile.write(f"    - Launching SPI upon Case #{case_num} {case['project_name']}...\n")
+                    outfile.write(f"       > Started at {each_start.strftime('%Y-%m-%d %H:%M:%S')}.\n")
+
+                try:
+                    if case['expr_count'] == 1:
+                        print(f"| SPI  |    > #{case_num} / Step 1. Running Commit Collector...")
+                        if not run_CC(case, is_defects4j, settings['SPI'], settings['CC']):
+                            raise RuntimeError("Module 'Commit Collector' launch failed.")
+
+                        print(f"| SPI  |    > #{case_num} / Step 2. Running Longest Common subvector Extractor...")
+                        if not run_LCE(case, is_defects4j, settings['SPI'], settings['LCE']):
+                            raise RuntimeError("Module 'Longest Common subvector Extractor' launch failed.")
+                    else:
+                        print(f"| SPI  |    > #{case_num} / Step 1 and Step 2 skipped.")
 
                     print(f"| SPI  |    > #{case_num} / Step 3. Running ConFix...")
                     if not run_ConFix(case, is_defects4j, settings['SPI'], settings['ConFix']):
                         raise RuntimeError("Module 'ConFix' launch failed.")
+
 
                     # Check for patch existence
                     if os.path.isfile(os.path.join(case['target_dir'], "diff_file.txt")):
@@ -432,6 +451,11 @@ def main(argv):
                             print(content)
                         print(f"| SPI  |    > #{case_num} / === diff_file.txt ends ===")
 
+                        if not copy(os.path.join(case['target_dir'], "diff_file.txt"), os.path.join(case['target_dir'], f"diff_file-{patch_abb[patch_strategy]}{concretization_abb[concretization_strategy]}.txt")):
+                            raise RuntimeError("Failed to copy diff_file.txt.")
+                        if not remove(os.path.join(case['target_dir'], "diff_file.txt")):
+                            raise RuntimeError("Failed to remove diff_file.txt.")
+
                         succeeded.append(case['project_name'])
                         SPI_launch_result_str = "succeeded"
                     else:
@@ -439,6 +463,13 @@ def main(argv):
 
                         failed.append(case['project_name'])
                         SPI_launch_result_str = "failed"
+
+                    if not copy(os.path.join(case['target_dir'], case['identifier'],  "log.txt"), os.path.join(case['target_dir'], "logs", f"ConFix-{patch_abb[patch_strategy]}{concretization_abb[concretization_strategy]}.txt")):
+                        raise RuntimeError("Failed to copy log.txt.")
+                    if not remove(os.path.join(case['target_dir'], case['identifier'])):
+                        raise RuntimeError("Failed to remove workspace folder.")
+
+                    
                 except Exception as e:
                     print()
                     print(f"| SPI  | !  > #{case_num} / Aborted during progresses!")

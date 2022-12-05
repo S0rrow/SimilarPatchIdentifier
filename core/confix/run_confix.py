@@ -76,7 +76,7 @@ def main(argv):
 
             with open(os.path.join(target_workspace, "confix.properties"), "a") as confix_prop_file:
                 for d4j_prop, confix_prop in (("dir.src.classes", "src.dir"), ("dir.bin.classes", "target.dir"), ("dir.src.tests", "test.dir"), ("cp.compile", "cp.compile"), ("cp.test", "cp.test")):
-                    filename = f"prop_{d4j_prop}.txt"
+                    filename = os.path.join(target_workspace, f"prop_{d4j_prop}.txt")
                     subprocess.run(["defects4j", "export", "-p", d4j_prop, "-o", filename], cwd = target_workspace, check = True)
                     with open(os.path.join(target_workspace, filename), "r") as f:
                         file_content = f.read()
