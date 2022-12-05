@@ -35,6 +35,8 @@ def parse_argv() -> tuple:
     settings.optionxform = str
     settings.read(args.config)
 
+    settings['SPI']['debug'] = str(args.debug)
+
     cases = list()
     if args.debug == True:
         cases.append(dict())
@@ -148,7 +150,7 @@ def rebuild(module_name : str, SPI_root) -> bool:
         traceback.print_exc()
         return False
     else:
-        print(f"| SPI  | Successfully rebuilt submodule {submodule}.")
+        print(f"| SPI  | Successfully rebuilt submodule {module_name}.")
         return True
 
 # def rebuild_confix(SPI_root : str, JDK8_HOME : str) -> bool:
@@ -320,8 +322,10 @@ def main(argv):
     is_rebuild_required = (settings['SPI']['rebuild'] == "True")
 
 
-    patch_strategies = ("flfreq", ) if settings['SPI']['patch_strategy'] == "" else tuple([each.strip() for each in settings['SPI']['patch_strategy'].split(',')])
-    concretization_strategies = ("hash-match", ) if settings['SPI']['concretization_strategy'] == "" else tuple([each.strip() for each in settings['SPI']['concretization_strategy'].split(',')])
+    patch_strategies = ("flfreq", ) if (settings['SPI']['patch_strategy'] == "" or settings['SPI']['debug'] == "True") else tuple([each.strip() for each in settings['SPI']['patch_strategy'].split(',')])
+    concretization_strategies = ("hash-match", ) if (settings['SPI']['concretization_strategy'] == "" or settings['SPI']['debug'] == "True") else tuple([each.strip() for each in settings['SPI']['concretization_strategy'].split(',')])
+    print(f"| SPI  | SPI launching with patch strategies {patch_strategies}.")
+    print(f"| SPI  | SPI launching with concretization strategies {concretization_strategies}.")
 
     if is_rebuild_required:
         print("| SPI  | Have been requested to rebuild all submodules. Commencing...")
@@ -354,7 +358,7 @@ def main(argv):
             succeeded = list()
 
 
-            hash_prefix = f"batch_{time_hash}_{patch_abb[patch_strategy]}+{concretization_abb[concretization_strategy]}" if "batch" in settings['SPI']['mode'] else f"{time_hash}"
+            hash_prefix = f"batch_{time_hash}_{patch_abb[patch_strategy]}{concretization_abb[concretization_strategy]}" if "batch" in settings['SPI']['mode'] else f"{time_hash}"
             log_file = f"log_{hash_prefix}.txt"
             
             ###
