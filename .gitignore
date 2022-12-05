@@ -210,6 +210,7 @@ logs/
 
 # target folder which stores resulted simonfix executions
 target/
+byproducts/
 
 # ??? what is this folder
 outputs/

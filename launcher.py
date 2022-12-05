@@ -1,6 +1,7 @@
 import shutil
 import sys
 import os
+import platform
 import zipfile
 import subprocess
 import traceback
@@ -12,20 +13,9 @@ import datetime as dt
 import csv
 
 
-
-'''
-    TODO:
-        - Add '--rebuild' option. If enabled, SPI.py will rebuild all SPI submodules.
-        - Config .properties files here. DO NOT additionally make shell scripts.
-'''
-
 def parse_argv() -> tuple:
     parser = argparse.ArgumentParser()
 
-    # parser.add_argument("-m", "--mode",     choices = ("github", "batch", "defects4j"),
-    #                     help = "Tells in what mode to run SPI.")
-    # parser.add_argument("-t", "--target",   type = str,
-    #                     help = "Tells what project to run, or what file to read data from.")
     parser.add_argument("-c", "--config",   type = str,     default = "SPI.ini",
                         help = "Tells on what environment to run SPI.")
 
@@ -45,40 +35,42 @@ def parse_argv() -> tuple:
     settings.optionxform = str
     settings.read(args.config)
 
+    settings['SPI']['debug'] = str(args.debug)
+
     cases = list()
     if args.debug == True:
         cases.append(dict())
         settings['SPI']['mode'] = "defects4j" # override mode
         settings['SPI']['project'] = "Closure"
-        cases[-1]['project_name'] = 'Closure-14'
-        cases[-1]['identifier'], cases[-1]['bug_id'] = cases[-1]['project_name'].split('-')
+        cases[-1]['project_name'] = "Closure-14"
+        cases[-1]['identifier'], cases[-1]['version'] = cases[-1]['project_name'].split("-")
+        cases[-1]['expr_count'] = 0
     else:
-        if settings['SPI']['mode'] == 'defects4j':
-            print(f"debug : mode defects4j")
+        if settings['SPI']['mode'] == "defects4j":
             cases.append(dict())
-            cases[-1]['identifier'] = settings['SPI']['project']
-            cases[-1]['bug_id'] = settings['SPI']['identifier']
-            cases[-1]['project_name'] = f"{cases[-1]['identifier']}-{cases[-1]['bug_id']}"
-            # cases[-1]['identifier'], cases[-1]['bug_id'] = cases[-1]['project_name'].split('-')
+            cases[-1]['identifier'] = settings['SPI']['identifier']
+            cases[-1]['version'] = settings['SPI']['version']
+            cases[-1]['project_name'] = f"{cases[-1]['identifier']}-{cases[-1]['version']}"
+            cases[-1]['expr_count'] = 0
 
-        elif settings['SPI']['mode'] in ('defects4j-batch', 'defects4j-batch-expr'):
+        elif settings['SPI']['mode'] in ("defects4j-batch", "defects4j-batch-expr"):
             print(f"debug : mode defects4j-batch")
-            with open(settings['SPI']['batch_d4j_file'], 'r') as infile:
+            with open(settings['SPI']['batch_d4j_file'], "r") as infile:
                 for bug in infile.read().splitlines():
                     cases.append(dict())
                     cases[-1]['project_name'] = bug
-                    cases[-1]['project'] = bug
-                    identifier, bug_id = bug.split('-')
-                    cases[-1]['identifier'] = identifier
-                    cases[-1]['bug_id'] = bug_id
+                    cases[-1]['identifier'], cases[-1]['version'] = bug.split("-")
+                    cases[-1]['expr_count'] = 0
                 
 
-        elif settings['SPI']['mode'] == 'github':
+        elif settings['SPI']['mode'] == "github":
+            pass
             # Enhance reading options here
             cases.append(dict())
             cases[-1]['repository'] = settings['SPI']['repository_url']
-            cases[-1]['project_name'] = cases[-1]['repository'].rsplit('/', 1)[-1]
+            cases[-1]['project_name'] = cases[-1]['repository'].rsplit("/", 1)[-1]
             cases[-1]['identifier'] = cases[-1]['project_name']
+            cases[-1]['expr_count'] = 0
 
     # settings['verbose'] = args.verbose
     # settings['quiet'] = False if args.verbose else args.quiet # suppresses quiet option if verbose option is given
@@ -90,59 +82,15 @@ def parse_argv() -> tuple:
 # Misc
 #######
 
-def rebuild(module_name : str, SPI_root) -> bool:
-    #print(f"> Rebuilding {module_name}...")
+def copy(file, destination):
     try:
-        assert subprocess.run(("gradle", "distZip", "-q"), cwd = f"./core/{module_name}")
-        #assert subprocess.run(("mv", "app/build/distributions/app.zip", "../../pkg/"), cwd = f"./core/{module_name}", shell=True)
-        #print(f"> moving app.zip to pkg...")
-        if not move(f"./core/{module_name}/app/build/distributions/app.zip", f"{SPI_root}/pkg/", copy_function = shutil.copy):
-            print(f"| SPI  | ! Error occurred while moving app.zip to pkg.")
-            return False
-        #print(f"> unzipping {module_name}...")
-        #assert subprocess.run(("unzip", "-q", "app.zip"), cwd = "./pkg", shell=True)
-        if not unzip("./pkg/app.zip", "./pkg/"):
-            print(f"| SPI  | ! Error occurred while unzipping {module_name}.")
-            return False
-        #print(f"> creating {module_name} directory...")
-        if not os.path.exists(f"./pkg/{module_name}"):
-            assert subprocess.run(("mkdir", f"{module_name}"), cwd = "./pkg")
-        #assert subprocess.run(("mv", "app", module_name), cwd = "./pkg", shell=True)
-        #print(f"> moving app to {module_name}...")
-        if not move("./pkg/app", f"./pkg/{module_name}", shutil.copy2):
-            print(f"| SPI  | ! Error occurred while moving app to {module_name}.")
-            return False
-
-        os.chmod(f"./pkg/{module_name}/app/bin/app", 0o774)
-        os.chmod(f"./pkg/{module_name}/app/bin/app.bat", 0o774)
-
-        #assert subprocess.run(("rm", "app.zip"), cwd = "./pkg", shell=True)
-        #print(f"> removing app.zip...")
-        if not remove("./pkg/app.zip"):
-            print(f"| SPI  | Error occurred while removing app.zip.")
-            return False
-
+        shutil.copy(file, destination)
     except Exception as e:
-        print(f"| SPI  | Error occurred while rebuilding submodule {module_name}.")
-        print(f"| SPI  | Error : {e}")
+        print(f"| SPI  | ! Error: {file} : {e.strerror}")
+        print(f"| SPI  | ! Error occurred while copying {file} to {destination}.")
         return False
-    #print(f"> Done.")
-    return True
-
-def rebuild_confix(SPI_root : str, JDK8_HOME : str) -> bool:
-    try:
-        assert subprocess.run(("mvn", "clean", "package", "-q"), cwd = "./core/confix/ConFix-code")
-        #assert subprocess.run(("cp", "target/confix-0.0.1-SNAPSHOT-jar-with-dependencies.jar", "../lib/confix-ami_torun.jar"), cwd = "./core/confix/ConFix-code", shell=True)
-        if not (copy(f"{SPI_root}/core/confix/ConFix-code/target/confix-0.0.1-SNAPSHOT-jar-with-dependencies.jar", f"{SPI_root}/core/confix/lib/confix-ami_torun.jar")):
-            print("Error occurred while copying ConFix jar file.")
-            return False
-
-    except AssertionError as e:
-        print("| SPI  | ! Error occurred while rebuilding ConFix.")
-        print("| SPI  | ! Error : ", e)
-        return False
-
-    return True
+    else:
+        return True
 
 def move(location, destination, copy_function) -> bool:
     try:
@@ -151,26 +99,8 @@ def move(location, destination, copy_function) -> bool:
         print(f"| SPI  | ! Error: {location} : {e.strerror}")
         print(f"| SPI  | ! Error occurred while moving {location} to {destination}.")
         return False
-    return True
-
-def unzip(file, destination):
-    try:
-        with zipfile.ZipFile(file, 'r') as zip_ref:
-            zip_ref.extractall(destination)
-    except Exception as e:
-        print(f"| SPI  | ! Error: {file} : {e.strerror}")
-        print(f"| SPI  | ! Error occurred while unzipping {file}.")
-        return False
-    return True
-
-def copy(file, destination):
-    try:
-        shutil.copy(file, destination)
-    except Exception as e:
-        print(f"| SPI  | ! Error: {file} : {e.strerror}")
-        print(f"| SPI  | ! Error occurred while copying {file} to {destination}.")
-        return False
-    return True
+    else:
+        return True
 
 def remove(path):
     try:
@@ -183,133 +113,200 @@ def remove(path):
         print(f"| SPI  | ! Error: {path} : {e.strerror}")
         print(f"| SPI  | ! Error occurred while removing {path}.")
         return False
-    return True
+    else:
+        return True
+
+def unzip(file, destination):
+    try:
+        with zipfile.ZipFile(file, "r") as zip_ref:
+            zip_ref.extractall(destination)
+    except Exception as e:
+        print(f"| SPI  | ! Error: {file} : {e.strerror}")
+        print(f"| SPI  | ! Error occurred while unzipping {file}.")
+        return False
+    else:
+        return True
+
+#######
+# Module rebuilder
+#######
+
+def rebuild(module_name : str, SPI_root) -> bool:
+    try:
+        subprocess.run(("gradle", "distZip", "-q"), cwd = os.path.join(SPI_root, "core", module_name), check = True)
+        if not move(os.path.join(SPI_root, "core", module_name, "app", "build", "distributions", "app.zip"), os.path.join(SPI_root, "pkg"), copy_function = shutil.copy):
+            raise RuntimeError("Failed to move distZip result to pkg/.")
+        if not unzip(os.path.join(SPI_root, "pkg", "app.zip"), os.path.join(SPI_root, "pkg")):
+            raise RuntimeError("Failed to unzip app.zip in pkg/.")
+        if not os.path.exists(os.path.join(SPI_root, "pkg", module_name)):
+            subprocess.run(("mkdir", module_name), cwd = os.path.join(SPI_root, "pkg"), check = True)
+        if not move(os.path.join(SPI_root, "pkg", "app"), os.path.join(SPI_root, "pkg", module_name), shutil.copy2):
+            raise RuntimeError(f"Failed to move app/ to {module_name}/.")
+
+        os.chmod(os.path.join(SPI_root, "pkg", module_name, "app", "bin", "app"), 0o774)
+        os.chmod(os.path.join(SPI_root, "pkg", module_name, "app", "bin", "app.bat"), 0o774)
+
+        if not remove(os.path.join(SPI_root, "pkg", "app.zip")):
+            raise RuntimeError("Failed to remove app.zip.")
+
+    except Exception as e:
+        print(f"| SPI  | ! Error occurred while rebuilding submodule {module_name}.")
+        traceback.print_exc()
+        return False
+    else:
+        print(f"| SPI  | Successfully rebuilt submodule {module_name}.")
+        return True
+
+# def rebuild_confix(SPI_root : str, JDK8_HOME : str) -> bool:
+#     try:
+#         subprocess.run(("mvn", "clean", "package", "-q"), cwd = os.path.join(SPI_root, "core", "confix", "ConFix-code"), check = True)
+#         if not copy(os.path.join(SPI_root, "core", "confix", "ConFix-code", "target", "confix-0.0.1-SNAPSHOT-jar-with-dependencies.jar"), os.path.join(SPI_root, "core", "confix", "lib", "confix-ami_torun.jar")):
+#             raise RuntimeError("Failed to copy ConFix.jar.")
+
+#     except Exception as e:
+#         print("| SPI  | ! Error occurred while rebuilding ConFix.")
+#         traceback.print_exc()
+#         return False
+#     else:
+#         return True
 
 def rebuild_all(SPI_root : str, JDK8_HOME : str):
     try:
-        #assert subprocess.run(("rm", "-rf", "pkg"))
-        if not (remove(f"{SPI_root}/pkg")):
-            print(f"| SPI  | ! Error occurred while removing {SPI_root}/pkg.")
-        assert subprocess.run(("mkdir", "pkg"))
-        #os.mkdir(f"{SPI_root}/pkg")
-        # for submodule in ("BuggyChangeCollector", "AllChangeCollector", "LCE"):
+        if not (remove(os.path.join(SPI_root, "pkg"))):
+            raise RuntimeError("Failed to remove directory pkg/.")
+        subprocess.run(("mkdir", "pkg"), cwd = SPI_root, check = True)
+
         for submodule in ("ChangeCollector", "LCE"):
-            assert rebuild(submodule, SPI_root)
-            print(f"| SPI  | Successfully rebuilt submodule {submodule}.")
+            rebuild(submodule, SPI_root)
+        # # ConFix is rebuilt every launch. No need to rebuild it here.
+        # rebuild_confix(SPI_root, JDK8_HOME) # ConFix uses maven unlike any other packages; this should be handled differently.
+        # print(f"| SPI  | Successfully rebuilt submodule ConFix.")
 
-        assert rebuild_confix(SPI_root, JDK8_HOME) # ConFix uses maven unlike any other packages; this should be handled differently.
-        print(f"| SPI  | Successfully rebuilt submodule ConFix.")
-        print()
-
-    except AssertionError as e:
-        print("| SPI  | ! Error occurred while rebuilding modules.")
-        print()
-        return False
     except Exception as e:
-        print(f"| SPI  | ! Error occurred while rebuilding modules: {e}")
-        print()
+        print("| SPI  | ! Error occurred while rebuilding modules.")
+        traceback.print_exc()
         return False
-
-    print("All submodules have been successfully rebuilt.")
-    print()
-    return True
+    else:
+        return True
 
 
 #######
 # Module launcher
 #######
 
-def run_CC(case : dict, is_defects4j : bool, config_SPI: configparser.SectionProxy, config : configparser.SectionProxy) -> bool:
+def run_CC(case : dict, is_defects4j : bool, conf_SPI : configparser.SectionProxy, conf_CC : configparser.SectionProxy) -> bool:
     try:
         # copy .properties file
-        # run ACC
         prop_CC = jproperties.Properties()
-        for key in config.keys():
-            prop_CC[key] = config[key]
+        for key in conf_CC.keys():
+            prop_CC[key] = conf_CC[key]
+        prop_CC['project_root'] = conf_SPI['root']
+        prop_CC['output_dir'] = conf_SPI['byproduct_path']
+        prop_CC['JAVA_HOME.8'] = conf_SPI['JAVA_HOME_8']
+
         # Explicitly tell 'target'
+        prop_CC['mode'] = "defects4j" if is_defects4j else "repository"
         prop_CC['hash_id'] = case['hash_id']
-        prop_CC['mode'] = 'defects4j' if is_defects4j else 'repository'
         if is_defects4j == True:
             prop_CC['defects4j_name'] = case['identifier']
-            prop_CC['defects4j_id'] = case['bug_id']
+            prop_CC['defects4j_id'] = case['version']
         else:
-            if prop_CC['mode'] == 'file':
+            if prop_CC['mode'] == "file":
                 pass
 
-            prop_CC['git_url'] = config_SPI['repository_url']
-            prop_CC['git_name'] = config_SPI['project']
-            prop_CC['file_name'] = config_SPI['faulty_file']
-            prop_CC['commit_id'] = config_SPI['commit_id']
+            prop_CC['git_url'] = conf_SPI['repository_url']
+            prop_CC['git_name'] = conf_SPI['project']
+            prop_CC['file_name'] = conf_SPI['faulty_file']
+            prop_CC['commit_id'] = conf_SPI['commit_id']
 
-            pass
-
-        with open(f"{case['target_dir']}/properties/CC.properties", "wb") as f:
+        with open(os.path.join(case['target_dir'], "properties", "CC.properties"), "wb") as f:
             prop_CC.store(f, encoding = "UTF-8")
 
-        # assert subprocess.run(["app", "-l", f"{case['target_dir']}/collection.txt"], cwd = "./pkg/AllChangeCollector/bin")
-        assert subprocess.run(["./app", f"{case['target_dir']}/properties/CC.properties"], cwd = "./pkg/ChangeCollector/app/bin")
-    except Exception as e:
-        print(e)
-        return False
-    return True
 
-def run_LCE(case : dict, is_defects4j : bool, config : configparser.SectionProxy) -> bool:
+        # run CC
+        launch_command = ".\\app.bat" if platform.system() == "Windows" else "./app"
+        with open(os.path.join(case['target_dir'], "logs", "CC.log"), "w") as f:
+            subprocess.run([launch_command, os.path.join(case['target_dir'], "properties", "CC.properties")], cwd = os.path.join(conf_SPI['root'], "pkg", "ChangeCollector", "app", "bin"), stdout = f, check = True)
+    except Exception as e:
+        traceback.print_exc()
+        return False
+    else:
+        return True
+
+def run_LCE(case : dict, is_defects4j : bool, conf_SPI : configparser.SectionProxy, conf_LCE : configparser.SectionProxy) -> bool:
     try:
         prop_LCE = jproperties.Properties()
-        for key in config.keys():
-            prop_LCE[key] = config[key]
+        for key in conf_LCE.keys():
+            prop_LCE[key] = conf_LCE[key]
 
-        prop_LCE['pool_file.dir'] = f"{prop_LCE['SPI.dir'].data}/components/LCE/gumtree_vector.csv"
-        prop_LCE['meta_pool_file.dir'] = f"{prop_LCE['SPI.dir'].data}/components/LCE/commit_file.csv"
-        prop_LCE['target_vector.dir'] = f"{case['target_dir']}/outputs/ChangeCollector/{case['identifier']}_gumtree_vector.csv"
-        prop_LCE['pool.dir'] = f"{case['target_dir']}/outputs/LCE/result/"
-        prop_LCE['candidates.dir'] = f"{case['target_dir']}/outputs/LCE/candidates/"
+        prop_LCE['SPI.dir'] = conf_SPI['root']
+
+        prop_LCE['pool_file.dir'] = os.path.join(conf_SPI['root'], "components", "LCE", "gumtree_vector.csv")
+        prop_LCE['meta_pool_file.dir'] = os.path.join(conf_SPI['root'], "components", "LCE", "commit_file.csv")
+
+        prop_LCE['target_vector.dir'] = os.path.join(case['target_dir'], "outputs", "ChangeCollector", f"{case['identifier']}_gumtree_vector.csv")
+        prop_LCE['pool.dir'] = os.path.join(case['target_dir'], "outputs", "LCE", "result")
+        prop_LCE['candidates.dir'] = os.path.join(case['target_dir'], "outputs", "LCE", "candidates")
 
         if is_defects4j == True:
             prop_LCE['d4j_project_name'] = case['identifier']
-            prop_LCE['d4j_project_num'] = case['bug_id']
+            prop_LCE['d4j_project_num'] = case['version']
         
-        with open(f"{case['target_dir']}/properties/LCE.properties", "wb") as f:
+        with open(os.path.join(case['target_dir'], "properties", "LCE.properties"), "wb") as f:
             prop_LCE.store(f, encoding = "UTF-8")
 
         os.makedirs(prop_LCE['pool.dir'].data)
         os.makedirs(prop_LCE['candidates.dir'].data)
 
-        assert subprocess.run(["./app", f"{case['target_dir']}/properties/LCE.properties"], cwd = "./pkg/LCE/app/bin")
+        launch_command = ".\\app.bat" if platform.system() == "Windows" else "./app"
+        with open(os.path.join(case['target_dir'], "logs", "LCE.log"), "w") as f:
+            subprocess.run([launch_command, os.path.join(case['target_dir'], "properties", "LCE.properties")], cwd = os.path.join(conf_SPI['root'], "pkg", "LCE", "app", "bin"), stdout = f, check = True)
     except Exception as e:
-        print(e)
+        traceback.print_exc()
         return False
-    return True
+    else:
+        return True
 
-def run_ConFix(case : dict, is_defects4j : bool, config_runner : configparser.SectionProxy, config_ConFix : configparser.SectionProxy) -> bool:
+def run_ConFix(case : dict, is_defects4j : bool, conf_SPI : configparser.SectionProxy, conf_ConFix : configparser.SectionProxy) -> bool:
     try:
-        ini_runner = configparser.ConfigParser()
-        ini_runner.optionxform = str
-        ini_runner.add_section('Project')
-        ini_runner['Project'] = config_runner
-        with open(f"{case['target_dir']}/properties/confix_runner.ini", "w") as f:
-            ini_runner.write(f)
+        conf_runner = configparser.ConfigParser()
+        conf_runner.optionxform = str
+        conf_runner.add_section('Project')
+        conf_runner['Project'] = conf_SPI
+        with open(os.path.join(case['target_dir'], "properties", "confix_runner.ini"), "w") as f:
+            conf_runner.write(f)
+
 
         prop_ConFix = jproperties.Properties()
-        for key in config_ConFix.keys():
-            prop_ConFix[key] = config_ConFix[key]
-        with open(f"{case['target_dir']}/properties/confix.properties", "wb") as f:
+        for key in conf_ConFix.keys():
+            prop_ConFix[key] = conf_ConFix[key]
+
+        prop_ConFix['jvm'] = os.path.join(conf_SPI['JAVA_HOME_8'], "bin", "java")
+        prop_ConFix['version'] = "1.8" if conf_ConFix['version'] == "" else conf_ConFix['version']
+        prop_ConFix['pool.path'] = f"{os.path.join(conf_SPI['root'], 'core', 'confix', 'pool', 'ptlrh')},{os.path.join(conf_SPI['root'], 'core', 'confix', 'pool', 'plrt')}"
+        prop_ConFix['cp.lib'] = os.path.join(conf_SPI['root'], 'core', 'confix', 'lib', 'confix-ami_torun.jar')
+
+        with open(os.path.join(case['target_dir'], "properties", "confix.properties"), "wb") as f:
             prop_ConFix.store(f, encoding = "UTF-8")
 
         jdk8_env = os.environ.copy()
-        jdk8_env['JAVA_HOME'] = config_runner['JAVA_HOME_8']
+        jdk8_env['JAVA_HOME'] = conf_SPI['JAVA_HOME_8']
 
         if is_defects4j == True:
-            assert subprocess.run(["python3", "./core/confix/run_confix.py", "-d", "true", "-h", case['hash_id'], "-f", f"{case['target_dir']}/properties/confix_runner.ini"], env = jdk8_env)
+            subprocess.run(["python3", os.path.join(conf_SPI['root'], "core", "confix", "run_confix.py"), "-d", "true", "-h", case['hash_id'], "-f", os.path.join(case['target_dir'], "properties", "confix_runner.ini")], env = jdk8_env, check = True)
         else:
-            assert subprocess.run(["python3", "./core/confix/run_confix.py", "-h", case['hash_id'], "-f", f"{case['target_dir']}/properties/confix_runner.ini"], env = jdk8_env)
+            subprocess.run(["python3", os.path.join(conf_SPI['root'], "core", "confix", "run_confix.py"), "-h", case['hash_id'], "-f", os.path.join(case['target_dir'], "properties", "confix_runner.ini")], env = jdk8_env, check = True)
+        # with open(os.path.join(case['target_dir'], "logs", "ConFix_runner.log"), "w") as f:
+        #     if is_defects4j == True:
+        #         subprocess.run(["python3", os.path.join(conf_SPI['root'], "core", "confix", "run_confix.py"), "-d", "true", "-h", case['hash_id'], "-f", os.path.join(case['target_dir'], "properties", "confix_runner.ini")], env = jdk8_env, stdout = f, check = True)
+        #     else:
+        #         subprocess.run(["python3", os.path.join(conf_SPI['root'], "core", "confix", "run_confix.py"), "-h", case['hash_id'], "-f", os.path.join(case['target_dir'], "properties", "confix_runner.ini")], env = jdk8_env, stdout = f, check = True)
 
-        
     except Exception as e:
-        print(e)
         traceback.print_exc()
         return False
-    return True
+    else:
+        return True
 
 #######
 # Main
@@ -318,148 +315,196 @@ def run_ConFix(case : dict, is_defects4j : bool, config_runner : configparser.Se
 def main(argv):
     cases, settings = parse_argv()
 
-    is_defects4j = settings['SPI']['mode'] in ('defects4j', 'defects4j-batch', 'defects4j-batch-expr')
-    is_rebuild_required = (settings['SPI']['rebuild'] == 'True')
+    settings['SPI']['root'] = os.getcwd() if settings['SPI']['root'] == "" else settings['SPI']['root']
+    settings['SPI']['byproduct_path'] = os.path.join(settings['SPI']['root'], "byproducts") if settings['SPI']['byproduct_path'] == "" else settings['SPI']['byproduct_path']
 
-    # Should be the root of SPI repository
-    SPI_root = os.getcwd()
+    print(f"| SPI  | SPI from directory {settings['SPI']['root']} is going to be launched.")
+    print(f"| SPI  | SPI byproducts will be made in directory {settings['SPI']['byproduct_path']}.")
+
+    
+    is_defects4j = settings['SPI']['mode'] in ("defects4j", "defects4j-batch")
+    is_rebuild_required = (settings['SPI']['rebuild'] == "True")
+
+
+    patch_strategies = ("flfreq", ) if (settings['SPI']['patch_strategy'] == "" or settings['SPI']['debug'] == "True") else tuple([each.strip() for each in settings['SPI']['patch_strategy'].split(',')])
+    concretization_strategies = ("hash-match", ) if (settings['SPI']['concretization_strategy'] == "" or settings['SPI']['debug'] == "True") else tuple([each.strip() for each in settings['SPI']['concretization_strategy'].split(',')])
+    print(f"| SPI  | SPI launching with patch strategies {patch_strategies}.")
+    print(f"| SPI  | SPI launching with concretization strategies {concretization_strategies}.")
 
     if is_rebuild_required:
-        print("Have been requested to rebuild all submodules. Commencing...")
-        if rebuild_all(SPI_root, settings['SPI']['JAVA_HOME_8']):
-            print("All submodules have been successfully rebuilt.")
+        print("| SPI  | Have been requested to rebuild all submodules. Commencing...")
+        if rebuild_all(settings['SPI']['root'], settings['SPI']['JAVA_HOME_8']):
+            print("| SPI  | All submodules have been successfully rebuilt.")
+        else:
+            print("| SPI  | ! Some of the submodules have failed to build, thus cannot execute SPI. Aborting the program.")
+            sys.exit(-1)
 
-    if settings['SPI']["mode"] is None:
-        print("You have not told me what to fix. Exiting program.")
+    if settings['SPI']['mode'] is None:
+        print("| SPI  | ! You have not told me what to fix. Exiting the program.")
         sys.exit(0)
 
     
     time_hash = str(abs(hash(f"{dt.datetime.now().strftime('%Y%m%d%H%M%S')}")))[-6:]
-
     SPI_launch_result_str = str()
-
-    patch_strategies = ("flfreq", "tested-first", "noctx", "patch")
-    concretization_strategies = ("tcvfl", "hash-match", "neighbor", "tc")
-
     log_file = str()
 
-    if settings['SPI']['mode'] != 'defects4j-batch-expr':
-        patch_strategies = (settings['ConFix']['patch.strategy'], )
-        concretization_strategies = (settings['ConFix']['concretize.strategy'], )
+    patch_abb = {"flfreq" : "ff", "tested-first" : "tf", "noctx" : "nc", "patch" : "pt"}
+    concretization_abb = {"tcvfl" : "tv", "hash-match" : "hm", "neighbor" : "nb", "tc" : "tc"}
 
     for patch_strategy in patch_strategies:
         for concretization_strategy in concretization_strategies:
             settings['ConFix']['patch.strategy'] = patch_strategy
             settings['ConFix']['concretize.strategy'] = concretization_strategy
-            print(f"Patch Strategy: {patch_strategy}, Concretization Strategy: {concretization_strategy}")
+            print(f"\n| SPI  | Strategy combination '{patch_strategy} + {concretization_strategy}' set.")
 
             # Initializations before whole case-loop
             failed = list()
             succeeded = list()
 
 
-            hash_part = str()
-            if 'batch' in settings['SPI']['mode']:
-                if 'expr' in settings['SPI']['mode']:
-                    hash_part = f"batch_{time_hash}_{patch_strategy}+{concretization_strategy}"
-                else:
-                    hash_part = f"batch_{time_hash}"
-            else:
-                hash_part = f"{time_hash}"
+            # hash_prefix = f"batch_{time_hash}_{patch_abb[patch_strategy]}+{concretization_abb[concretization_strategy]}" if "batch" in settings['SPI']['mode'] else f"{time_hash}"
+            hash_prefix = f"batch_{time_hash}" if "batch" in settings['SPI']['mode'] else f"{time_hash}"
+            log_file = f"log_{hash_prefix}.txt"
             
             ###
 
             whole_start = dt.datetime.now()
 
+            if not os.path.exists(os.path.join(settings['SPI']['root'], "logs")):
+                os.makedirs(os.path.join(settings['SPI']['root'], "logs"))
+
+            if not os.path.isfile(os.path.join(settings['SPI']['root'], "logs", log_file)):
+                with open(os.path.join(settings['SPI']['root'], "logs", log_file), "x") as _:
+                    pass # only make log file if it doesn't exist.
+            
+            with open(os.path.join(settings['SPI']['root'], "logs", log_file), "w") as outfile:
+                outfile.write(f"Batch execution with strategy combination '{patch_strategy} + {concretization_strategy}' launched in {whole_start}\n")
+
             for case_num, case in enumerate(cases, 1):
-                # case['hash_id'] = f"{hash_prefix}_{case['project_name']}"
-                case['hash_id'] = f"{hash_part}_{case['project_name']}"
-                print(f"| SPI  | Hash ID generated as {case['hash_id']}:")
-                if 'batch' in settings['SPI']['mode']:
-                    log_file = f"log_{hash_part}.txt"
-                else:
-                    log_file = f"log_{hash_part}_{case['project_name']}.txt"
-                #case['target_dir'] = f"{SPI_root}/target/{case['hash_id']}"
-                case['target_dir'] = f"/data/codemodel/turbstructor/SPI_batch_byproducts_221111/{case['hash_id']}"
-                os.makedirs(case['target_dir'])
+                ##########
+                # Pre-launch configuration
+                ##########
 
-                each_start = dt.datetime.now()
+                case['hash_id'] = f"{hash_prefix}_{case['project_name']}"
+                case['target_dir'] = os.path.join(settings['SPI']['byproduct_path'], case['hash_id'])
+                case['expr_count'] += 1
 
-                with open(f"logs/{log_file}", "a") as outfile:
-                    outfile.write(f"Launching SPI upon case #{case_num} {case['project_name']}... Started at {each_start.strftime('%Y-%m-%d %H:%M:%S')}.\n")
+                print(f"| SPI  | Case #{case_num}: begins to look for patch for {case['project_name']}...")
+                print(f"| SPI  |    > #{case_num}: Hash ID generated as {case['hash_id']}")
+                print(f"| SPI  |    > #{case_num}: byproducts made in directory {case['target_dir']}.")
 
+                # path preparation
+                if case['expr_count'] == 1:
+                    os.makedirs(case['target_dir'])
+                    os.makedirs(os.path.join(case['target_dir'], "logs"))
+                    os.makedirs(os.path.join(case['target_dir'], "outputs"))
+                    os.makedirs(os.path.join(case['target_dir'], "properties"))
 
                 if is_defects4j == True:
-                    settings['SPI']['project'] = case['identifier']
-                    settings['SPI']['identifier'] = case['bug_id']
-                    with open(f"{SPI_root}/components/commit_collector/Defects4J_bugs_info/{case['identifier']}.csv", 'r', newline = '') as d4j_meta_file:
+                    settings['SPI']['identifier'] = case['identifier']
+                    settings['SPI']['version'] = case['version']
+                    with open(os.path.join(settings['SPI']['root'], "components", "commit_collector", "Defects4J_bugs_info", f"{case['identifier']}.csv"), "r", newline = "") as d4j_meta_file:
                         reader = csv.DictReader(d4j_meta_file)
                         for row in reader:
-                            if int(row['Defects4J ID']) == int(case['bug_id']):
+                            if int(row['Defects4J ID']) == int(case['version']):
                                 settings['SPI']['faulty_file'] = row['Faulty file path']
                                 settings['SPI']['faulty_line_fix'] = row['fix faulty line']
                                 settings['SPI']['faulty_line_blame'] = row['blame faulty line']
                                 break
+                else: # GitHub not implemented fully.
+                    print("| SPI  | ! SPI currently works on defects4j bugs only. Cannot launch those on other projects. Aborting program.")
+                    sys.exit(0)
+
+
+                ##########
+                # Modules launch
+                ##########
+
+                each_start = dt.datetime.now()
+                with open(os.path.join(settings['SPI']['root'], "logs", log_file), "a") as outfile:
+                    outfile.write(f"    - Launching SPI upon Case #{case_num} {case['project_name']}...\n")
+                    outfile.write(f"       > Started at {each_start.strftime('%Y-%m-%d %H:%M:%S')}.\n")
 
                 try:
-                    assert subprocess.run(("mkdir", f"{case['target_dir']}/properties"))
+                    if case['expr_count'] == 1:
+                        print(f"| SPI  |    > #{case_num} / Step 1. Running Commit Collector...")
+                        if not run_CC(case, is_defects4j, settings['SPI'], settings['CC']):
+                            raise RuntimeError("Module 'Commit Collector' launch failed.")
 
-                    print(f"\n| SPI  | Case #{case_num} / Step 1. Running Commit Collector...")
-                    assert run_CC(case, is_defects4j, settings['SPI'], settings['CC']) is True, "'Commit Collector' Module launch failed"
+                        print(f"| SPI  |    > #{case_num} / Step 2. Running Longest Common subvector Extractor...")
+                        if not run_LCE(case, is_defects4j, settings['SPI'], settings['LCE']):
+                            raise RuntimeError("Module 'Longest Common subvector Extractor' launch failed.")
+                    else:
+                        print(f"| SPI  |    > #{case_num} / Step 1 and Step 2 skipped.")
 
-                    print(f"\n| SPI  | Case #{case_num} / Step 2. Running Longest Common subvector Extractor...")
-                    assert run_LCE(case, is_defects4j, settings['LCE']) is True, "'Longest Common subvector Extractor' Module launch failed"
+                    print(f"| SPI  |    > #{case_num} / Step 3. Running ConFix...")
+                    if not run_ConFix(case, is_defects4j, settings['SPI'], settings['ConFix']):
+                        raise RuntimeError("Module 'ConFix' launch failed.")
 
-                    print(f"\n| SPI  | Case #{case_num} / Step 3. Running ConFix...")
-                    assert run_ConFix(case, is_defects4j, settings['SPI'], settings['ConFix']) is True, "'ConFix' Module launch failed"
 
                     # Check for patch existence
-                    if not os.path.isfile(f"{case['target_dir']}/diff_file.txt"):
-                        print(f"| SPI  | ! SPI launch upon Case #{case_num} {case['project_name']} failed to find a patch.")
-                        failed.append(case['project_name'])
-                        SPI_launch_result_str = "failure"
-                    else:
-                        print(f"| SPI  | SPI launch upon Case #{case_num} {case['project_name']} found a patch!")
-                        succeeded.append(case['project_name'])
-                        SPI_launch_result_str = "success"
-
-                        print("\n=== diff_file.txt start ===")
-                        with open(f"{case['target_dir']}/diff_file.txt", "r") as f:
+                    if os.path.isfile(os.path.join(case['target_dir'], "diff_file.txt")):
+                        print(f"\n| SPI  |    > #{case_num} / Finished, and found a patch!")
+                        print(f"| SPI  |    > #{case_num} / === diff_file.txt starts ===")
+                        with open(os.path.join(case['target_dir'], "diff_file.txt"), "r") as f:
                             content = f.read()
                             print(content)
-                        print("=== diff_file.txt ended ===")
-                except AssertionError as e:
-                    print(f"| SPI  | ! Lauanch upon Case #{case_num} {case['project_name']} failed during progresses.")
-                    print(f"| SPI  | ! Failed cause: {e}")
+                        print(f"| SPI  |    > #{case_num} / === diff_file.txt ends ===")
+
+                        if not copy(os.path.join(case['target_dir'], "diff_file.txt"), os.path.join(case['target_dir'], f"diff_file-{patch_abb[patch_strategy]}{concretization_abb[concretization_strategy]}.txt")):
+                            raise RuntimeError("Failed to copy diff_file.txt.")
+                        if not remove(os.path.join(case['target_dir'], "diff_file.txt")):
+                            raise RuntimeError("Failed to remove diff_file.txt.")
+
+                        succeeded.append(case['project_name'])
+                        SPI_launch_result_str = "succeeded"
+                    else:
+                        print(f"\n| SPI  |    > #{case_num} / Finished, but failed to find a patch.")
+
+                        failed.append(case['project_name'])
+                        SPI_launch_result_str = "failed"
+
+                    if not copy(os.path.join(case['target_dir'], case['identifier'],  "log.txt"), os.path.join(case['target_dir'], "logs", f"ConFix-{patch_abb[patch_strategy]}{concretization_abb[concretization_strategy]}.txt")):
+                        raise RuntimeError("Failed to copy log.txt.")
+                    if not remove(os.path.join(case['target_dir'], case['identifier'])):
+                        raise RuntimeError("Failed to remove workspace folder.")
+
+                    
+                except Exception as e:
+                    print()
+                    print(f"| SPI  | !  > #{case_num} / Aborted during progresses!")
+                    print(f"| SPI  | !  > #{case_num} / Failed cause: {e}")
+                    traceback.print_exc()
+
                     failed.append(case['project_name'])
                     SPI_launch_result_str = "failure"
                 finally:
                     each_end = dt.datetime.now()
                     each_elapsed_time = (each_end - each_start)
 
-                    print(f"| SPI  | Elapsed Time for Case #{case_num} {case['project_name']} : {each_elapsed_time}")
+                    print(f"| SPI  |    > #{case_num} / Elapsed Time : {each_elapsed_time}")
 
-                    with open(f"logs/{log_file}", "a") as outfile:
-                        outfile.write(f"Launching SPI upon Case #{case_num} {case['project_name']}... ended at {each_end.strftime('%Y-%m-%d %H:%M:%S')}, with {SPI_launch_result_str}.\n")
-                        outfile.write(f"Launching SPI upon Case #{case_num} {case['project_name']} took {each_elapsed_time}.\n")
+                    with open(os.path.join("logs", log_file), "a") as outfile:
+                        outfile.write(f"       > Ended at {each_end.strftime('%Y-%m-%d %H:%M:%S')}.\n")
+                        outfile.write(f"       > Elapsed time: {each_elapsed_time}.\n")
+                        outfile.write(f"       > Patch generation: {SPI_launch_result_str}\n")
 
 
             whole_end = dt.datetime.now()
             whole_elapsed_time = (whole_end - whole_start)
 
-            if 'batch' in settings['SPI']['mode']:
-                with open(f"logs/{log_file}", "a") as outfile:
-                    outfile.write(f"Whole batch took {whole_elapsed_time}.\n")
-                    outfile.write(f"Whole batch resulted in {len(succeeded)} success(es) and {len(failed)} failure(s).\n")
-                    outfile.write("Succeeded case(s):\n")
-                    for each in succeeded:
-                        outfile.write(f"- {each}\n")
+            if "batch" in settings['SPI']['mode']:
+                with open(os.path.join("logs", log_file), "a") as outfile:
                     outfile.write("\n")
-                    outfile.write("Failed case(s):\n")
+                    outfile.write(f"Batch execution with strategy combination '{patch_strategy} + {concretization_strategy}' finished at {whole_end}, after {whole_elapsed_time}, with {len(succeeded)} success(es) and {len(failed)} failure(s).\n")
+                    outfile.write(f"    - Succeeded case(s): {len(succeeded)}\n")
+                    for each in succeeded:
+                        outfile.write(f"        - {each}\n")
+                    outfile.write(f"    - Failed case(s): {len(failed)}\n")
                     for each in failed:
-                        outfile.write(f"- {each}\n")
+                        outfile.write(f"        - {each}\n")
 
-            print(f"| SPI  | Total Elapsed Time : {whole_elapsed_time}")
+            print(f"| SPI  | Total Elapsed Time for strategy combination '{patch_strategy} + {concretization_strategy}': {whole_elapsed_time}")
             print(f"| SPI  | {len(succeeded)} succeeded, {len(failed)} failed.")
 
     
