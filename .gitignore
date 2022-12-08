@@ -210,6 +210,7 @@ logs/
 
 # target folder which stores resulted simonfix executions
 target/
+byproducts/
 
 # ??? what is this folder
 outputs/
@@ -230,3 +231,6 @@ core/AllChangeCollector/.gradle/
 core/LCE/.gradle/
 pkg/
 SPI.ini
+
+# screen log
+d4j-batch_log

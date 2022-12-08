@@ -10,8 +10,6 @@ import static org.junit.jupiter.api.Assertions.*;
 class AppTest {
     @Test
     void testAppLog4j() {
-        App app = new App();
-        Properties properties = app.loadProperties();
-        app.test(properties);
+
     }
 }

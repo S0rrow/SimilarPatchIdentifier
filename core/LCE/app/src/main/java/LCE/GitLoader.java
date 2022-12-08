@@ -123,13 +123,8 @@ public class GitLoader {
     }
 
     private boolean checkout(String directory) {
-        String t_cid_after = traverse(cid_after);
-        if (t_cid_after == null || t_cid_after.length() == 0) {
-            gitLogger.fatal(App.ANSI_RED + "[error] > commit id after is not exist" + App.ANSI_RESET);
-            return false;
-        }
-        String cid1 = cid_after; // possible bug inducing commit
-        String cid2 = t_cid_after; // possible fix inducing commit
+        String cid1 = cid_before; // possible bug inducing commit
+        String cid2 = cid_after; // possible fix inducing commit
         try {
             String project = d4j_project_name + "-" + d4j_project_num;
             gitLogger.trace(App.ANSI_BLUE + "[status] > git checkout cid before : " + App.ANSI_YELLOW + cid1
@@ -156,7 +151,7 @@ public class GitLoader {
             p = pb.start();
             p.waitFor();
             gitLogger.trace(App.ANSI_GREEN + "[status] > git checkout success" + App.ANSI_RESET);
-            if (!!copy(result_dir + "/" + name + "_" + counter + "/" + filepath_after,
+            if (copy(result_dir + "/" + name + "_" + counter + "/" + filepath_after,
                     candidate_dir + "/" + project + "_rank-" + counter + "_new.java"))
                 gitLogger.trace(App.ANSI_GREEN + "[status] > copy success" + App.ANSI_RESET);
             else {

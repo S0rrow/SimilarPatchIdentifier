@@ -58,8 +58,12 @@ public class App {
         List<String[]> preprocessed = preprocess(result);
         appLogger.trace(ANSI_GREEN + "[status] > preprocess success" + ANSI_RESET);
 
+        // variable init
+        String pool_dir = properties.getProperty("pool.dir");
+        String candidates_dir = properties.getProperty("candidates.dir");
+
         // setup for git loader to load source from git
-        gitLoader.set(properties.getProperty("pool.dir"), properties.getProperty("candidates.dir")); // argv
+        gitLoader.set(pool_dir, candidates_dir); // argv
 
         boolean doClean = properties.getProperty("doClean").equals("true");
 
@@ -72,9 +76,9 @@ public class App {
             appLogger.trace(ANSI_BLUE + "[status] > copying gitignore file to result directory and candidate directory"
                     + ANSI_RESET);
             gitLoader.copy(spi_path + "/core/LCE/gitignore/.gitignore",
-                    properties.getProperty("pool.dir") + ".gitignore"); // argv
+                    pool_dir + ".gitignore"); // argv
             gitLoader.copy(spi_path + "/core/LCE/gitignore/.gitignore",
-                    properties.getProperty("candidates.dir") + ".gitignore"); // argv
+                    candidates_dir + ".gitignore"); // argv
             appLogger.trace(ANSI_GREEN + "[status] > gitignore file copied" + ANSI_RESET);
         }
 

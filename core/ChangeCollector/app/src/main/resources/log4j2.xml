@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Configuration status="info">
 	<Properties>
-		<Property name="projectRoot">/home/codemodel/leshen/SimilarPatchIdentifier</Property>
+		<Property name="projectRoot">/home/hans/coding/SimilarPatchIdentifier</Property>
 	</Properties>
 	<Appenders>
 		<RollingFile name="fileLogger" fileName="${projectRoot}/logs/changecollector.log" filePattern="${projectRoot}/logs/changecollector-%d{yyMMdd}.log">

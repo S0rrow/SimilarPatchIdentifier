@@ -36,8 +36,65 @@ public class Extractor {
     HashMap<String, Integer> map = new HashMap<>();
     ArrayList<Integer> AST_types = new ArrayList<>();
 
+    public boolean extract_gumtree_log(String repo_path, String bic, String bbic, String bic_path, String bbic_path,
+            String output_dir) {
+        App.logger.trace(App.ANSI_BLUE + "[status] > extracting gumtree log from " + App.ANSI_RESET + " to "
+                + App.ANSI_BLUE + output_dir + App.ANSI_RESET);
+        App.logger.trace(App.ANSI_YELLOW + "[status] > repo path: " + repo_path + App.ANSI_RESET);
+
+        try {
+            Git git = Git.open(new File(repo_path));
+            Repository repository = git.getRepository();
+            RevWalk walk = new RevWalk(repository);
+            File output = new File(output_dir);
+            if (!output.exists()) {
+                output.mkdir();
+            }
+            String line = "";
+            String repo_name = GitFunctions.get_repo_name_from_url(repo_path);
+
+            File log_file = new File(output_dir, "gumtree_log.txt");
+            BufferedWriter writer = new BufferedWriter(new FileWriter(log_file, false));
+            RevCommit commitBIC = walk.parseCommit(repository.resolve(bic));
+            RevCommit commitBBIC = walk.parseCommit(repository.resolve(bbic));
+            String pathBIC = bic_path;
+            String pathBBIC = bbic_path;
+
+            String file_information = bic + " " + pathBIC + "\n";
+            String file_information_before = bbic + " " + pathBBIC + "\n";
+
+            writer.write(file_information);
+            writer.write(file_information_before);
+
+            Run.initGenerators();
+            // create bic and bbic java files
+            String src_byte = get_source(repository, commitBIC.getName(), pathBIC, "BIC.java", repo_name,
+                    output_dir);
+            String dst_byte = get_source(repository, commitBBIC.getName(), pathBBIC, "BBIC.java", repo_name,
+                    output_dir);
+
+            Tree src = TreeGenerators.getInstance().getTree(src_byte).getRoot();
+            Tree dst = TreeGenerators.getInstance().getTree(dst_byte).getRoot();
+
+            Matcher defaultMatcher = Matchers.getInstance().getMatcher();
+            MappingStore mappings = defaultMatcher.match(src, dst);
+            EditScriptGenerator editScriptGenerator = new SimplifiedChawatheScriptGenerator();
+            EditScript actions = editScriptGenerator.computeActions(mappings);
+
+            String line_log = actions.asList().toString();
+            writer.write(line_log + "\n");
+
+            writer.close();
+            walk.close();
+        } catch (Exception e) {
+            App.logger.error(App.ANSI_RED + "[error] > " + e.getMessage() + App.ANSI_RESET);
+            return false;
+        }
+        return true;
+    }
+
     // extract gumtree log from diff line
-    public boolean extract_log(String repo_path, String diff_path, String output_dir) {
+    public boolean extract_gumtree_log(String repo_path, String diff_path, String output_dir) {
         try {
             App.logger.trace(App.ANSI_BLUE + "[status] > extracting gumtree log from " + diff_path
                     + App.ANSI_RESET + " to " + App.ANSI_BLUE + output_dir + App.ANSI_RESET);
@@ -98,6 +155,75 @@ public class Extractor {
             return false;
         }
         return true;
+    }
+
+    public int extract_vector_pool(String gumtree_log, String result_file) {
+        App.logger.trace(App.ANSI_BLUE + "[status] > extracting change vectors from " + gumtree_log
+                + App.ANSI_RESET + " to " + App.ANSI_BLUE + result_file + App.ANSI_RESET);
+        File gumtree = new File(gumtree_log);
+
+        String line = null;
+        boolean no_change = false;
+        boolean add = false;
+        int oper = 0;
+
+        try {
+            BufferedWriter vector_writer = new BufferedWriter(new FileWriter(result_file, true));
+            String write_line = "";
+
+            BufferedReader log_reader = new BufferedReader(new FileReader(gumtree));
+
+            while ((line = log_reader.readLine()) != null && (!no_change)) {
+                // App.logger.debug(App.ANSI_PURPLE + "[debug] > reading each line ..." +
+                // App.ANSI_RESET);
+                StringTokenizer st = new StringTokenizer(line);
+                write_line = "";
+                while (st.hasMoreTokens()) {
+                    String token = st.nextToken();
+                    // App.logger.debug(App.ANSI_PURPLE + "[debug] > reading each token : " + token
+                    // + App.ANSI_RESET);
+                    if (token.equals("[]")) {
+                        no_change = true;
+                    }
+                    if (token.matches("insert-node|delete-node|update-node|insert-tree|delete-tree|move-tree")) {
+                        if (AST_types.size() > 0 && oper != -1) {
+                            for (int i = 0; i < AST_types.size(); i++) {
+                                int val = 170 * oper + AST_types.get(i);
+                                write_line += val + ",";
+                            }
+                        }
+                        AST_types.clear();
+                        oper = getNodeNum(token);
+                    }
+                    if (token.matches("---")) {
+                        add = true;
+                    }
+                    if (token.matches("===")) {
+                        add = false;
+                    }
+                    if (add == true) {
+                        if (!Character.isAlphabetic(token.charAt(token.length() - 1)) && add) {
+                            token = token.substring(0, token.length() - 1);
+                        }
+
+                        for (int i = 0; i < ChangeVector.expanded_nodes.length; i++) {
+                            if (token.equals(ChangeVector.expanded_nodes[i])) {
+                                AST_types.add(i + 1);
+                            }
+                        }
+                    }
+                }
+                vector_writer.write(write_line);
+            }
+            vector_writer.newLine();
+            vector_writer.close();
+            log_reader.close();
+        } catch (Exception e) {
+            App.logger.error(App.ANSI_RED + "[error] Exception : " + e.getMessage() + App.ANSI_RESET);
+            return -1;
+        }
+        int result = no_change ? 1 : 0;
+        return result;
     }
 
     public int extract_vector(String repo_name, String gumtree_log, String result_path) {
