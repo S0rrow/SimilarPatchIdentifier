@@ -45,6 +45,7 @@ def parse_argv() -> tuple:
         cases[-1]['project_name'] = "Closure-14"
         cases[-1]['identifier'], cases[-1]['version'] = cases[-1]['project_name'].split("-")
         cases[-1]['iteration'] = 0
+        cases[-1]['is_ConFix_ready'] = False
     else:
         if settings['SPI']['mode'] == "defects4j":
             cases.append(dict())
@@ -52,6 +53,7 @@ def parse_argv() -> tuple:
             cases[-1]['version'] = settings['SPI']['version']
             cases[-1]['project_name'] = f"{cases[-1]['identifier']}-{cases[-1]['version']}"
             cases[-1]['iteration'] = 0
+            cases[-1]['is_ConFix_ready'] = False
 
         elif settings['SPI']['mode'] in ("defects4j-batch", "defects4j-batch-expr"):
             print(f"debug : mode defects4j-batch")
@@ -61,6 +63,7 @@ def parse_argv() -> tuple:
                     cases[-1]['project_name'] = bug
                     cases[-1]['identifier'], cases[-1]['version'] = bug.split("-")
                     cases[-1]['iteration'] = 0
+                    cases[-1]['is_ConFix_ready'] = False
                 
 
         elif settings['SPI']['mode'] == "github":
@@ -71,6 +74,7 @@ def parse_argv() -> tuple:
             cases[-1]['project_name'] = cases[-1]['repository'].rsplit("/", 1)[-1]
             cases[-1]['identifier'] = cases[-1]['project_name']
             cases[-1]['iteration'] = 0
+            cases[-1]['is_ConFix_ready'] = False
 
     # settings['verbose'] = args.verbose
     # settings['quiet'] = False if args.verbose else args.quiet # suppresses quiet option if verbose option is given
@@ -389,7 +393,6 @@ def main(argv):
                 case['hash_id'] = f"{hash_prefix}_{case['project_name']}"
                 case['target_dir'] = os.path.join(settings['SPI']['byproduct_path'], case['hash_id'])
                 case['iteration'] += 1
-                case['is_ConFix_ready'] = False
                 cursor_str = f"Iteration #{case['iteration']} w/ Strategy '{strategy_combination} / Case #{case_num}"
 
                 print(f"| SPI  | {cursor_str} | Begins to look for patch for {case['project_name']}...")
