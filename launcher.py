@@ -433,7 +433,7 @@ def main(argv):
                     outfile.write(f"       > Started at {each_start.strftime('%Y-%m-%d %H:%M:%S')}.\n")
 
                 try:
-                    if case['iteration'] == 1 and case['is_ConFix_ready'] == False:
+                    if case['iteration'] == 1 or case['is_ConFix_ready'] == False:
                         print(f"| SPI  |    > {cursor_str} | Step 1. Running Commit Collector...")
                         if not run_CC(case, is_defects4j, settings['SPI'], settings['CC']):
                             raise RuntimeError("Module 'Commit Collector' launch failed.")
