@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Configuration status="info">
 	<Properties>
-		<Property name="projectRoot">/home/hans/coding/SimilarPatchIdentifier</Property>
+		<Property name="projectRoot">/home/codemodel/turbstructor/SimilarPatchIdentifier</Property>
 	</Properties>
 
 	<Appenders>
