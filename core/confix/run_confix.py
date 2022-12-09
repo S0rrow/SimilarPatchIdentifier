@@ -148,7 +148,6 @@ def main(argv):
             print("| ConFix-runner    | Pre-launch configuration finished.")
 
 
-<<<<<<< HEAD
     # Rebuilding ConFix
     try:
         print("| ConFix-runner    | Building ConFix...")
@@ -157,51 +156,6 @@ def main(argv):
         print("| ConFix-runner    | ! Failed to build ConFix.")
         traceback.print_exc()
         sys.exit(-1)
-=======
-        prop_file = f"{target_root}/properties/confix.properties"
-        assert copy(prop_file, f"{target_workspace}/")
-        
-        ### fill up the confix.property
-        with open(f"{target_workspace}/confix.properties", "a") as f:
-            f.write(f"src.dir={project_information['Project']['source_path']}\n")
-            f.write(f"target.dir={project_information['Project']['target_path']}\n")
-            f.write(f"cp.compile={project_information['Project']['compile_class_path']}\n")
-            f.write(f"cp.test={project_information['Project']['test_class_path']}\n")
-            f.write(f"projectName={target_project_name}\n")
-            f.write(f"pFaultyClass={perfect_faulty_class}\n")
-            f.write(f"pFaultyLine={perfect_faulty_line}\n")
-            f.write(f"pool.source={target_outputs}/LCE/candidates\n")
-        with open(f"{target_workspace}/tests.all", "w") as f:
-            f.write(project_information['Project']['test_list'])
-        with open(f"{target_workspace}/tests.relevant", "w") as f:
-            f.write(project_information['Project']['test_list'])
-        with open(f"{target_workspace}/tests.trigger", "w") as f:
-            f.write(project_information['Project']['test_list'])
-
-        if buildTool in ("gradle", "Gradle"):
-            assert subprocess.run(["gradle", "build"], cwd = target_workspace)
-        elif buildTool in ("maven", "Maven", "mvn"):
-            assert subprocess.run(["mvn", "compile"], cwd = target_workspace)
-    print("Pre-configuration finished.")
-
-    print("Building ConFix...")
-    assert subprocess.run(["mvn", "clean", "package"], cwd = f"{SPI_root}/core/confix/ConFix-code")
-
-    print("Executing ConFix...")
-    assert copy(f"{SPI_root}/core/confix/ConFix-code/target/confix-0.0.1-SNAPSHOT-jar-with-dependencies.jar", f"{SPI_root}/core/confix/lib/confix-ami_torun.jar")
-
-    with open(f"{target_workspace}/log.txt", "w") as f:
-        assert subprocess.run(["/usr/lib/jvm/java-8-openjdk-amd64/bin/java", "-Xmx4g", "-cp", "../../../core/confix/lib/las.jar:../../../core/confix/lib/confix-ami_torun.jar", "-Duser.language=en", "-Duser.timezone=America/Los_Angeles", "com.github.thwak.confix.main.ConFix"], cwd = target_workspace, stdout = f)
-        # assert subprocess.run(["/usr/lib/jvm/java-8-openjdk-amd64/bin/java", "-Xmx16g", "-cp", "/home/codemodel/turbstructor/SimilarPatchIdentifier/core/confix/lib/las.jar:/home/codemodel/turbstructor/SimilarPatchIdentifier/core/confix/lib/confix-ami_torun.jar", "-Duser.language=en", "-Duser.timezone=America/Los_Angeles", "com.github.thwak.confix.main.ConFix"], cwd = target_workspace, stdout = f)
-
-    print("ConFix Execution Finished.")
-
-
-    if not os.path.isfile(f"{target_workspace}/patches/0/{perfect_faulty_path}"):
-        print("ConFix failed to generate plausible patch.")
-        sys.exit(-63)
-
->>>>>>> d9f4352bd (update on LCE App.java)
     else:
         print("| ConFix-runner    | Successfully built ConFix.")
 
