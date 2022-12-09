@@ -100,6 +100,8 @@ public class Extractor {
         source_files = new ArrayList<>();
         for (int i = 0; i < max_N_index_list.length; i++) {
             source_files.add(combine(cleaned_meta_pool_list.get(max_N_index_list[i])));
+            // print the result
+            extractionLogger.trace(App.ANSI_BLUE + "[result] " + source_files.get(i) + App.ANSI_RESET);
         }
         return source_files;
     }

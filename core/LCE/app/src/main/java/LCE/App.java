@@ -97,6 +97,10 @@ public class App {
             String filepath_after = line[3];
             String d4j_name = properties.getProperty("d4j_project_name");
             int d4j_num = Integer.parseInt(properties.getProperty("d4j_project_num"));
+            appLogger.trace(ANSI_GREEN + "[candidate metadata] > filepath after : " + filepath_after
+                    + ", git repository url : "
+                    + git_url + ", defects4j project : " + d4j_name + "-" + properties.getProperty("d4j_project_num")
+                    + ANSI_RESET);
 
             gitLoader.config(git_url, cid_before, cid_after, filepath_before, filepath_after, d4j_name, d4j_num);
             gitLoader.run();
