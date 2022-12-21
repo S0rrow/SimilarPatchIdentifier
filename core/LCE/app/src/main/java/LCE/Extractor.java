@@ -273,7 +273,7 @@ public class Extractor {
             if (targetScore < scores[scorePos]) {
                 targetScore = scores[scorePos];
             }
-            // if left candudate number is higher than number of occurence of target score,
+            // if left candidate number is higher than number of occurence of target score,
             // then return all indexes of target score
             if (leftCandNum >= map.get(targetScore)) {
                 int[] indexes = indexes_of_specific_sim_score(orig, map, targetScore);
@@ -283,7 +283,7 @@ public class Extractor {
                 map.remove(targetScore);
                 scorePos++;
             } else {
-                // if left candudate number is lower than number of occurence of target score,
+                // if left candidate number is lower than number of occurence of target score,
                 // then return randomly picked indexes of target score
                 int[] indexes = indexes_of_specific_sim_score(orig, map, targetScore);
                 int[] randomIndexes = new int[leftCandNum];
