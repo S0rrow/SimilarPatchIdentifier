@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Properties;
 import java.util.Scanner;
 import java.util.Vector;
+import java.util.HashMap;
 import org.apache.logging.log4j.*;
 import org.apache.logging.log4j.core.config.Configurator;
 
@@ -83,8 +84,9 @@ public class Extractor {
             for (int i = 0; i < regressed_pool_array.length; i++) {
                 sim_score_array[i] = lcs.ScoreSimilarity(regressed_pool_array[i], vector_array[0]);
             }
-
-            max_N_index_list = indexesOfTopElements(sim_score_array, nummax);
+            HashMap<Float, Integer> sim_score_map = count_number_of_sim_scores(sim_score_array); // new
+            // max_N_index_list = indexesOfTopElements(sim_score_array, nummax);
+            max_N_index_list = indexes_of_specific_sim_score(sim_score_array, sim_score_map, nummax);
             extractionLogger.trace(
                     App.ANSI_BLUE + "[status] max_N_index_list size = " + max_N_index_list.length + App.ANSI_RESET);
         } catch (FileNotFoundException e) {
@@ -205,6 +207,7 @@ public class Extractor {
         return synced_meta_pool;
     }
 
+    // LEGACY
     // find index of top N max values in array and return index list
     private int[] indexesOfTopElements(float[] orig, int nummax) {
         float[] copy = Arrays.copyOf(orig, orig.length);
@@ -219,6 +222,81 @@ public class Extractor {
                 continue;
             if (resultPos < nummax)
                 result[resultPos++] = i;
+        }
+        return result;
+    }
+
+    // count number of each similarity score
+    private HashMap<Float, Integer> count_number_of_sim_scores(float[] orig) {
+        HashMap<Float, Integer> result = new HashMap<>();
+        for (int i = 0; i < orig.length; i++) {
+            float onTrial = orig[i];
+            if (result.containsKey(onTrial)) {
+                result.put(onTrial, result.get(onTrial) + 1);
+            } else {
+                result.put(onTrial, 1);
+            }
+        }
+        return result;
+    }
+
+    // return index of specific similarity score
+    private int[] indexes_of_specific_sim_score(float[] orig, HashMap<Float, Integer> map, float targetScore) {
+        int[] result = new int[map.get(targetScore)];
+        int resultPos = 0;
+        for (int i = 0; i < orig.length; i++) {
+            float onTrial = orig[i];
+            if (onTrial == targetScore) {
+                result[resultPos++] = i;
+            }
+        }
+        return result;
+    }
+
+    private int[] index_of_candidate_patches(float[] orig, HashMap<Float, Integer> map, int nummax) {
+        // if nummax = 10, then return index of top 10 max similarity scores
+        int[] result = new int[nummax];
+        int resultPos = 0;
+        float targetScore = 0;
+        float[] scores = map.keySet().toArray(new float[map.keySet().size()]);
+        int scorePos = 0;
+        // sort from highest to lowsest
+        Arrays.sort(scores);
+        while (resultPos < nummax) {
+            int leftCandNum = nummax - resultPos;
+            // if there is no more similarity score, then break
+            if (map.isEmpty()) {
+                break;
+            }
+            // if a similarity score is highest, and has more occurence than nummax, return
+            // randomly picked indexes of that similarity score
+            if (targetScore < scores[scorePos]) {
+                targetScore = scores[scorePos];
+            }
+            // if left candudate number is higher than number of occurence of target score,
+            // then return all indexes of target score
+            if (leftCandNum >= map.get(targetScore)) {
+                int[] indexes = indexes_of_specific_sim_score(orig, map, targetScore);
+                for (int i = 0; i < indexes.length; i++) {
+                    result[resultPos++] = indexes[i];
+                }
+                map.remove(targetScore);
+                scorePos++;
+            } else {
+                // if left candudate number is lower than number of occurence of target score,
+                // then return randomly picked indexes of target score
+                int[] indexes = indexes_of_specific_sim_score(orig, map, targetScore);
+                int[] randomIndexes = new int[leftCandNum];
+                for (int i = 0; i < leftCandNum; i++) {
+                    int randomIndex = (int) (Math.random() * indexes.length);
+                    randomIndexes[i] = indexes[randomIndex];
+                }
+                for (int i = 0; i < randomIndexes.length; i++) {
+                    result[resultPos++] = randomIndexes[i];
+                }
+                map.remove(targetScore);
+                scorePos++;
+            }
         }
         return result;
     }
