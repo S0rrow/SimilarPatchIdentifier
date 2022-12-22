@@ -88,7 +88,7 @@ public class Extractor {
             }
             HashMap<Float, Integer> sim_score_map = count_number_of_sim_scores(sim_score_array); // new
             // max_N_index_list = indexesOfTopElements(sim_score_array, nummax);
-            max_N_index_list = indexes_of_specific_sim_score(sim_score_array, sim_score_map, nummax);
+            max_N_index_list = index_of_candidate_patches(sim_score_array, sim_score_map, nummax);
             extractionLogger.trace(
                     App.ANSI_BLUE + "[status] max_N_index_list size = " + max_N_index_list.length + App.ANSI_RESET);
         } catch (FileNotFoundException e) {
