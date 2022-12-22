@@ -1,61 +1,68 @@
 [SPI]
-# mode: select among [defects4j, defects4j-batch, github]. If debug mode is active, then this mode is ignored.
-mode = github
-# batch_d4j_file: text file that contains multiple Defects4J bugs to run SPI upon. Required for 'defects4j-batch' mode.
+; mode: select among [defects4j, defects4j-batch, github]. If debug mode is active, then this mode is ignored.
+mode = defects4j-batch
+; batch_d4j_file: text file that contains multiple Defects4J bugs to run SPI upon. Required for 'defects4j-batch' mode.
 batch_d4j_file = d4j-batch.txt
-# below are both used for 'defects4j' and 'github' modes
-project = gradleTest-Increment
-# below are required for 'defects4j' mode
-identifier = 14
-# below are automatically set for 'defects4j' and 'defects4j-batch' modes
-faulty_file = app/src/main/java/gradleTest/Increment/App.java
-faulty_line_fix = 30
-faulty_line_blame = 30
-# below are required for 'github' mode
-repository_url = https://github.com/Turbstructor/gradleTest-Increment
-commit_id = acd145af33c06432ee40906a751f6b566942088b
-source_path = app/src/main
-target_path = app/build/classes/java
-test_list = gradleTest.Increment.AppTest
-test_class_path = app/build/classes/java/main:app/build/classes/java/test
-compile_class_path = app/build/classes/java/main
-build_tool = gradle
-JAVA_HOME_8 = /usr/lib/jvm/java-1.8.0-openjdk-amd64
+; below are both used for 'defects4j' and 'github' modes
+identifier = Closure
+; below are required for 'defects4j' mode
+version = 14
+; below are required for 'github' mode
+repository_url = 
+commit_id = 
+source_path = 
+target_path = 
+test_list = 
+test_class_path = 
+compile_class_path = 
+build_tool = 
+; below are automatically set for 'defects4j' and 'defects4j-batch' modes
+faulty_file = 
+faulty_line_fix = 
+faulty_line_blame = 
+JAVA_HOME_8 = /home/codemodel/paths/jdk1.8.0_311
+byproduct_path = /data/codemodel/turbstructor/SPI_batch_byproducts_221210
+root = /home/codemodel/leshen/SimilarPatchIdentifier
+patch_strategy = tested-first
+concretization_strategy = hash-match
+; patch_strategy = flfreq, tested-first, noctx, patch
+; concretization_strategy = tcvfl, hash-match, neighbor, tc
 
 [CC]
-project_root = /home/hans/coding/SimilarPatchIdentifier
-# mode = repository || file || defects4j
-mode = defects4j
-# necessary if mode = file, otherwise ignored
-file_name = ?
-commit_id = 2620f61b0de659208992bcf99559f05b07c4d9a2
-# unnecessary if git_url is given
-git_url = https://github.com/S0rrow/AllChangeCollector.git
-git_name = AllChangeCollector
-# output directory where the results are stored as csv files
-output_dir = /home/hans/coding/SimilarPatchIdentifier/target
-# whether to clean the output directory before running the tool
-doClean = true
-JAVA_HOME.8 = /usr/lib/jvm/java-1.8.0-openjdk-amd64
-# necessary if mode is defects4j
-defects4j_name = Closure
-defects4j_id = 14
-hash_id = 202209141316
+project_root =
+; output directory where the results are stored as csv files
+output_dir =
+; mode = repository || file || defects4j
+mode =
+; necessary if mode = file, otherwise ignored
+file_name =
+commit_id =
+; unnecessary if git_url is given
+git_url =
+git_name =
+; whether to clean the output directory before running the tool
+doClean = false
+JAVA_HOME.8 =
+; necessary if mode is defects4j
+defects4j_name =
+defects4j_id =
+hash_id =
 
 [LCE]
-SPI.dir=/home/hans/coding/SimilarPatchIdentifier
-pool_file.dir=/home/hans/coding/SimilarPatchIdentifier/core/LCE/target/gumtree_vector.csv
-meta_pool_file.dir=/home/hans/coding/SimilarPatchIdentifier/core/LCE/target/commit_file.csv
-target_vector.dir=/home/hans/coding/SimilarPatchIdentifier/core/LCE/target/testVector.csv
-pool.dir=/home/hans/coding/SimilarPatchIdentifier/core/LCE/result/
-candidates.dir=/home/hans/coding/SimilarPatchIdentifier/core/LCE/candidates/
+SPI.dir=
+pool_file.dir=
+meta_pool_file.dir=
+target_vector.dir=
+pool.dir=
+candidates.dir=
 candidate_number=10
-d4j_project_name=Closure
-d4j_project_num=14
-doClean=true
+d4j_project_name=
+d4j_project_num=
+doClean=false
+threshold=70000
 
 [ConFix]
-jvm=/usr/lib/jvm/java-8-openjdk-amd64/bin/java
+jvm=/home/codemodel/paths/jdk1.8.0_311/bin/java
 version=1.8
 pool.path=../../pool/ptlrh,../../pool/plrt
 cp.lib=../lib/confix-ami_torun.jar
@@ -63,6 +70,6 @@ patch.count=200000
 max.change.count=2500
 max.trials=100
 time.budget=3
-patch.strategy=noctx
-concretize.strategy=tc
+patch.strategy=tested-first
+concretize.strategy=hash-match
 fl.metric=perfect

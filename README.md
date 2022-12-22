@@ -1,7 +1,7 @@
 # SPI 2022
 Revision of ConFix with patch recommendation data instead of change pool
 
-ACC + LCE + ConFix
+CC + LCE + ConFix
 
 Inspired by _**Automated Patch Generation with Context-based Change Application**_ 
 - [Original Repository of ConFix](https://github.com/thwak/ConFix)
@@ -9,8 +9,8 @@ Inspired by _**Automated Patch Generation with Context-based Change Application*
 
 ## Other projects included:
 - [ConFix](https://github.com/thwak/confix)
-- [AllChangeCollector](https://github.com/JeongHyunHeo/AllcCangeCollector)
-- [Longest Common sub-vector Extractor (LCE)](https://github.com/s0rrow/fv4202)
+- [ChangeCollector](https://github.com/S0rrow/ChangeCollector)
+- [Longest Common sub-vector Extractor (LCE)](https://github.com/S0rrow/LCE)
 
 ## How to run
 1. run ``python3 launcher.py`` for identifying patches for defects4j projects.
