@@ -40,7 +40,7 @@ commit_id =
 ; unnecessary if git_url is given
 git_url =
 git_name =
-; whether to clean the output directory before running the tool
+; whether to clean the output directory before recurrent execution with identical output directory
 doClean = false
 JAVA_HOME.8 =
 ; necessary if mode is defects4j
