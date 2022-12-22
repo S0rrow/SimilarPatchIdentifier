@@ -265,7 +265,8 @@ public class Extractor {
         float[] scores = new float[map.keySet().size()];
         int scorePos = 0;
         while(keyIterator.hasNext()){
-            scores[scorePos++] = (float) keyIterator.next();
+            scores[scorePos] = (float) keyIterator.next();
+            scorePos++;
         }
         scorePos = 0;
         // sort from highest to lowsest
