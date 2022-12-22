@@ -28,6 +28,7 @@ fi
 project_dir=$1
 email=$2
 sender="codemodel@ubuntu"
+basedir=$(pwd)
 
 # start time
 init_time=$(date +%s)
@@ -44,8 +45,9 @@ mail_title="Execution Complete Notification"
 
 # send mail after run
 if [ -n "$3" ]; then
-    echo "bash script execution complete on $project_dir
+    echo "bash script execution complete on $basedir
 ====================================
+Project dir : $project_dir
 Start time : $(date -d @$init_time)
 Finish time : $(date -d @$fin_time)
 ====================================
