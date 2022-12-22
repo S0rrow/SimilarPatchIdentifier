@@ -9,6 +9,8 @@ import java.util.Properties;
 import java.util.Scanner;
 import java.util.Vector;
 import java.util.HashMap;
+import java.util.Set;
+import java.util.Iterator;
 import org.apache.logging.log4j.*;
 import org.apache.logging.log4j.core.config.Configurator;
 
@@ -258,8 +260,14 @@ public class Extractor {
         int[] result = new int[nummax];
         int resultPos = 0;
         float targetScore = 0;
-        float[] scores = map.keySet().toArray(new float[map.keySet().size()]);
+        Set keySet = map.keySet();
+        Iterator keyIterator = keySet.iterator();
+        float[] scores = new float[map.keySet().size()];
         int scorePos = 0;
+        while(keyIterator.hasNext()){
+            scores[scorePos++] = (float) keyIterator.next();
+        }
+        scorePos = 0;
         // sort from highest to lowsest
         Arrays.sort(scores);
         while (resultPos < nummax) {
