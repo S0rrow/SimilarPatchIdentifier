@@ -22,35 +22,39 @@ Inspired by _**Automated Patch Generation with Context-based Change Application*
     - Oracle JDK 8 (Used by Defects4J)
 - [Defects4J](https://github.com/rjust/defects4j)
     - See [requirements](https://github.com/rjust/defects4j#requirements)
+- Python
+    - Python 3.6+
+    - PIP packages necessary
+        - jproperties
 
 ### Pre-run Configuration
 - Set up Defects4J with reference to [Steps to set up Defects4J](https://github.com/rjust/defects4j#requirements)
 - Edit `SPI.ini`
 
-#### SPI.ini settings
+#### `SPI.ini` settings
 ##### **SPI**
 |key|is_required|description|
 |:---|:---:|:---|
-|`mode`|Yes|How `SPI` will be run. Can choose among those options:<br>- `defects4j` : Tells `SPI` to try finding a patch out of a `Defects4J` bug.<br>- `defects4j-batch` : Tells `SPI` to try finding a patch out of a `Defects4J` bug, but with a number of bugs given as a list.<br>- `github` : Tells `SPI` to try finding a patch out of a `GitHub` project with a bug.|
-|`batch_d4j_file`|mode: `defects4j-batch`|Name of the file which contains names of Defects4J bugs|
-|`identifier`|?||
-|`version`|?||
-|`repository_url`|In `github`|URL of GitHub project to look for a patch upon|
-|`commit_id`|In `github`|Commit ID of GitHub project that produces a bug|
-|`source_path`|In `github`|Relative path (from root) of Project Directory which contains source codes|
-|`target_path`|In `github`|?|
-|`test_list`|In `github`|List of names of test classes that a project uses|
-|`test_class_path`|In `github`|?|
-|`compile_class_path`|In `github`|?|
-|`build_tool`|In `github`|How a project is built. Only tools `maven` and `gradle` are possible for option|
-|`faulty_file`||Relative directory (from root of project) of a faulty file|
-|`faulty_line_fix`||Line number of `faulty_file` to try modifying|
-|`faulty_line_blame`||Line number of `faulty file` where the bug is made|
-|`JAVA_HOME_8`|Yes|Absolute path of JDK 8 directory|
-|`byproduct_path`|No|Directory which files and folders made during the progress of `SPI` should be stored into. If not given, It makes a folder `byproducts` inside `root`|
+|`mode`|Yes|How `SPI` will be run. Can choose among those options:<br>- `defects4j` : Tells `SPI` to try finding a patch out of a `Defects4J` bug.<br>- `defects4j-batch` : Tells `SPI` to try finding a patch out of a `Defects4J` bug, but with a number of bugs given as a list.<br>- `github` : *Currently not fully implemented.* Tells `SPI` to try finding a patch out of a `GitHub` project with a bug.|
+|`batch_d4j_file`|In mode `defects4j-batch`|Name of the file which contains names of Defects4J bugs|
+|`identifier`|In mode `defects4j`|Alias to the name of the project.<br>*Automatically set when running `SPI` in mode `defects4j-batch`*|
+|`version`|In mode `defects4j`|Bug ID of Defects4J bug.|
+|`repository_url`|In mode `github`|URL of GitHub project to look for a patch upon|
+|`commit_id`|In mode `github`|Commit ID of GitHub project that produces a bug|
+|`source_path`|In mode `github`|Source directory path (relative path from project root) for parsing buggy codes|
+|`target_path`|In mode `github`|Relative path (from project root) for compiled .class files|
+|`test_list`|In mode `github`|List of names of test classes that a project uses|
+|`test_class_path`|In mode `github`|Classpath for test execution. Colon(`:`)-separated.|
+|`compile_class_path`|In mode `github`|Classpath for candidate compilation. Colon(`:`)-separated.|
+|`build_tool`|In mode `github`|How a project is built. Only tools `maven` and `gradle` are possible for option|
+|`faulty_file`|In mode `github`|Relative directory (from root of project) of a faulty file. *Automatically set when running `SPI` in mode `defects4j` / `defects4j-batch`*|
+|`faulty_line_fix`|In mode `github`|Line number of `faulty_file` to try modifying. *Automatically set when running `SPI` in mode `defects4j` / `defects4j-batch`*|
+|`faulty_line_blame`|In mode `github`|Line number of `faulty file` where the bug is made. *Automatically set when running `SPI` in mode `defects4j` / `defects4j-batch`*|
+|`JAVA_HOME_8`|**Yes**|Absolute path to JDK 8|
+|`byproduct_path`|No|Directory which files and folders made during the progress of `SPI` should be stored into. *Will make folder `byproducts` inside `root` by default.*|
 |`root`|No|Directory where `SPI` root directory is placed.|
-|`patch_strategy`|Yes|List of patch strategies (among `flfreq`, `tested-first`, `noctx`, `patch`) to run `SPI` on. Comma-separated.)
-|`concretization_strategy`|Yes|List of concretization strategies (among `tcvfl`, `hash-match`, `neightbor`, `tc`) to run `SPI` on. Comma-separated. |
+|`patch_strategy`|No|List of patch strategies (among `flfreq`, `tested-first`, `noctx`, `patch`) to run `SPI` with. Comma-separated. *`flfreq` by default.*|
+|`concretization_strategy`|No|List of concretization strategies (among `tcvfl`, `hash-match`, `neightbor`, `tc`) to run `SPI` with. Comma-separated. *`hash-match` by default.*|
 
 ##### **Change Collector**
 |**key**|**is_required**|**description**|
@@ -101,10 +105,17 @@ Inspired by _**Automated Patch Generation with Context-based Change Application*
 
 ### How to launch
 
-1. run ``python3 launcher.py`` for identifying patches for defects4j projects.
-2. give argument option ``-r`` to rebuild all submodules.
-3. edit `SPI.ini` to specify the launch options.
+> ```python3 launcher.py```
 
 #### Arguments
-#### SPI.ini
+- `'-r', '--rebuild'` : Rebuild all submodules (ChangeCollector, LCE) on start of execution. In default, `launcher.py` does not rebuild each submodules on execution.
+- `'-d', '--debug'` : Execute single Defects4J project, `Closure-14` for testing a cycle of execution. Debug uses `flfreq` and `hash-match` strategies. SPI consists of three Java projects as submodules. Thus you may need to check if there is no compile error or wrong paths given through debug execution. If no problem occurs, you are clear to launch.
+
+### Upon Execution...
+#### "Notify me by Email"
+- You may use inserted bash script, `tracker.sh` for notifying execution finish through email. Through bash script, `tracker.sh` will execute `launcher.py` with *rebuild* option given.
+- You must use <span style="color:skyblue">handong.ac.kr</span> account only for email.
+    - due to Gmail Rules, we cannot use *gmail* accounts for mailing within SERVER #24.
+#### How to use `tracker.sh`
+> <span style="color:green">./tracker.sh</span> `{location_of_SPI}` `{your@email}`
 
