@@ -28,7 +28,14 @@ Inspired by _**Automated Patch Generation with Context-based Change Application*
 
 ### Pre-run Configuration
 - Set up Defects4J with reference to [Steps to set up Defects4J](https://github.com/rjust/defects4j#requirements)
-- Edit `SPI.ini`
+- Install SimilarPatchIdentifier
+    > `git clone https://github.com/ISEL-HGU/SimilarPatchIdentifier`
+- Change working directory to `SimilarPatchIdentifier`
+    > `cd SimilarPatchIdentifier`
+- Edit `SPI.ini` file
+    - See [SPI.ini settings](#spiini-settings)
+- Run launcher.py file
+    - See [How to launch](#how-to-launch)
 
 #### `SPI.ini` settings
 ##### **SPI**
