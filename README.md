@@ -34,8 +34,11 @@ Inspired by _**Automated Patch Generation with Context-based Change Application*
     > `cd SimilarPatchIdentifier`
 - Edit `SPI.ini` file
     - See [SPI.ini settings](#spiini-settings)
-- Run launcher.py file
-    - See [How to launch](#how-to-launch)
+- Launch the SimilarPatchIdentifier
+    - See [Generate the Change Vector Pool](#generate-the-change-vector-pool)
+    - See [How to find Patch for Git Repository](#how-to-find-patch-for-git-repository)
+    - See [How to find Patch for Defects4J](#how-to-find-patch-for-defects4j)
+    - See [How to launch using batch](#how-to-launch-using-batch)
 
 #### `SPI.ini` settings
 ##### **SPI**
@@ -109,7 +112,18 @@ Inspired by _**Automated Patch Generation with Context-based Change Application*
 |`concretize.strategy`|no|automatically given by `launcher.py`|
 |`fl.metric`|yes|define how Fault Localization is done. default is perfect. only required for ConFix|
 
-### How to launch
+
+### Generate the Change Vector Pool
+- `Change Collector` is a submodule of `SPI` which is responsible for generating the change vector pool.
+    - `Change Collector` is a Java project which is built with Gradle.
+- To execute the `ChangeCollector` module, you need to have JDK 17 installed.
+
+> `cd core/ChangeCollector`
+> `./gradlew run`
+
+### How to find Patch for Git Repository
+### How to find Patch for Defects4J Project
+### How to launch using batch
 
 > ```python3 launcher.py```
 
