@@ -244,7 +244,7 @@ public class Extractor {
         String line = null;
         boolean no_change = false;
         boolean add = false;
-        int oper = 0;
+        int oper = -1;
 
         try {
             BufferedWriter vector_writer = new BufferedWriter(new FileWriter(vector_file, true));
@@ -280,11 +280,10 @@ public class Extractor {
                     if (token.matches("===")) {
                         add = false;
                     }
-                    if (add == true) {
+                    if (add) {
                         if (!Character.isAlphabetic(token.charAt(token.length() - 1)) && add) {
                             token = token.substring(0, token.length() - 1);
                         }
-
                         for (int i = 0; i < ChangeVector.expanded_nodes.length; i++) {
                             if (token.equals(ChangeVector.expanded_nodes[i])) {
                                 AST_types.add(i + 1);
@@ -296,6 +295,16 @@ public class Extractor {
                 if (!write_line.equals("") && all_diffs) {
                     vector_writer.newLine();
                 }
+            }
+            // write last line
+            if (AST_types.size() > 0 && oper != -1) {
+                for (int i = 0; i < AST_types.size(); i++) {
+                    int val = 170 * oper + AST_types.get(i);
+
+                    write_line += val + ",";
+                }
+                AST_types.clear();
+                vector_writer.write(write_line);
             }
             vector_writer.close();
             log_reader.close();

@@ -44,14 +44,16 @@ def parse_argv() -> tuple:
         settings['SPI']['project'] = "Closure"
         cases[-1]['project_name'] = "Closure-14"
         cases[-1]['identifier'], cases[-1]['version'] = cases[-1]['project_name'].split("-")
-        cases[-1]['expr_count'] = 0
+        cases[-1]['iteration'] = 0
+        cases[-1]['is_ConFix_ready'] = False
     else:
         if settings['SPI']['mode'] == "defects4j":
             cases.append(dict())
             cases[-1]['identifier'] = settings['SPI']['identifier']
             cases[-1]['version'] = settings['SPI']['version']
             cases[-1]['project_name'] = f"{cases[-1]['identifier']}-{cases[-1]['version']}"
-            cases[-1]['expr_count'] = 0
+            cases[-1]['iteration'] = 0
+            cases[-1]['is_ConFix_ready'] = False
 
         elif settings['SPI']['mode'] in ("defects4j-batch", "defects4j-batch-expr"):
             print(f"debug : mode defects4j-batch")
@@ -60,7 +62,8 @@ def parse_argv() -> tuple:
                     cases.append(dict())
                     cases[-1]['project_name'] = bug
                     cases[-1]['identifier'], cases[-1]['version'] = bug.split("-")
-                    cases[-1]['expr_count'] = 0
+                    cases[-1]['iteration'] = 0
+                    cases[-1]['is_ConFix_ready'] = False
                 
 
         elif settings['SPI']['mode'] == "github":
@@ -70,7 +73,8 @@ def parse_argv() -> tuple:
             cases[-1]['repository'] = settings['SPI']['repository_url']
             cases[-1]['project_name'] = cases[-1]['repository'].rsplit("/", 1)[-1]
             cases[-1]['identifier'] = cases[-1]['project_name']
-            cases[-1]['expr_count'] = 0
+            cases[-1]['iteration'] = 0
+            cases[-1]['is_ConFix_ready'] = False
 
     # settings['verbose'] = args.verbose
     # settings['quiet'] = False if args.verbose else args.quiet # suppresses quiet option if verbose option is given
@@ -355,7 +359,8 @@ def main(argv):
         for concretization_strategy in concretization_strategies:
             settings['ConFix']['patch.strategy'] = patch_strategy
             settings['ConFix']['concretize.strategy'] = concretization_strategy
-            print(f"\n| SPI  | Strategy combination '{patch_strategy} + {concretization_strategy}' set.")
+            strategy_combination = f"{patch_strategy} + {concretization_strategy}"
+            print(f"\n| SPI  | Strategy combination '{strategy_combination}' set.")
 
             # Initializations before whole case-loop
             failed = list()
@@ -377,8 +382,8 @@ def main(argv):
                 with open(os.path.join(settings['SPI']['root'], "logs", log_file), "x") as _:
                     pass # only make log file if it doesn't exist.
             
-            with open(os.path.join(settings['SPI']['root'], "logs", log_file), "w") as outfile:
-                outfile.write(f"Batch execution with strategy combination '{patch_strategy} + {concretization_strategy}' launched in {whole_start}\n")
+            with open(os.path.join(settings['SPI']['root'], "logs", log_file), "a") as outfile:
+                outfile.write(f"Batch execution w/ Strategy '{strategy_combination}' commmenced in {whole_start}\n")
 
             for case_num, case in enumerate(cases, 1):
                 ##########
@@ -387,18 +392,20 @@ def main(argv):
 
                 case['hash_id'] = f"{hash_prefix}_{case['project_name']}"
                 case['target_dir'] = os.path.join(settings['SPI']['byproduct_path'], case['hash_id'])
-                case['expr_count'] += 1
+                case['iteration'] += 1
+                cursor_str = f"Iteration #{case['iteration']} w/ Strategy '{strategy_combination} / Case #{case_num}"
 
-                print(f"| SPI  | Case #{case_num}: begins to look for patch for {case['project_name']}...")
-                print(f"| SPI  |    > #{case_num}: Hash ID generated as {case['hash_id']}")
-                print(f"| SPI  |    > #{case_num}: byproducts made in directory {case['target_dir']}.")
+                print(f"| SPI  | {cursor_str} | Begins to look for patch for {case['project_name']}...")
 
                 # path preparation
-                if case['expr_count'] == 1:
+                if case['iteration'] == 1:
                     os.makedirs(case['target_dir'])
                     os.makedirs(os.path.join(case['target_dir'], "logs"))
                     os.makedirs(os.path.join(case['target_dir'], "outputs"))
                     os.makedirs(os.path.join(case['target_dir'], "properties"))
+
+                    print(f"| SPI  |    > {cursor_str} | Hash ID generated as {case['hash_id']}")
+                    print(f"| SPI  |    > {cursor_str} | byproducts made in directory {case['target_dir']}.")
 
                 if is_defects4j == True:
                     settings['SPI']['identifier'] = case['identifier']
@@ -422,34 +429,37 @@ def main(argv):
 
                 each_start = dt.datetime.now()
                 with open(os.path.join(settings['SPI']['root'], "logs", log_file), "a") as outfile:
-                    outfile.write(f"    - Launching SPI upon Case #{case_num} {case['project_name']}...\n")
+                    outfile.write(f"    - Launching SPI upon {cursor_str}...\n")
                     outfile.write(f"       > Started at {each_start.strftime('%Y-%m-%d %H:%M:%S')}.\n")
 
                 try:
-                    if case['expr_count'] == 1:
-                        print(f"| SPI  |    > #{case_num} / Step 1. Running Commit Collector...")
+                    if case['iteration'] == 1 or case['is_ConFix_ready'] == False:
+                        print(f"| SPI  |    > {cursor_str} | Step 1. Running Commit Collector...")
                         if not run_CC(case, is_defects4j, settings['SPI'], settings['CC']):
                             raise RuntimeError("Module 'Commit Collector' launch failed.")
 
-                        print(f"| SPI  |    > #{case_num} / Step 2. Running Longest Common subvector Extractor...")
+                        print(f"| SPI  |    > {cursor_str} | Step 2. Running Longest Common subvector Extractor...")
                         if not run_LCE(case, is_defects4j, settings['SPI'], settings['LCE']):
                             raise RuntimeError("Module 'Longest Common subvector Extractor' launch failed.")
-                    else:
-                        print(f"| SPI  |    > #{case_num} / Step 1 and Step 2 skipped.")
 
-                    print(f"| SPI  |    > #{case_num} / Step 3. Running ConFix...")
+                        case['is_ConFix_ready'] = True # Mark it True if those two CC and LCE has succeede in launch.
+                    else:
+                        print(f"| SPI  |    > {cursor_str} | Step 1 and Step 2 skipped.")
+
+                    print(f"| SPI  |    > {cursor_str} / Step 3. Running ConFix...")
                     if not run_ConFix(case, is_defects4j, settings['SPI'], settings['ConFix']):
                         raise RuntimeError("Module 'ConFix' launch failed.")
 
 
                     # Check for patch existence
                     if os.path.isfile(os.path.join(case['target_dir'], "diff_file.txt")):
-                        print(f"\n| SPI  |    > #{case_num} / Finished, and found a patch!")
-                        print(f"| SPI  |    > #{case_num} / === diff_file.txt starts ===")
+                        print(f"\n| SPI  | !  > {cursor_str} | [candidate metadata] > ConFix patch generation success")
+                        print(f"| SPI  |    > {cursor_str} | Finished, and found a patch!")
+                        print(f"| SPI  |    > {cursor_str} | === diff_file.txt starts ===")
                         with open(os.path.join(case['target_dir'], "diff_file.txt"), "r") as f:
                             content = f.read()
                             print(content)
-                        print(f"| SPI  |    > #{case_num} / === diff_file.txt ends ===")
+                        print(f"| SPI  |    > {cursor_str} | === diff_file.txt ends ===")
 
                         if not copy(os.path.join(case['target_dir'], "diff_file.txt"), os.path.join(case['target_dir'], f"diff_file-{patch_abb[patch_strategy]}{concretization_abb[concretization_strategy]}.txt")):
                             raise RuntimeError("Failed to copy diff_file.txt.")
@@ -459,7 +469,8 @@ def main(argv):
                         succeeded.append(case['project_name'])
                         SPI_launch_result_str = "succeeded"
                     else:
-                        print(f"\n| SPI  |    > #{case_num} / Finished, but failed to find a patch.")
+                        print(f"| SPI  | !  > {cursor_str} | [candidate metadata] > ConFix patch generation fail")
+                        print(f"\n| SPI  |    > {cursor_str} | Finished, but failed to find a patch.")
 
                         failed.append(case['project_name'])
                         SPI_launch_result_str = "failed"
@@ -472,8 +483,9 @@ def main(argv):
                     
                 except Exception as e:
                     print()
-                    print(f"| SPI  | !  > #{case_num} / Aborted during progresses!")
-                    print(f"| SPI  | !  > #{case_num} / Failed cause: {e}")
+                    print(f"| SPI  | !  > {cursor_str} | [candidate metadata] > ConFix patch generation fail")
+                    print(f"| SPI  | !  > {cursor_str} | Aborted during progresses!")
+                    print(f"| SPI  | !  > {cursor_str} | Failed cause: {e}")
                     traceback.print_exc()
 
                     failed.append(case['project_name'])
@@ -482,7 +494,7 @@ def main(argv):
                     each_end = dt.datetime.now()
                     each_elapsed_time = (each_end - each_start)
 
-                    print(f"| SPI  |    > #{case_num} / Elapsed Time : {each_elapsed_time}")
+                    print(f"| SPI  |    > {cursor_str} | Elapsed Time : {each_elapsed_time}")
 
                     with open(os.path.join("logs", log_file), "a") as outfile:
                         outfile.write(f"       > Ended at {each_end.strftime('%Y-%m-%d %H:%M:%S')}.\n")
@@ -496,7 +508,7 @@ def main(argv):
             if "batch" in settings['SPI']['mode']:
                 with open(os.path.join("logs", log_file), "a") as outfile:
                     outfile.write("\n")
-                    outfile.write(f"Batch execution with strategy combination '{patch_strategy} + {concretization_strategy}' finished at {whole_end}, after {whole_elapsed_time}, with {len(succeeded)} success(es) and {len(failed)} failure(s).\n")
+                    outfile.write(f"Batch execution w/ strategy '{strategy_combination}' finished at {whole_end}, after {whole_elapsed_time}, with {len(succeeded)} success(es) and {len(failed)} failure(s).\n")
                     outfile.write(f"    - Succeeded case(s): {len(succeeded)}\n")
                     for each in succeeded:
                         outfile.write(f"        - {each}\n")
@@ -504,7 +516,7 @@ def main(argv):
                     for each in failed:
                         outfile.write(f"        - {each}\n")
 
-            print(f"| SPI  | Total Elapsed Time for strategy combination '{patch_strategy} + {concretization_strategy}': {whole_elapsed_time}")
+            print(f"| SPI  | Total Elapsed Time for strategy combination '{strategy_combination}': {whole_elapsed_time}")
             print(f"| SPI  | {len(succeeded)} succeeded, {len(failed)} failed.")
 
     
