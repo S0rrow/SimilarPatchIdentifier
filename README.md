@@ -66,7 +66,7 @@ Inspired by _**Automated Patch Generation with Context-based Change Application*
 |`commit_id`|no|automatically follow `commit_id` from SPI part|
 |`git_url`|no|automatically follow `repository_url` from SPI part|
 |`git_name`|no|unnecessary if `git_url` is given|
-|`doClean`|no|whether to clean the output directory before recurrent<br>execution with identical output directory|
+|`doClean`|no|whether to clean the output directory before recurrent execution with identical output directory|
 |`JAVA_HOME.8`|no|automatically follow `JAVA_HOME_8` from SPI part|
 |`defects4j_name`|no|automatically follow `identifier` from SPI part|
 |`defects4j_id`|no|automatically follow `version` from SPI part|
@@ -85,7 +85,7 @@ Inspired by _**Automated Patch Generation with Context-based Change Application*
 |`candidate_number`|**yes**|select the number of candidate source codes. default is 10|
 |`d4j_project_name`|no|automatically follow `identifier` from SPI part|
 |`d4j_project_num`|no|automatically follow `version` from SPI part|
-|`doClean`|no|whether to clean the output directory before recurrent<br>execution with identical output directory|
+|`doClean`|no|whether to clean the output directory before recurrent execution with identical output directory|
 
 
 ##### **ConFix**
@@ -114,8 +114,8 @@ Inspired by _**Automated Patch Generation with Context-based Change Application*
 ### Upon Execution...
 #### "Notify me by Email"
 - You may use inserted bash script, `tracker.sh` for notifying execution finish through email. Through bash script, `tracker.sh` will execute `launcher.py` with *rebuild* option given.
-- You must use <span style="color:skyblue">handong.ac.kr</span> account only for email.
+- You must use `handong.ac.kr` account only for email.
     - due to Gmail Rules, we cannot use *gmail* accounts for mailing within SERVER #24.
-#### How to use `tracker.sh`
-> <span style="color:green">./tracker.sh</span> `{location_of_SPI}` `{your@email}`
+#### How to use *tracker.sh*
+> `./tracker.sh` `{location_of_SPI}` `{your@email}`
 
