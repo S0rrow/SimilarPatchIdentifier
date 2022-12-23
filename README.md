@@ -8,7 +8,7 @@ Inspired by _**Automated Patch Generation with Context-based Change Application*
 ## Submodules (Projects included)
 **SPI = CC + LCE + ConFix**
 - [ConFix](https://github.com/thwak/confix) (Original Repository of ConFix)
-- [ChangeCollector (CC)](https://github.com/S0rrow/ChangeCollector)
+- [ChangeCollector (CC)](https://github.com/ISEL-HGU/ChangeCollector)
 - ~~[AllChangeCollector](https://github.com/JeongHyunHeo/AllChangeCollector)~~ (Integrated into ChangeCollector)
 - [Longest Common sub-vector Extractor (LCE)](https://github.com/S0rrow/LCE)
 
