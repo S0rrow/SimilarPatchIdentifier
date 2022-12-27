@@ -34,11 +34,11 @@ Inspired by _**Automated Patch Generation with Context-based Change Application*
     > `cd SimilarPatchIdentifier`
 - Edit `SPI.ini` file
     - See [SPI.ini settings](#spiini-settings)
-- Launch the SimilarPatchIdentifier
-    - See [Generate the Change Vector Pool](#generate-the-change-vector-pool)
-    - See [How to find Patch for Git Repository](#how-to-find-patch-for-git-repository)
-    - See [How to find Patch for Defects4J](#how-to-find-patch-for-defects4j)
-    - See [How to launch using batch](#how-to-launch-using-batch)
+- Launch the SimilarPatchIdentifier according to scenario you want to apply.
+    - To generate `change vector pool`, See [Generate the Change Vector Pool](#generate-the-change-vector-pool)
+    - To find a patch for buggy file from git repository, See [How to find Patch for Git Repository](#how-to-find-patch-for-git-repository)
+    - To find a patch for buggy project from `Defects4J Framework`, See [How to find Patch for Defects4J](#how-to-find-patch-for-defects4j)
+    - To find multiple patches for buggy projects from `Defects4J Framework`, See [How to launch using batch](#how-to-launch-using-batch)
 
 #### `SPI.ini` settings
 ##### **SPI**
@@ -100,7 +100,7 @@ Inspired by _**Automated Patch Generation with Context-based Change Application*
 ##### **ConFix**
 |**key**|**is_required**|**description**|
 |:---|:---:|:---|
-|`jvm`|yes|automatically follow *JAVA_HOME_8* from SPI part|
+|`jvm`|no|automatically follow *JAVA_HOME_8* from SPI part|
 |`version`|no|automatically given by `launcher.py`|
 |`pool.path`|no|automatically given by `launcher.py`|
 |`cp.lib`|no|automatically given by `launcher.py`|
@@ -122,10 +122,48 @@ Inspired by _**Automated Patch Generation with Context-based Change Application*
 > `./gradlew run`
 
 ### How to find Patch for Git Repository
+- To launch SimilarPatchIdentifier to make patch for buggy file from a Git repository, input values descripted below in `SPI.ini` file.
+- in `SPI` section
+    - mode : `github`
+    - repository_url : `URL` of the Git repository
+    - commit_id : `Commit ID` of the buggy version
+    - target_path : `Path of the buggy file` in the repository
+    - test_list : `List of names of test classes` that a project uses
+    - test_class_path : `Path of the test class path` (Colon(`:`)-separated.)
+    - compile_class_path : Path of the compile class path (Colon(`:`)-separated.)
+    - build_tool : How a project is built. Only tools `maven` and `gradle` are possible for option
+    - faulty_line : Line number of the buggy line
+    - faulty_line_fix : Line number of the fixed line
+    - faulty_line_blame : Line number of the blame line
+    - JAVA_HOME_8 : Path of the JDK 8
+    - byproduct_path : Path of the directory which files and folders made during the progress of SPI should be stored into. Will make folder byproducts inside root by default.
+- in `ChangeCollector` section
+    - no need to input
+- in `LCE` section
+    - candidate_number : Number of candidates to be generated, default is 10
+- in `ConFix` section
+    - patch.count : Number of patch generation trials, default is 200000
+    - max.change.count : The threshold of number of changes to use as patch material
+    - max.trials : The threshold of patch generation trial, default is 100
+    - time.budget : Time limit of ConFix execution, default is 3
+    - fl.metric : How Fault Localization is done. default is perfect.
+
+- After setting `SPI.ini` for the Git repository, you can launch SimilarPatchIdentifier with the following command.
+    - if you want to rebuild all submodules, add `-r` or `--rebuild` option on execution.
+
+> `python3 launcher.py`
+
+- The result of the execution will be stored in the `byproduct_path` directory.
+    - If "diff.txt" is found within path, it means the patch is found.
+    - If there is none, it means that there is no patch found for the buggy file.
+
+
 ### How to find Patch for Defects4J Project
+- Give inputs needed for launching SimilarPatchIdentifier in `SPI.ini` file.
+
 ### How to launch using batch
 
-> ```python3 launcher.py```
+> `python3 launcher.py`
 
 #### Arguments
 - `'-r', '--rebuild'` : Rebuild all submodules (ChangeCollector, LCE) on start of execution. In default, `launcher.py` does not rebuild each submodules on execution.
