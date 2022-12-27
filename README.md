@@ -83,6 +83,7 @@ Inspired by _**Automated Patch Generation with Context-based Change Application*
 |`defects4j_name`|no|automatically follow `identifier` from SPI part|
 |`defects4j_id`|no|automatically follow `version` from SPI part|
 |`hash_id`|no|automatically given by `launcher.py`|
+|`set_file_path`|no|only needed for generating Change Vector Pool. defines the list of BIC commid id, BFC commit id, path for BIC file, path for BFC file, Git url, and JIRA key.|
 
 
 ##### **LCE**
@@ -122,38 +123,44 @@ Inspired by _**Automated Patch Generation with Context-based Change Application*
 - To execute the `ChangeCollector` module, you need to have JDK 17 installed.
 - To launch `ChangeCollector` to generate the change vector pool, input values descripted below in target properties file.
     - ChangeCollector itself does not use `SPI.ini` file. Instead, it uses `.properties` file for input.
-- The path of `.properties` file can be given by argument.
-
-
-> `cd core/ChangeCollector`<br>
-> `./gradlew run`
+- The path of `.properties` file can be given by argument. If not, `ChangeCollector` will look for `cc.properties` under `{Path to SimilarPatchIdentifier}/core/ChangeCollector` directory.
+- The `.properties` file should contain the following values to generate pool.
+    - `project_root` : Absolute path to the root directory of the project.
+    - `output_dir` : Absolute path to the directory where the output files should be stored.
+    - `mode` : For Change Vector Pool generation, the mode should be `poolminer`.
+    - `JAVA_HOME.8` : Absolute path to JDK 8.
+    - `set_file_path` : Absolute path to the file which contains the list of metadata; {BIC commit ID, BFC commit ID, path for BIC file, path for BFC file, Git URL, JIRA key}.
+- Execute the following command to launch `ChangeCollector` to generate the change vector pool.
+   - If you want to execute `ChangeCollector` with designated properties file, provide path as additional argument.
+> `cd ./core/ChangeCollector {Path of .properties file}`<br>
+> `gradle clean run`
 
 ### How to find Patch for Git Repository
 - To launch SimilarPatchIdentifier to make patch for buggy file from a Git repository, input values descripted below in `SPI.ini` file.
 - in `SPI` section
-    - mode : `github`
-    - repository_url : `URL` of the Git repository
-    - commit_id : `Commit ID` of the buggy version
-    - target_path : `Path of the buggy file` in the repository
-    - test_list : `List of names of test classes` that a project uses
-    - test_class_path : `Path of the test class path` (Colon(`:`)-separated.)
-    - compile_class_path : Path of the compile class path (Colon(`:`)-separated.)
-    - build_tool : How a project is built. Only tools `maven` and `gradle` are possible for option
-    - faulty_line : Line number of the buggy line
-    - faulty_line_fix : Line number of the fixed line
-    - faulty_line_blame : Line number of the blame line
-    - JAVA_HOME_8 : Path of the JDK 8
-    - byproduct_path : Path of the directory which files and folders made during the progress of SPI should be stored into. Will make folder byproducts inside root by default.
+    - `mode` : `github`
+    - `repository_url` : URL of the Git repository
+    - `commit_id` : Commit ID of the buggy version
+    - `target_path` : Path of the buggy file in the repository
+    - `test_list` : List of names of test classes that a project uses
+    - `test_class_path` : Path of the test class path (Colon(`:`)-separated.)
+    - `compile_class_path` : Path of the compile class path (Colon(`:`)-separated.)
+    - `build_tool` : How a project is built. Only tools `maven` and `gradle` are possible for option
+    - `faulty_line` : Line number of the buggy line
+    - `faulty_line_fix` : Line number of the fixed line
+    - `faulty_line_blame` : Line number of the blame line
+    - `JAVA_HOME_8` : Path of the JDK 8
+    - `byproduct_path` : Path of the directory which files and folders made during the progress of SPI should be stored into. Will make folder byproducts inside root by default.
 - in `ChangeCollector` section
     - no need to input
 - in `LCE` section
-    - candidate_number : Number of candidates to be generated, default is 10
+    - `candidate_number` : Number of candidates to be generated, default is 10
 - in `ConFix` section
-    - patch.count : Number of patch generation trials, default is 200000
-    - max.change.count : The threshold of number of changes to use as patch material
-    - max.trials : The threshold of patch generation trial, default is 100
-    - time.budget : Time limit of ConFix execution, default is 3
-    - fl.metric : How Fault Localization is done. default is perfect.
+    - `patch.count` : Number of patch generation trials, default is 200000
+    - `max.change.count` : The threshold of number of changes to use as patch material
+    - `max.trials` : The threshold of patch generation trial, default is 100
+    - `time.budget` : Time limit of ConFix execution, default is 3
+    - `fl.metric` : How Fault Localization is done. default is perfect.
 
 - After setting `SPI.ini` for the Git repository, you can launch SimilarPatchIdentifier with the following command.
     - if you want to rebuild all submodules, add `-r` or `--rebuild` option on execution.

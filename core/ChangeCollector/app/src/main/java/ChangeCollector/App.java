@@ -53,11 +53,16 @@ public class App {
         String defects4j_id = properties.getProperty("defects4j_id"); // defects4j bug id
         String hash_id = properties.getProperty("hash_id"); // hash id of the current execution
 
-        String workspace_dir = String.format("%s/%s", output_dir, hash_id);
+        // if hash_id is null, set it as current time
+        if (hash_id == null || hash_id.equals("")) {
+            hash_id = String.valueOf(System.currentTimeMillis());
+        }
+
         // in case of hash id usage
-        if (hash_id != null) {
+        if (hash_id != null && !hash_id.equals("")) {
             output_dir = String.format("%s/%s/%s", output_dir, hash_id, "outputs/ChangeCollector");
         }
+        String workspace_dir = String.format("%s/%s", output_dir, hash_id);
 
         // clean output directory
         if (doClean) {
