@@ -121,7 +121,7 @@ Inspired by _**Automated Patch Generation with Context-based Change Application*
 #### How to use *tracker.sh*
 > `./tracker.sh` `{location_of_SPI}` `{your@email}`
 
-#### `SPI.ini` settings
+#### `SPI.ini` Specified Description
 ##### **SPI**
 |key|is_required|description|
 |:---|:---:|:---|
