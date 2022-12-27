@@ -27,6 +27,9 @@ Inspired by _**Automated Patch Generation with Context-based Change Application*
         - jproperties
 
 ### Pre-run Configuration
+#### `preconfig.sh`
+- Provided `preconfig.sh` will run all needed installation process before launch.
+#### Manual Configuration
 - Set up Defects4J with reference to [Steps to set up Defects4J](https://github.com/rjust/defects4j#requirements)
 - Install SimilarPatchIdentifier
     > `git clone https://github.com/ISEL-HGU/SimilarPatchIdentifier`
@@ -117,8 +120,12 @@ Inspired by _**Automated Patch Generation with Context-based Change Application*
 - `Change Collector` is a submodule of `SPI` which is responsible for generating the change vector pool.
     - `Change Collector` is a Java project which is built with Gradle.
 - To execute the `ChangeCollector` module, you need to have JDK 17 installed.
+- To launch `ChangeCollector` to generate the change vector pool, input values descripted below in target properties file.
+    - ChangeCollector itself does not use `SPI.ini` file. Instead, it uses `.properties` file for input.
+- The path of `.properties` file can be given by argument.
 
-> `cd core/ChangeCollector`
+
+> `cd core/ChangeCollector`<br>
 > `./gradlew run`
 
 ### How to find Patch for Git Repository
