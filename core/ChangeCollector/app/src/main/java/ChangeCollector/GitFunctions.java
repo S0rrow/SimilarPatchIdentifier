@@ -102,7 +102,7 @@ public class GitFunctions {
         try {
             ProcessBuilder pb = new ProcessBuilder();
             pb.directory(new File(repo_path));
-            pb.command("git", "log", "origin", "--pretty=format:%H", file_name);
+            pb.command("git", "log", "--pretty=format:%H", file_name);
             Process process = pb.start();
             BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
             String line = "";
@@ -229,7 +229,7 @@ public class GitFunctions {
             str_builder = new StringBuilder();
             for (String l = reader.readLine(); l != null; l = reader.readLine()) {
                 // debug: print l
-                App.logger.debug(App.ANSI_PURPLE + "[debug] > l = " + l + App.ANSI_RESET);
+                // App.logger.debug(App.ANSI_PURPLE + "[debug] > l = " + l + App.ANSI_RESET);
                 str_builder.append(l);
                 str_builder.append(System.lineSeparator());
             }
@@ -265,27 +265,32 @@ public class GitFunctions {
                         .debug(App.ANSI_PURPLE + "[debug] > bic is initial commit of the repository" + App.ANSI_RESET);
                 return null;
             }
-            String[] cid_set = blame(repo_git, file_name, lineBlame, lineFix);
-            if (cid_set == null) {
-                App.logger.error(App.ANSI_RED + "[ERROR] > Blamed cid set is null on " + lineBlame
-                        + " in file " + file_name + App.ANSI_RESET);
-                return null;
-            }
-            old_cid = cid_set[0];
-            if (!cid_set[1].equals(new_cid)) {
-                App.logger.error(App.ANSI_RED + "[ERROR] > BIC is different from " + new_cid + "as " + cid_set[1]
-                        + " on line " + lineBlame
-                        + " in file " + file_name + App.ANSI_RESET);
-                return null;
-            }
-            if (old_cid == null) {
-                App.logger.error(App.ANSI_RED + "[ERROR] > Failed to get the commit id of the line " + lineBlame
-                        + " in file " + file_name + App.ANSI_RESET);
+            old_cid = blame(repo_git, file_name, lineBlame, lineFix, new_cid);
+            if (old_cid == null || old_cid.isEmpty()) {
+                App.logger.error(App.ANSI_RED + "[ERROR] > Failed to get old commit id" + App.ANSI_RESET);
                 return null;
             } else if (old_cid.equals(new_cid)) {
-                App.logger.error(App.ANSI_RED + "[ERROR] > Failed to get the commit id of the line " + lineBlame
-                        + " in file " + file_name + App.ANSI_RESET);
-                return null;
+                ArrayList<String> hashes = log(repo_git, file_name);
+                // debug : print hashes
+                // App.logger.debug(App.ANSI_PURPLE + "[debug] > printing hashes ... " +
+                // App.ANSI_RESET);
+                // for (String hash : hashes) {
+                // App.logger.debug(App.ANSI_PURPLE + "[debug] > hash = " + hash +
+                // App.ANSI_RESET);
+                // }
+                // find new_cid's index
+                int index = hashes.indexOf(new_cid);
+                if (index == -1) {
+                    App.logger.error(App.ANSI_RED + "[ERROR] > Failed to find new_cid's index" + App.ANSI_RESET);
+                    return null;
+                }
+                // find old_cid's index
+                int old_index = index + 1;
+                if (old_index >= hashes.size()) {
+                    App.logger.error(App.ANSI_RED + "[ERROR] > Failed to find old_cid's index" + App.ANSI_RESET);
+                    return null;
+                }
+                old_cid = hashes.get(old_index);
             }
         } catch (Exception e) {
             App.logger.error(App.ANSI_RED + e.getMessage() + App.ANSI_RESET);
