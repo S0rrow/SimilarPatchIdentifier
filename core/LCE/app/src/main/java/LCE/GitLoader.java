@@ -74,7 +74,6 @@ public class GitLoader {
         gitLogger
                 .trace(App.ANSI_BLUE + "[info #" + counter + "] > git clone " + App.ANSI_YELLOW + url + App.ANSI_RESET);
         print_debug_info();
-        // TODO
     }
 
     public void getCounter(int counter) {
