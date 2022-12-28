@@ -59,9 +59,7 @@ public class App {
         }
 
         // in case of hash id usage
-        if (hash_id != null && !hash_id.equals("")) {
-            output_dir = String.format("%s/%s", output_dir, "outputs/ChangeCollector");
-        }
+        output_dir = String.format("%s/%s/%s", output_dir, hash_id, "outputs/ChangeCollector");
         String workspace_dir = String.format("%s/%s", output_dir, hash_id);
 
         // clean output directory
