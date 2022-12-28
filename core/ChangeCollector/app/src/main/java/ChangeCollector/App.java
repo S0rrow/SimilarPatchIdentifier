@@ -60,7 +60,7 @@ public class App {
 
         // in case of hash id usage
         if (hash_id != null && !hash_id.equals("")) {
-            output_dir = String.format("%s/%s/%s", output_dir, hash_id, "outputs/ChangeCollector");
+            output_dir = String.format("%s/%s", output_dir, "outputs/ChangeCollector");
         }
         String workspace_dir = String.format("%s/%s", output_dir, hash_id);
 
@@ -91,81 +91,19 @@ public class App {
         }
         // logger.info(ANSI_GREEN + "[info] > Successfully cloned " + git_url +
         // ANSI_RESET);
-
+        if (git_name == null || git_name.equals("")) {
+            git_name = GitFunctions.get_repo_name_from_url(git_url);
+        }
         String repo_git = workspace_dir + "/" + git_name;
 
         logger.trace(ANSI_YELLOW + "[info] > executing ChangeCollector for mode : " + mode + ANSI_RESET);
-        // MODE 1 : collect all change vectors from a repository
-        if (mode.equals("repository")) {
-            // STEP 1 : extract all source code differences between commits within a
-            // repository
-            ArrayList<String[]> all_diffs = gitFunctions.extract_diff(repo_git);
-            if (all_diffs == null || all_diffs.size() == 0) {
-                logger.fatal(ANSI_RED + "[fatal] > Failed to extract diffs" + ANSI_RESET);
-                System.exit(1);
-            }
-            try {
-                BufferedWriter writer = new BufferedWriter(new FileWriter(new File(output_dir, "diff.txt")));
-                for (String[] diff : all_diffs) {
-                    for (String line : diff) {
-                        writer.write(line);
-                        writer.write(" ");
-                    }
-                    writer.newLine();
-                }
-                writer.close();
-            } catch (Exception e) {
-                logger.fatal(ANSI_RED + "[fatal] > Exception : " + e.getMessage() + ANSI_RESET);
-                System.exit(1);
-            }
-            logger.info(ANSI_GREEN + "[info] > Successfully extracted diffs" + ANSI_RESET);
-            // STEP 2 : extract commit ids and file names from all diffs and write them to a
-            // file
-            try {
-                BufferedWriter writer = new BufferedWriter(new FileWriter(
-                        new File(output_dir, GitFunctions.get_repo_name_from_url(git_url) + "_commit_file.csv")));
-                for (String[] diff : all_diffs) {
-                    for (String line : diff) {
-                        writer.write(line + ",");
-                    }
-                    writer.write(git_url);
-                    writer.newLine();
-                }
-                writer.close();
-            } catch (Exception e) {
-                logger.fatal(ANSI_RED + "[fatal] > Exception : " + e.getMessage() + ANSI_RESET);
-                System.exit(1);
-            }
-            logger.info(ANSI_GREEN + "[info] > Successfully created " + GitFunctions.get_repo_name_from_url(git_url)
-                    + "_commit_file.csv" + ANSI_RESET);
-
-            String diff_path = output_dir + "/diff.txt";
-
-            if (!extractor.extract_gumtree_log(repo_git, diff_path, output_dir)) {
-                logger.fatal(ANSI_RED + "[fatal] > Failed to extract log" + ANSI_RESET);
-                System.exit(1);
-            }
-            logger.info(ANSI_GREEN + "[info] > Successfully extracted log" + ANSI_RESET);
-
-            String gumtree_log = output_dir + "/gumtree_log.txt";
-            // STEP 3 : extract change vectors from all diffs and write them to a file
-            int cv_extraction_result = extractor.extract_vector(git_name, gumtree_log, output_dir, true);
-            if (cv_extraction_result == -1) {
-                logger.fatal(ANSI_RED + "[fatal] > Failed to extract change vector" + ANSI_RESET);
-                System.exit(1);
-            } else if (cv_extraction_result == 1) {
-                logger.fatal(ANSI_RED + "[fatal] > Failed to extract change vector due to no change" + ANSI_RESET);
-                System.exit(1);
-            }
-            logger.info(ANSI_GREEN + "[info] > Successfully extracted change vector" + ANSI_RESET);
-        }
-        // MODE 2 : collect change vector between current commit and before of a single
+        // MODE 1 : collect change vector between current commit and before of a single
         // source code file
-        else if (mode.equals("file")) {
-
+        if (mode.equals("github")) {
             // STEP 1 : extract source code differences between current commit and before
-
-            String[] diff = gitFunctions.extract_diff(repo_git, file_name, commit_id);
+            int lineFix = Integer.parseInt(properties.getProperty("lineFix"));
+            int lineBlame = Integer.parseInt(properties.getProperty("lineBlame"));
+            String[] diff = gitFunctions.extract_diff(repo_git, file_name, commit_id, lineFix, lineBlame);
             if (diff == null) {
                 logger.fatal(ANSI_RED + "[fatal] > Failed to extract diff" + ANSI_RESET);
                 System.exit(1);
@@ -221,7 +159,7 @@ public class App {
             }
             logger.info(ANSI_GREEN + "[info] > Successfully extracted change vector" + ANSI_RESET);
         }
-        // MODE 3 : collect change vector between current commit and before from a
+        // MODE 2 : collect change vector between current commit and before from a
         // Defects4J bug
         else if (mode.equals("defects4j")) {
             String[] cid_set = new String[2]; // [0] old cid [1] new cid
@@ -316,7 +254,7 @@ public class App {
             }
             logger.info(ANSI_GREEN + "[info] > Successfully extracted change vector" + ANSI_RESET);
         }
-        // MODE 4 : collect change vectors from given inputs of bic and bfc file
+        // MODE 3 : collect change vectors from given inputs of bic and bfc file
         // and write gumtree_vector.csv on output
         else if (mode.equals("poolminer")) {
             String target = properties.getProperty("output_dir");

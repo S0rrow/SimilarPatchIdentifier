@@ -228,6 +228,8 @@ public class GitFunctions {
             reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
             str_builder = new StringBuilder();
             for (String l = reader.readLine(); l != null; l = reader.readLine()) {
+                // debug: print l
+                App.logger.debug(App.ANSI_PURPLE + "[debug] > l = " + l + App.ANSI_RESET);
                 str_builder.append(l);
                 str_builder.append(System.lineSeparator());
             }
@@ -247,65 +249,51 @@ public class GitFunctions {
         return bbic;
     }
 
-    // extract commit ids and file names between commits of all source files within
-    // a git repository
-    // @param repo_git : path of git repository
-    public ArrayList<String[]> extract_diff(String repo_git) {
-        ArrayList<String[]> results = new ArrayList<>();
-        ArrayList<String> hashes = log(repo_git);
-        for (String hash : hashes) {
-            ArrayList<String> files = list_tree(repo_git, hash);
-            for (String file_name : files) {
-                String[] diff = extract_diff(repo_git, file_name, hash);
-                if (diff != null) {
-                    results.add(diff);
-                }
-            }
-        }
-        return results;
-    }
-
     // extract source code differences between a commit id and before of a certain
     // source file
     // @param repo_git : path of git repository
     // @param file_name : file name to check
     // @param new_cid : Fix Inducing Commit ID
-    public String[] extract_diff(String repo_git, String file_name, String new_cid) {
+    public String[] extract_diff(String repo_git, String file_name, String new_cid, int lineFix, int lineBlame) {
         String repo_name = get_repo_name_from_url(repo_git);
+        String old_cid = null;
         App.logger.trace(App.ANSI_BLUE + "[status] > extracting diff from " + repo_name + App.ANSI_RESET + " to "
                 + App.ANSI_BLUE + file_name + App.ANSI_RESET + " with " + App.ANSI_BLUE + new_cid + App.ANSI_RESET);
-        String old_cid = "";
-        boolean found = false;
         try {
-            ArrayList<String> commit_hashes = log(repo_git, file_name);
-            if (commit_hashes == null) {
-                App.logger.error(App.ANSI_RED + "[error] > Failed to get commit hashes" + App.ANSI_RESET);
+            if (isInit(repo_git, new_cid)) {
+                App.logger
+                        .debug(App.ANSI_PURPLE + "[debug] > bic is initial commit of the repository" + App.ANSI_RESET);
                 return null;
             }
-            for (String cid : commit_hashes) {
-                if (found) {
-                    old_cid = cid;
-                    break;
-                }
-                if (cid.equals(new_cid)) {
-                    found = true;
-                }
-                if (commit_hashes.indexOf(cid) == commit_hashes.size() - 1 && !found) {
-                    App.logger.debug(App.ANSI_PURPLE + "[debug] > " + App.ANSI_YELLOW + repo_name + App.ANSI_PURPLE
-                            + " does not have "
-                            + App.ANSI_YELLOW + new_cid + App.ANSI_RESET);
-                    return null;
-                }
+            String[] cid_set = blame(repo_git, file_name, lineBlame, lineFix);
+            if (cid_set == null) {
+                App.logger.error(App.ANSI_RED + "[ERROR] > Blamed cid set is null on " + lineBlame
+                        + " in file " + file_name + App.ANSI_RESET);
+                return null;
             }
-            if (!found || old_cid.equals("")) {
-                App.logger
-                        .debug(App.ANSI_PURPLE + "[debug] > no commit ids found before : " + App.ANSI_YELLOW + new_cid
-                                + App.ANSI_RESET);
+            old_cid = cid_set[0];
+            if (!cid_set[1].equals(new_cid)) {
+                App.logger.error(App.ANSI_RED + "[ERROR] > new cid is different from " + new_cid + "as " + cid_set[0]
+                        + " on line " + lineBlame
+                        + " in file " + file_name + App.ANSI_RESET);
+                return null;
+            }
+            if (old_cid == null) {
+                App.logger.error(App.ANSI_RED + "[ERROR] > Failed to get the commit id of the line " + lineBlame
+                        + " in file " + file_name + App.ANSI_RESET);
+                return null;
+            } else if (old_cid.equals(new_cid)) {
+                App.logger.error(App.ANSI_RED + "[ERROR] > Failed to get the commit id of the line " + lineBlame
+                        + " in file " + file_name + App.ANSI_RESET);
                 return null;
             }
         } catch (Exception e) {
             App.logger.error(App.ANSI_RED + e.getMessage() + App.ANSI_RESET);
             return null;
+        }
+        // if old_cid contains "^" as first character, remove it
+        if (old_cid.charAt(0) == '^') {
+            old_cid = old_cid.substring(1);
         }
         return extract_diff(repo_git, file_name, new_cid, old_cid);
     }
