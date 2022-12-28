@@ -273,7 +273,7 @@ public class GitFunctions {
             }
             old_cid = cid_set[0];
             if (!cid_set[1].equals(new_cid)) {
-                App.logger.error(App.ANSI_RED + "[ERROR] > new cid is different from " + new_cid + "as " + cid_set[0]
+                App.logger.error(App.ANSI_RED + "[ERROR] > BIC is different from " + new_cid + "as " + cid_set[1]
                         + " on line " + lineBlame
                         + " in file " + file_name + App.ANSI_RESET);
                 return null;
