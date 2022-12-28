@@ -209,7 +209,7 @@ def run_CC(case : dict, is_defects4j : bool, conf_SPI : configparser.SectionProx
         prop_CC['JAVA_HOME.8'] = conf_SPI['JAVA_HOME_8']
 
         # Explicitly tell 'target'
-        prop_CC['mode'] = "defects4j" if is_defects4j else "repository"
+        prop_CC['mode'] = "defects4j" if is_defects4j else "github"
         prop_CC['hash_id'] = case['hash_id']
         if is_defects4j == True:
             prop_CC['defects4j_name'] = case['identifier']
@@ -219,7 +219,7 @@ def run_CC(case : dict, is_defects4j : bool, conf_SPI : configparser.SectionProx
                 pass
 
             prop_CC['git_url'] = conf_SPI['repository_url']
-            prop_CC['git_name'] = conf_SPI['project']
+            prop_CC['git_name'] = conf_SPI['identifier']
             prop_CC['file_name'] = conf_SPI['faulty_file']
             prop_CC['commit_id'] = conf_SPI['commit_id']
 
@@ -419,9 +419,9 @@ def main(argv):
                                 settings['SPI']['faulty_line_blame'] = row['blame faulty line']
                                 break
                 else: # GitHub not implemented fully.
-                    print("| SPI  | ! SPI currently works on defects4j bugs only. Cannot launch those on other projects. Aborting program.")
-                    sys.exit(0)
-
+                    # print("| SPI  | ! SPI currently works on defects4j bugs only. Cannot launch those on other projects. Aborting program.")
+                    # sys.exit(0)
+                    settings['SPI']['identifier'] = case['identifier']
 
                 ##########
                 # Modules launch

@@ -47,6 +47,8 @@ JAVA_HOME.8 =
 defects4j_name =
 defects4j_id =
 hash_id =
+; necessary if mode is poolminer
+set_file_path = 
 
 [LCE]
 SPI.dir=
