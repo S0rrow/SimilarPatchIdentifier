@@ -73,7 +73,6 @@ Inspired by _**Automated Patch Generation with Context-based Change Application*
 |:---|:---|:---|:---|
 |`SPI`|`mode`|How `SPI` will be run. Can choose among those options:<br>- `defects4j` : Tells `SPI` to try finding a patch out of a `Defects4J` bug.<br>- `defects4j-batch` : Tells `SPI` to try finding a patch out of a `Defects4J` bug, but with a number of bugs given as a list.<br>- `github` : *Currently not fully implemented.* Tells `SPI` to try finding a patch out of a `GitHub` project with a bug.|-
 |`SPI`|`JAVA_HOME_8`|Absolute path of JDK 8|None, *Should be specified*|
-|`SPI`|`JAVA_HOME`|Absolute path of JDK used in target buggy project.|None, *Should be specified*|
 |`SPI`|`byproduct_path`|Directory which files and folders made during the progress of `SPI` should be stored into.|`{SPI_root_directory}/byproducts`|
 |`SPI`|`root`|Directory where `SPI` root directory is placed.|.|
 |`SPI`|`patch_strategy`|List of patch strategies (among `flfreq`, `tested-first`, `noctx`, `patch`) to run `SPI` with. Comma-separated.|`flfreq`|
@@ -142,7 +141,6 @@ Inspired by _**Automated Patch Generation with Context-based Change Application*
 |`faulty_line_fix`|In mode `github`|Line number of `faulty_file` to try modifying. *Automatically set when running `SPI` in mode `defects4j` / `defects4j-batch`*|
 |`faulty_line_blame`|In mode `github`|Line number of `faulty file` where the bug is made. *Automatically set when running `SPI` in mode `defects4j` / `defects4j-batch`*|
 |`JAVA_HOME_8`|**Yes**|Absolute path of JDK 8. Necessary to build and compile ConFix.|
-|`JAVA_HOME`|**Yes**|Absolute path of JDK used in target project. Defects4J uses JDK 8 to build it's project, but other github repository may use different version of JDK.|
 |`byproduct_path`|No|Directory which files and folders made during the progress of `SPI` should be stored into. *Will make folder `byproducts` inside `root` by default.*|
 |`root`|No|Directory where `SPI` root directory is placed.|
 |`patch_strategy`|No|List of patch strategies (among `flfreq`, `tested-first`, `noctx`, `patch`) to run `SPI` with. Comma-separated.|
