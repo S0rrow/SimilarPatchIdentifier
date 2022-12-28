@@ -66,6 +66,9 @@ def main(argv):
         identifier = project_info['Project']['identifier']
         version = project_info['Project']['version']
 
+        jdk_env = os.environ.copy()
+        jdk_env['JAVA_HOME'] = project_info['Project']['JAVA_HOME_8']
+
         try:
             subprocess.run(["defects4j", "checkout", "-p", identifier, "-v", f"{version}b", "-w", target_workspace], cwd = target_root, check = True)
 
@@ -77,7 +80,8 @@ def main(argv):
             with open(os.path.join(target_workspace, "confix.properties"), "a") as confix_prop_file:
                 for d4j_prop, confix_prop in (("dir.src.classes", "src.dir"), ("dir.bin.classes", "target.dir"), ("dir.src.tests", "test.dir"), ("cp.compile", "cp.compile"), ("cp.test", "cp.test")):
                     filename = os.path.join(target_workspace, f"prop_{d4j_prop}.txt")
-                    subprocess.run(["defects4j", "export", "-p", d4j_prop, "-o", filename], cwd = target_workspace, check = True)
+
+                    subprocess.run(["defects4j", "export", "-p", d4j_prop, "-o", filename], cwd = target_workspace, env = jdk_env, check = True)
                     with open(os.path.join(target_workspace, filename), "r") as f:
                         file_content = f.read()
                         confix_prop_file.write(f"{confix_prop}={file_content}\n")
@@ -89,7 +93,7 @@ def main(argv):
 
             for test_list in ("tests.all", "tests.relevant", "tests.trigger"):
                 outfile = os.path.join(target_workspace, test_list)
-                subprocess.run(["defects4j", "export", "-p", test_list, "-o", outfile], cwd = target_workspace, check = True)
+                subprocess.run(["defects4j", "export", "-p", test_list, "-o", outfile], cwd = target_workspace, env = jdk_env, check = True)
 
             with open(os.path.join(target_workspace, "confix.properties"), "a") as f:
                 f.write(f"pool.source={os.path.join(target_outputs, 'LCE', 'candidates')}\n")
@@ -112,11 +116,12 @@ def main(argv):
         # buildTool = project_info['Project']['build_tool']
 
         try:
+            subprocess.run(["git", "clone", project_info['Project']['repository_url'], target_workspace], cwd = target_root, check = True)
+            subprocess.run(["git", "checkout", project_info['Project']['commit_id']], cwd = target_workspace, check = True)
+
             if not copy(os.path.join(SPI_root, "core", "confix", "coverages", "math", "math1b", "coverage-info.obj"), target_workspace):
                 raise RuntimeError("Failed to copy coverage info.")
-
-            prop_file = os.path.join(target_root, "properties", "confix.properties")
-            if not copy(prop_file, target_workspace):
+            if not copy(os.path.join(target_root, "properties", "confix.properties"), target_workspace):
                 raise RuntimeError("Failed to bring confix.properties to workspace directory.")
             
             ### fill up the confix.property
@@ -136,10 +141,11 @@ def main(argv):
             with open(os.path.join(target_workspace, "tests.trigger"), "w") as f:
                 f.write(project_info['Project']['test_list'])
 
-            if buildTool in ("gradle", "Gradle"):
-                subprocess.run(["gradle", "build"], cwd = target_workspace, check = True)
-            elif buildTool in ("maven", "Maven", "mvn"):
-                subprocess.run(["mvn", "compile"], cwd = target_workspace, check = True)
+            jdk_env = os.environ.copy()
+            jdk_env['JAVA_HOME'] = project_info['Project']['JAVA_HOME']
+            args_list = ["./gradlew", "build"] if project_info['Project']['build_tool'] in ("gradle", "Gradle") else ["mvn", "compile"]
+            subprocess.run(args_list, cwd = target_workspace, env = jdk_env)
+
         except Exception as e:
             print("| ConFix-runner    | ! Failed to run pre-launch configuration.")
             traceback.print_exc()
@@ -151,7 +157,9 @@ def main(argv):
     # Rebuilding ConFix
     try:
         print("| ConFix-runner    | Building ConFix...")
-        subprocess.run(("mvn", "clean", "package", "-q"), cwd = os.path.join(SPI_root, "core", "confix", "ConFix-code"), check = True)
+        jdk_env = os.environ.copy()
+        jdk_env['JAVA_HOME'] = project_info['Project']['JAVA_HOME_8']
+        subprocess.run(("mvn", "clean", "package", "-q"), cwd = os.path.join(SPI_root, "core", "confix", "ConFix-code"), env = jdk_env, check = True)
     except Exception as e:
         print("| ConFix-runner    | ! Failed to build ConFix.")
         traceback.print_exc()
@@ -168,7 +176,9 @@ def main(argv):
 
         with open(os.path.join(target_workspace, "log.txt"), "w") as f:
             JDK8_HOME = project_info['Project']['JAVA_HOME_8']
-            subprocess.run([os.path.join(JDK8_HOME, "bin", "java"), "-Xmx4g", "-cp", f"{os.path.join(SPI_root, 'core', 'confix', 'lib', 'las.jar')}:{os.path.join(SPI_root, 'core', 'confix', 'lib', 'confix-ami_torun.jar')}", "-Duser.language=en", "-Duser.timezone=America/Los_Angeles", "com.github.thwak.confix.main.ConFix"], cwd = target_workspace, stdout = f, check = True)
+            jdk_env = os.environ.copy()
+            jdk_env['JAVA_HOME'] = project_info['Project']['JAVA_HOME']
+            subprocess.run([os.path.join(JDK8_HOME, "bin", "java"), "-Xmx4g", "-cp", f"{os.path.join(SPI_root, 'core', 'confix', 'lib', 'las.jar')}:{os.path.join(SPI_root, 'core', 'confix', 'lib', 'confix-ami_torun.jar')}", "-Duser.language=en", "-Duser.timezone=America/Los_Angeles", "com.github.thwak.confix.main.ConFix"], cwd = target_workspace, env = jdk_env, stdout = f, check = True)
     except Exception as e:
         print("| ConFix-runner    | ! ConFix Launch failed.")
     else:

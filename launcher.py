@@ -73,6 +73,7 @@ def parse_argv() -> tuple:
             cases[-1]['repository'] = settings['SPI']['repository_url']
             cases[-1]['project_name'] = cases[-1]['repository'].rsplit("/", 1)[-1]
             cases[-1]['identifier'] = cases[-1]['project_name']
+            cases[-1]['version'] = "0"
             cases[-1]['iteration'] = 0
             cases[-1]['is_ConFix_ready'] = False
 
@@ -222,6 +223,8 @@ def run_CC(case : dict, is_defects4j : bool, conf_SPI : configparser.SectionProx
             prop_CC['git_name'] = conf_SPI['identifier']
             prop_CC['file_name'] = conf_SPI['faulty_file']
             prop_CC['commit_id'] = conf_SPI['commit_id']
+            prop_CC['lineFix'] = conf_SPI['faulty_line_fix']
+            prop_CC['lineBlame'] = conf_SPI['faulty_line_blame']
 
         with open(os.path.join(case['target_dir'], "properties", "CC.properties"), "wb") as f:
             prop_CC.store(f, encoding = "UTF-8")
@@ -252,9 +255,8 @@ def run_LCE(case : dict, is_defects4j : bool, conf_SPI : configparser.SectionPro
         prop_LCE['pool.dir'] = os.path.join(case['target_dir'], "outputs", "LCE", "result")
         prop_LCE['candidates.dir'] = os.path.join(case['target_dir'], "outputs", "LCE", "candidates")
 
-        if is_defects4j == True:
-            prop_LCE['d4j_project_name'] = case['identifier']
-            prop_LCE['d4j_project_num'] = case['version']
+        prop_LCE['d4j_project_name'] = case['identifier']
+        prop_LCE['d4j_project_num'] = case['version']
         
         with open(os.path.join(case['target_dir'], "properties", "LCE.properties"), "wb") as f:
             prop_LCE.store(f, encoding = "UTF-8")
@@ -285,7 +287,7 @@ def run_ConFix(case : dict, is_defects4j : bool, conf_SPI : configparser.Section
         for key in conf_ConFix.keys():
             prop_ConFix[key] = conf_ConFix[key]
 
-        prop_ConFix['jvm'] = os.path.join(conf_SPI['JAVA_HOME_8'], "bin", "java")
+        prop_ConFix['jvm'] = os.path.join(conf_SPI['JAVA_HOME'], "bin", "java")
         prop_ConFix['version'] = "1.8" if conf_ConFix['version'] == "" else conf_ConFix['version']
         prop_ConFix['pool.path'] = f"{os.path.join(conf_SPI['root'], 'core', 'confix', 'pool', 'ptlrh')},{os.path.join(conf_SPI['root'], 'core', 'confix', 'pool', 'plrt')}"
         prop_ConFix['cp.lib'] = os.path.join(conf_SPI['root'], 'core', 'confix', 'lib', 'confix-ami_torun.jar')
@@ -293,13 +295,10 @@ def run_ConFix(case : dict, is_defects4j : bool, conf_SPI : configparser.Section
         with open(os.path.join(case['target_dir'], "properties", "confix.properties"), "wb") as f:
             prop_ConFix.store(f, encoding = "UTF-8")
 
-        jdk8_env = os.environ.copy()
-        jdk8_env['JAVA_HOME'] = conf_SPI['JAVA_HOME_8']
-
         if is_defects4j == True:
-            subprocess.run(["python3", os.path.join(conf_SPI['root'], "core", "confix", "run_confix.py"), "-d", "true", "-h", case['hash_id'], "-f", os.path.join(case['target_dir'], "properties", "confix_runner.ini")], env = jdk8_env, check = True)
+            subprocess.run(["python3", os.path.join(conf_SPI['root'], "core", "confix", "run_confix.py"), "-d", "true", "-h", case['hash_id'], "-f", os.path.join(case['target_dir'], "properties", "confix_runner.ini")], check = True)
         else:
-            subprocess.run(["python3", os.path.join(conf_SPI['root'], "core", "confix", "run_confix.py"), "-h", case['hash_id'], "-f", os.path.join(case['target_dir'], "properties", "confix_runner.ini")], env = jdk8_env, check = True)
+            subprocess.run(["python3", os.path.join(conf_SPI['root'], "core", "confix", "run_confix.py"), "-h", case['hash_id'], "-f", os.path.join(case['target_dir'], "properties", "confix_runner.ini")], check = True)
         # with open(os.path.join(case['target_dir'], "logs", "ConFix_runner.log"), "w") as f:
         #     if is_defects4j == True:
         #         subprocess.run(["python3", os.path.join(conf_SPI['root'], "core", "confix", "run_confix.py"), "-d", "true", "-h", case['hash_id'], "-f", os.path.join(case['target_dir'], "properties", "confix_runner.ini")], env = jdk8_env, stdout = f, check = True)
@@ -434,9 +433,9 @@ def main(argv):
 
                 try:
                     if case['iteration'] == 1 or case['is_ConFix_ready'] == False:
-                        print(f"| SPI  |    > {cursor_str} | Step 1. Running Commit Collector...")
+                        print(f"| SPI  |    > {cursor_str} | Step 1. Running Change Collector...")
                         if not run_CC(case, is_defects4j, settings['SPI'], settings['CC']):
-                            raise RuntimeError("Module 'Commit Collector' launch failed.")
+                            raise RuntimeError("Module 'Change Collector' launch failed.")
 
                         print(f"| SPI  |    > {cursor_str} | Step 2. Running Longest Common subvector Extractor...")
                         if not run_LCE(case, is_defects4j, settings['SPI'], settings['LCE']):
